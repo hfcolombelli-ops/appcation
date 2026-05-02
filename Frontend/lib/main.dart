@@ -385,11 +385,14 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   Widget _buildEntryCard(BuildContext context, TextTheme tt, {Key? key}) {
     return Card(
       key: key,
-      elevation: 8,
-      shadowColor: const Color(0xFF0F172A).withValues(alpha: 0.12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      elevation: 1.5,
+      shadowColor: const Color(0xFF0F172A).withValues(alpha: 0.08),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+        side: BorderSide(color: const Color(0xFF0F172A).withValues(alpha: 0.06)),
+      ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -411,33 +414,33 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               textAlign: TextAlign.center,
               style: tt.bodyMedium?.copyWith(color: const Color(0xFF5C5E66), height: 1.35),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 16),
             Text(
-              'Novo por Google — escolha o perfil',
-              style: tt.labelLarge?.copyWith(color: const Color(0xFF191C1E), fontWeight: FontWeight.w600),
+              'Perfil (primeiro acesso Google)',
+              style: tt.labelMedium?.copyWith(
+                color: const Color(0xFF45464D),
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
             ),
             const SizedBox(height: 10),
-            LayoutBuilder(
-              builder: (context, bc) {
-                final gap = 10.0;
-                final w = (bc.maxWidth - gap) / 2;
-                return Wrap(
-                  spacing: gap,
-                  runSpacing: gap,
-                  children: [
-                    for (final r in _googleRoles)
-                      SizedBox(
-                        width: w.clamp(100, 220),
-                        child: _GoogleRoleMiniCard(
-                          label: r.label,
-                          icon: r.icon,
-                          selected: _googleRole == r.id,
-                          onTap: _loadingGoogle ? null : () => setState(() => _googleRole = r.id),
-                        ),
-                      ),
-                  ],
-                );
-              },
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.zero,
+                itemCount: _googleRoles.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, i) {
+                  final r = _googleRoles[i];
+                  return _GoogleRoleChip(
+                    label: r.label,
+                    icon: r.icon,
+                    selected: _googleRole == r.id,
+                    onTap: _loadingGoogle ? null : () => setState(() => _googleRole = r.id),
+                  );
+                },
+              ),
             ),
             if (_googleRole == 'manufacturer_admin') ...[
               const SizedBox(height: 14),
@@ -569,11 +572,14 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   Widget _buildRegisterCard(BuildContext context, TextTheme tt, {Key? key}) {
     return Card(
       key: key,
-      elevation: 8,
-      shadowColor: const Color(0xFF0F172A).withValues(alpha: 0.12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      elevation: 1.5,
+      shadowColor: const Color(0xFF0F172A).withValues(alpha: 0.08),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+        side: BorderSide(color: const Color(0xFF0F172A).withValues(alpha: 0.06)),
+      ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -744,8 +750,9 @@ Widget _primaryButton(
   );
 }
 
-class _GoogleRoleMiniCard extends StatelessWidget {
-  const _GoogleRoleMiniCard({
+/// Chip compacto em linha (scroll horizontal) para perfil Google.
+class _GoogleRoleChip extends StatelessWidget {
+  const _GoogleRoleChip({
     required this.label,
     required this.icon,
     required this.selected,
@@ -760,43 +767,34 @@ class _GoogleRoleMiniCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const accent = Color(0xFF00677D);
-    final border = selected ? accent : const Color(0xFFE2E5E9);
-    final bg = selected ? const Color(0xFFE8F6FA) : Colors.white;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
+        borderRadius: BorderRadius.circular(22),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
           decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: border, width: selected ? 2 : 1),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF0F172A).withValues(alpha: selected ? 0.06 : 0.04),
-                blurRadius: selected ? 10 : 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            color: selected ? const Color(0xFFE8F4F7) : const Color(0xFFF4F6F8),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: selected ? accent : const Color(0xFFE0E4E8),
+              width: selected ? 1.5 : 1,
+            ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-          child: Column(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 24, color: selected ? accent : const Color(0xFF5C5E66)),
-              const SizedBox(height: 6),
+              Icon(icon, size: 18, color: selected ? accent : const Color(0xFF6B7280)),
+              const SizedBox(width: 6),
               Text(
                 label,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 12,
-                  height: 1.2,
+                  fontSize: 13,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? const Color(0xFF0A4A58) : const Color(0xFF45464D),
+                  color: selected ? const Color(0xFF0D3D47) : const Color(0xFF374151),
                 ),
               ),
             ],
@@ -823,32 +821,36 @@ class _AccountTypeMiniCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const accent = Color(0xFF00677D);
-    final border = selected ? accent : const Color(0xFFE2E5E9);
-    final bg = selected ? const Color(0xFFE8F6FA) : const Color(0xFFF8FAFC);
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
           decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: border, width: selected ? 2 : 1),
+            color: selected ? const Color(0xFFE8F4F7) : const Color(0xFFF4F6F8),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected ? accent : const Color(0xFFE0E4E8),
+              width: selected ? 1.5 : 1,
+            ),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-          child: Column(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 28, color: selected ? accent : const Color(0xFF5C5E66)),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                  color: selected ? const Color(0xFF0A4A58) : const Color(0xFF45464D),
+              Icon(icon, size: 22, color: selected ? accent : const Color(0xFF6B7280)),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                    color: selected ? const Color(0xFF0D3D47) : const Color(0xFF374151),
+                  ),
                 ),
               ),
             ],
