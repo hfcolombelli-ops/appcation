@@ -13,8 +13,7 @@ void main() {
     appAuth = AuthSession();
   });
 
-  /// Não usar [MyApp] aqui: o tema chama `GoogleFonts.*` e falha em muitos CIs
-  /// mesmo com `allowRuntimeFetching: false`. Isto só valida o ecrã de login.
+  /// Não usar [MyApp] aqui: o tema chama `GoogleFonts.*` e falha em muitos CIs.
   testWidgets('login screen smoke test', (WidgetTester tester) async {
     final binding = TestWidgetsFlutterBinding.instance;
     await binding.setSurfaceSize(const Size(800, 2000));
@@ -30,9 +29,13 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(find.byKey(const ValueKey('login-universal')), findsOneWidget);
-
-    final entrar = find.text('Entrar');
-    await tester.scrollUntilVisible(entrar, 400);
-    expect(entrar, findsOneWidget);
+    expect(find.byKey(const ValueKey('login-submit')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('login-submit')),
+        matching: find.text('Entrar'),
+      ),
+      findsOneWidget,
+    );
   });
 }

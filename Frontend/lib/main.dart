@@ -291,11 +291,16 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                     Row(
                       children: [
                         const Expanded(child: Divider(color: Color(0xFFC6C6CD))),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'ou selecione seu perfil de acesso',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                        Flexible(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              'ou selecione seu perfil de acesso',
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
                           ),
                         ),
                         const Expanded(child: Divider(color: Color(0xFFC6C6CD))),
@@ -318,14 +323,26 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                       onTap: () => _snack('Use e-mail e senha com perfil de fabricante.'),
                     ),
                     const SizedBox(height: 22),
-                    const Row(
+                    Row(
                       children: [
-                        Expanded(child: Divider(color: Color(0xFFC6C6CD))),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Text('acesso institucional', style: TextStyle(fontSize: 13, color: Color(0xFF76777D))),
+                        const Expanded(child: Divider(color: Color(0xFFC6C6CD))),
+                        Flexible(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              'acesso institucional',
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontSize: 13,
+                                    color: const Color(0xFF76777D),
+                                  ) ??
+                                  const TextStyle(fontSize: 13, color: Color(0xFF76777D)),
+                            ),
+                          ),
                         ),
-                        Expanded(child: Divider(color: Color(0xFFC6C6CD))),
+                        const Expanded(child: Divider(color: Color(0xFFC6C6CD))),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -362,6 +379,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                           ],
                           const SizedBox(height: 12),
                           FilledButton(
+                            key: const ValueKey('login-submit'),
                             onPressed: _loadingLogin ? null : _submitLogin,
                             style: FilledButton.styleFrom(
                               backgroundColor: const Color(0xFF131B2E),
