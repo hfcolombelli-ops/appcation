@@ -11,3 +11,6 @@ ui-debug.log
 
 # Defines de build Flutter Web (Firebase + API); copiar de dart_defines.production.env.example
 Frontend/dart_defines.production.env
+
+# Documentos Office na raiz do repo (rascunhos locais)
+/*.docx
