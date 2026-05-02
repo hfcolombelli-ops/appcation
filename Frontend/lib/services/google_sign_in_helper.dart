@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../config.dart';
+import 'google_sign_in_errors.dart';
 
 bool _googleSignInInitialized = false;
 
@@ -11,9 +12,7 @@ Future<void> _ensureGoogleSignInInitialized() async {
   }
   final cid = AppConfig.googleWebClientId.trim();
   if (cid.isEmpty) {
-    throw StateError(
-      'Configure GOOGLE_WEB_CLIENT_ID (dart-define) igual ao OAuth Client ID Web no Google Cloud.',
-    );
+    throw const GoogleSignInFailure(GoogleSignInFailureKind.webClientIdMissing);
   }
   await GoogleSignIn.instance.initialize(
     clientId: kIsWeb ? cid : null,
@@ -37,13 +36,16 @@ Future<String?> obtainGoogleIdToken({bool forceAccountPicker = false}) async {
     );
     final token = account.authentication.idToken;
     if (token == null || token.isEmpty) {
-      throw StateError('Google não devolveu id_token. Verifique o Client ID Web e as APIs no Google Cloud.');
+      throw const GoogleSignInFailure(GoogleSignInFailureKind.idTokenMissing);
     }
     return token;
   } on GoogleSignInException catch (e) {
     if (e.code == GoogleSignInExceptionCode.canceled) {
       return null;
     }
-    throw StateError(e.description ?? e.toString());
+    throw GoogleSignInFailure(
+      GoogleSignInFailureKind.signInError,
+      detail: e.description ?? e.toString(),
+    );
   }
 }

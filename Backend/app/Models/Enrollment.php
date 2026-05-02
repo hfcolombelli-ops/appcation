@@ -15,6 +15,9 @@ class Enrollment extends Model
         'score',
         'joined_at',
         'completed_at',
+        'repescage_round',
+        'in_recovery',
+        'recovery_question_ids',
     ];
 
     protected function casts(): array
@@ -22,6 +25,8 @@ class Enrollment extends Model
         return [
             'joined_at' => 'datetime',
             'completed_at' => 'datetime',
+            'in_recovery' => 'boolean',
+            'recovery_question_ids' => 'array',
         ];
     }
 
@@ -38,5 +43,10 @@ class Enrollment extends Model
     public function answers(): HasMany
     {
         return $this->hasMany(Answer::class);
+    }
+
+    public function followUps(): HasMany
+    {
+        return $this->hasMany(EnrollmentFollowUp::class);
     }
 }

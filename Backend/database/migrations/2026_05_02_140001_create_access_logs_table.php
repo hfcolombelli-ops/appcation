@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('access_logs', function (Blueprint $table) {
             $table->id();
+            $table->uuid('request_id')->nullable();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
@@ -18,6 +19,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('response_status')->nullable();
             $table->timestamp('created_at')->useCurrent();
 
+            $table->index('request_id');
             $table->index(['created_at']);
             $table->index(['user_id', 'created_at']);
         });

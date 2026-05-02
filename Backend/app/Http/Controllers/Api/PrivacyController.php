@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Answer;
 use App\Models\Enrollment;
+use App\Models\SecurityAuditLog;
 use App\Models\TraineeProfile;
 use App\Models\UserConsent;
 use Illuminate\Http\Request;
@@ -40,13 +41,18 @@ class PrivacyController extends Controller
             return response()->json(['message' => 'Tipo de consentimento inválido para este perfil.'], 422);
         }
 
-        UserConsent::query()->create([
+        $consent = UserConsent::query()->create([
             'user_id' => $request->user()->id,
             'consent_type' => $type,
             'policy_version' => config('lgpd.privacy_policy_version'),
             'ip_address' => $request->ip(),
             'user_agent' => substr((string) $request->userAgent(), 0, 2000),
             'given_at' => now(),
+        ]);
+
+        SecurityAuditLog::record($request, 'privacy.consent_store', UserConsent::class, (int) $consent->id, [
+            'consent_type' => $type,
+            'policy_version' => config('lgpd.privacy_policy_version'),
         ]);
 
         return response()->json(['message' => 'Consentimento registrado.', 'policy_version' => config('lgpd.privacy_policy_version')]);
@@ -104,6 +110,10 @@ class PrivacyController extends Controller
                 ->get(['id', 'enrollment_id', 'question_id', 'is_correct', 'score', 'created_at']);
         }
 
+        SecurityAuditLog::record($request, 'privacy.export_personal_data', null, (int) $user->id, [
+            'role' => $user->role,
+        ]);
+
         return response()->json($payload);
     }
 
@@ -145,6 +155,8 @@ class PrivacyController extends Controller
             return response()->json(['message' => 'Senha incorreta.'], 422);
         }
 
+        $userId = (int) $user->id;
+
         DB::transaction(function () use ($user) {
             $user->tokens()->delete();
 
@@ -163,6 +175,10 @@ class PrivacyController extends Controller
                 'google_sub' => null,
             ])->save();
         });
+
+        SecurityAuditLog::record($request, 'privacy.account_deletion', null, $userId, [
+            'anonymized' => true,
+        ]);
 
         return response()->json([
             'message' => 'Conta anonimizada. Encerre a sessão neste dispositivo.',

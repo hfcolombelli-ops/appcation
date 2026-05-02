@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -18,22 +18,159 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="App²cation — treinos médicos, certificados e fluxo Fluxxo. Instale como aplicação (PWA) no telemóvel ou computador.">
+  <meta name="theme-color" content="#00677D">
   <meta name="google-signin-client_id" content="71104147877-c81cu1eda0r0n869n70jf686n1bs2v5t.apps.googleusercontent.com">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="appcation">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="App²cation">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>appcation</title>
+  <title>App²cation</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    .pwa-bottom-banner {
+      display: none;
+      position: fixed;
+      z-index: 99999;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 12px 16px;
+      background: #00677d;
+      color: #fff;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      font-size: 14px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+    }
+    .pwa-bottom-banner.visible { display: flex; }
+    .pwa-bottom-banner button {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .pwa-bottom-banner .pwa-btn-primary {
+      background: #fff;
+      color: #00677d;
+    }
+    .pwa-bottom-banner .pwa-btn-ghost {
+      background: transparent;
+      color: rgba(255, 255, 255, 0.85);
+      padding: 8px 12px;
+    }
+  </style>
 </head>
 <body>
+  <div id="pwa-install-banner" class="pwa-bottom-banner" role="region" aria-label="Instalar aplicação">
+    <span>Instale o App²cation no ecrã inicial para acesso rápido.</span>
+    <span style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+      <button type="button" class="pwa-btn-primary" id="pwa-install-accept">Instalar</button>
+      <button type="button" class="pwa-btn-ghost" id="pwa-install-dismiss">Agora não</button>
+    </span>
+  </div>
+  <div id="ios-pwa-hint" class="pwa-bottom-banner" role="region" aria-label="Instalar no iPhone ou iPad">
+    <span style="line-height:1.35;">No iPhone ou iPad: toque em <strong>Partilhar</strong> (□↑) e escolha <strong>Adicionar ao ecrã inicial</strong>.</span>
+    <button type="button" class="pwa-btn-primary" id="ios-pwa-dismiss">Entendido</button>
+  </div>
+  <script>
+    (function () {
+      var banner = document.getElementById('pwa-install-banner');
+      var accept = document.getElementById('pwa-install-accept');
+      var dismiss = document.getElementById('pwa-install-dismiss');
+      var deferredPrompt = null;
+
+      if (!banner || !accept || !dismiss) return;
+
+      try {
+        if (window.matchMedia('(display-mode: standalone)').matches) return;
+        if (window.navigator.standalone === true) return;
+        if (sessionStorage.getItem('pwa-install-dismissed') === '1') return;
+      } catch (e) {}
+
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        banner.classList.add('visible');
+        try {
+          var iosHint = document.getElementById('ios-pwa-hint');
+          if (iosHint) iosHint.classList.remove('visible');
+        } catch (err) {}
+      });
+
+      accept.addEventListener('click', function () {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.finally(function () {
+          deferredPrompt = null;
+          banner.classList.remove('visible');
+        });
+      });
+
+      dismiss.addEventListener('click', function () {
+        banner.classList.remove('visible');
+        try {
+          sessionStorage.setItem('pwa-install-dismissed', '1');
+        } catch (e) {}
+      });
+
+      window.addEventListener('appinstalled', function () {
+        banner.classList.remove('visible');
+        try {
+          localStorage.setItem('pwa-install-dismissed', '1');
+        } catch (e) {}
+      });
+    })();
+  </script>
+  <script>
+    (function () {
+      var iosBanner = document.getElementById('ios-pwa-hint');
+      var iosDismiss = document.getElementById('ios-pwa-dismiss');
+      if (!iosBanner || !iosDismiss) return;
+
+      function isStandalone() {
+        try {
+          if (window.matchMedia('(display-mode: standalone)').matches) return true;
+          if (window.navigator.standalone === true) return true;
+        } catch (e) {}
+        return false;
+      }
+
+      function isIosLike() {
+        var ua = navigator.userAgent || '';
+        if (/iphone|ipad|ipod/i.test(ua)) return true;
+        if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return true;
+        return false;
+      }
+
+      if (!isIosLike() || isStandalone()) return;
+
+      try {
+        if (sessionStorage.getItem('ios-pwa-install-dismissed') === '1') return;
+      } catch (e) {}
+
+      iosBanner.classList.add('visible');
+
+      iosDismiss.addEventListener('click', function () {
+        iosBanner.classList.remove('visible');
+        try {
+          sessionStorage.setItem('ios-pwa-install-dismissed', '1');
+        } catch (e) {}
+      });
+    })();
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

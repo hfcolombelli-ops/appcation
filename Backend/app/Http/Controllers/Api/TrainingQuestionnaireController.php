@@ -19,8 +19,17 @@ class TrainingQuestionnaireController extends Controller
     {
         $training = Training::findOrFail($trainingId);
 
-        if ((int) $training->instructor_id !== (int) $request->user()->id) {
-            return response()->json(['message' => 'Somente o instrutor pode editar o questionário.'], 403);
+        $user = $request->user();
+        $canEdit = (int) $training->instructor_id === (int) $user->id
+            || (
+                $user->role === 'manufacturer_admin'
+                && $training->is_official_template
+                && $training->manufacturer_id !== null
+                && (int) $training->manufacturer_id === (int) $user->manufacturer_id
+            );
+
+        if (! $canEdit) {
+            return response()->json(['message' => 'Somente o instrutor ou o fabricante (template) pode editar o questionário.'], 403);
         }
 
         $data = $request->validate([
@@ -34,6 +43,7 @@ class TrainingQuestionnaireController extends Controller
             'blocks.*.questions.*.options.*.label' => ['required', 'string', 'max:500'],
             'blocks.*.questions.*.options.*.is_correct' => ['required', 'boolean'],
             'blocks.*.questions.*.options.*.sort_order' => ['required', 'integer', 'min:1'],
+            'blocks.*.questions.*.recovery_variant_group' => ['nullable', 'string', 'max:64'],
         ]);
 
         DB::transaction(function () use ($training, $data) {
@@ -54,6 +64,11 @@ class TrainingQuestionnaireController extends Controller
                         'prompt' => $qPayload['prompt'],
                         'sort_order' => $qPayload['sort_order'],
                         'is_required' => true,
+                        'recovery_variant_group' => isset($qPayload['recovery_variant_group'])
+                            && is_string($qPayload['recovery_variant_group'])
+                            && trim($qPayload['recovery_variant_group']) !== ''
+                            ? trim($qPayload['recovery_variant_group'])
+                            : null,
                     ]);
 
                     foreach ($qPayload['options'] as $optPayload) {

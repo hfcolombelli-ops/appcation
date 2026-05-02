@@ -37,6 +37,29 @@ class InstructorDashboardController extends Controller
                 ->whereNotNull('score')
                 ->avg('score');
 
+        $finishedTrainingsCount = Training::query()
+            ->where('instructor_id', $userId)
+            ->where('status', 'finished')
+            ->count();
+
+        $approvalStats = $trainingIds->isEmpty()
+            ? null
+            : DB::table('enrollments')
+                ->join('trainings', 'trainings.id', '=', 'enrollments.training_id')
+                ->where('trainings.instructor_id', $userId)
+                ->where('enrollments.status', 'completed')
+                ->whereNotNull('enrollments.score')
+                ->selectRaw(
+                    'SUM(CASE WHEN enrollments.score >= (COALESCE(trainings.passing_score_percent, 70) / 10.0) THEN 1 ELSE 0 END) as passed,
+                     COUNT(*) as total'
+                )
+                ->first();
+
+        $approvalRatePercent = null;
+        if ($approvalStats !== null && (int) $approvalStats->total > 0) {
+            $approvalRatePercent = round(100.0 * ((int) $approvalStats->passed) / (int) $approvalStats->total, 1);
+        }
+
         $recent = Training::query()
             ->where('instructor_id', $userId)
             ->with('institution:id,name')
@@ -46,8 +69,10 @@ class InstructorDashboardController extends Controller
 
         return response()->json([
             'training_count' => $trainingCount,
+            'finished_trainings_count' => $finishedTrainingsCount,
             'participant_count' => $participantCount,
             'average_score' => $avgScore !== null ? round((float) $avgScore, 2) : null,
+            'approval_rate_percent' => $approvalRatePercent,
             'recent_trainings' => $recent,
         ]);
     }

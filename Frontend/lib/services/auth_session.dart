@@ -79,7 +79,7 @@ class AuthSession extends ChangeNotifier {
     final t = data['token'] as String?;
     final u = data['user'];
     if (t == null || u is! Map<String, dynamic>) {
-      throw ApiException('Resposta de login inválida.', 500);
+      throw ApiException('', 500, reason: LocalizedApiReason.authInvalidLoginResponse);
     }
     _token = t;
     _user = u;
@@ -95,6 +95,7 @@ class AuthSession extends ChangeNotifier {
     String? phone,
     String? manufacturerName,
     String? manufacturerCnpj,
+    int? institutionId,
   }) async {
     final data = await _api.postJson('/api/auth/register', {
       'name': name.trim(),
@@ -107,11 +108,12 @@ class AuthSession extends ChangeNotifier {
         if (manufacturerCnpj != null && manufacturerCnpj.trim().isNotEmpty)
           'manufacturer_cnpj': manufacturerCnpj.trim(),
       },
+      if (role == 'institution_admin' && institutionId != null) 'institution_id': institutionId,
     });
     final t = data['token'] as String?;
     final u = data['user'];
     if (t == null || u is! Map<String, dynamic>) {
-      throw ApiException('Resposta de cadastro inválida.', 500);
+      throw ApiException('', 500, reason: LocalizedApiReason.authInvalidRegisterResponse);
     }
     _token = t;
     _user = u;
@@ -123,11 +125,12 @@ class AuthSession extends ChangeNotifier {
     String role = 'trainee',
     String? manufacturerName,
     String? manufacturerCnpj,
+    int? institutionId,
     bool forceAccountPicker = true,
   }) async {
     final idToken = await obtainGoogleIdToken(forceAccountPicker: forceAccountPicker);
     if (idToken == null) {
-      throw ApiException('Login Google cancelado.', 400);
+      throw ApiException('', 400, reason: LocalizedApiReason.authGoogleCancelled);
     }
 
     final body = <String, dynamic>{
@@ -138,16 +141,43 @@ class AuthSession extends ChangeNotifier {
         if (manufacturerCnpj != null && manufacturerCnpj.trim().isNotEmpty)
           'manufacturer_cnpj': manufacturerCnpj.trim(),
       },
+      if (role == 'institution_admin' && institutionId != null) 'institution_id': institutionId,
     };
 
     final data = await _api.postJson('/api/auth/google', body);
     final t = data['token'] as String?;
     final u = data['user'];
     if (t == null || u is! Map<String, dynamic>) {
-      throw ApiException('Resposta de login Google inválida.', 500);
+      throw ApiException('', 500, reason: LocalizedApiReason.authInvalidGoogleLoginResponse);
     }
     _token = t;
     _user = u;
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Digesto semanal de resumo agregado (gestor / fabricante).
+  Future<void> setWeeklyDashboardDigest(bool enabled) async {
+    if (_token == null) return;
+    final data = await _api.patchJson(
+      '/api/me/notification-preferences',
+      {'weekly_dashboard_digest': enabled},
+      token: _token,
+    );
+    _user = Map<String, dynamic>.from(data);
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Gestor: vincula o perfil a uma instituição (API devolve o utilizador actualizado).
+  Future<void> linkInstitution(int institutionId) async {
+    if (_token == null) return;
+    final data = await _api.patchJson(
+      '/api/me/institution',
+      {'institution_id': institutionId},
+      token: _token,
+    );
+    _user = Map<String, dynamic>.from(data);
     await _persist();
     notifyListeners();
   }

@@ -3,10 +3,15 @@
 namespace App\Support;
 
 use App\Events\TrainingSignal;
+use App\Http\Controllers\Api\EnrollmentController;
+use App\Models\Answer;
+use App\Models\Certificate;
 use App\Models\Enrollment;
+use App\Models\Question;
 use App\Models\Training;
 use App\Models\TrainingBlock;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class TrainingSession
 {
@@ -125,5 +130,198 @@ class TrainingSession
         });
 
         return true;
+    }
+
+    /**
+     * Mesma regra que {@see EnrollmentController::forTraining}:
+     * contagem de respostas certas no bloco &lt; metade do número de perguntas do bloco.
+     */
+    public static function enrollmentBlockBelowHalfAccuracy(Enrollment $enrollment, int $trainingBlockId): bool
+    {
+        $belongs = TrainingBlock::query()
+            ->whereKey($trainingBlockId)
+            ->where('training_id', $enrollment->training_id)
+            ->exists();
+        if (! $belongs) {
+            return false;
+        }
+
+        $total = Question::query()
+            ->where('training_block_id', $trainingBlockId)
+            ->count();
+        if ($total === 0) {
+            return false;
+        }
+
+        $correct = Answer::query()
+            ->where('enrollment_id', $enrollment->id)
+            ->whereHas('question', fn ($q) => $q->where('training_block_id', $trainingBlockId))
+            ->where('is_correct', true)
+            ->count();
+
+        return $correct < ($total / 2);
+    }
+
+    /**
+     * Fase 2 (variantes): substitui cada pergunta errada por outra do mesmo {@see Question::recovery_variant_group}
+     * no mesmo treino, quando {@see Training::metadata}['repescage_variant_bank'] é verdadeiro.
+     *
+     * @param  list<int>  $clearedQuestionIds
+     * @return list<int>
+     */
+    public static function resolveRecoveryQuestionIdsForVariantBank(Training $training, array $clearedQuestionIds): array
+    {
+        $meta = $training->metadata ?? [];
+        if (empty($meta['repescage_variant_bank'])) {
+            return array_values(array_map('intval', $clearedQuestionIds));
+        }
+
+        $assigned = [];
+        $out = [];
+        foreach ($clearedQuestionIds as $qid) {
+            $qid = (int) $qid;
+            $q = Question::query()->find($qid);
+            $group = $q?->recovery_variant_group;
+            if ($q === null || $group === null || $group === '') {
+                $out[] = $qid;
+                $assigned[] = $qid;
+
+                continue;
+            }
+
+            $candidates = Question::query()
+                ->whereHas('trainingBlock', fn ($b) => $b->where('training_id', $training->id))
+                ->where('recovery_variant_group', $group)
+                ->where('id', '!=', $qid)
+                ->whereNotIn('id', $assigned)
+                ->pluck('id');
+            if ($candidates->isEmpty()) {
+                $out[] = $qid;
+                $assigned[] = $qid;
+
+                continue;
+            }
+            $substitute = (int) $candidates->random();
+            $out[] = $substitute;
+            $assigned[] = $substitute;
+        }
+
+        return array_values(array_unique($out));
+    }
+
+    /**
+     * Repescagem: remove respostas incorretas, reabre inscrição para nova tentativa (documento Fluxxo).
+     * Com {@see $trainingBlockId}, remove apenas erros do bloco (repescagem por bloco).
+     *
+     * @param  list<int|string>  $enrollmentIds
+     */
+    public static function applyRepescage(Training $training, array $enrollmentIds, ?int $trainingBlockId = null): void
+    {
+        DB::transaction(function () use ($training, $enrollmentIds, $trainingBlockId) {
+            $affectedIds = [];
+
+            foreach ($enrollmentIds as $eid) {
+                $e = Enrollment::query()
+                    ->whereKey($eid)
+                    ->where('training_id', $training->id)
+                    ->firstOrFail();
+
+                if ($trainingBlockId !== null) {
+                    $clearedQuestionIds = Answer::query()
+                        ->where('enrollment_id', $e->id)
+                        ->whereHas('question', fn ($q) => $q->where('training_block_id', $trainingBlockId))
+                        ->where(function ($q) {
+                            $q->where('is_correct', false)->orWhereNull('is_correct');
+                        })
+                        ->pluck('question_id')
+                        ->unique()
+                        ->values()
+                        ->all();
+
+                    $deleted = Answer::query()
+                        ->where('enrollment_id', $e->id)
+                        ->whereHas('question', fn ($q) => $q->where('training_block_id', $trainingBlockId))
+                        ->where(function ($q) {
+                            $q->where('is_correct', false)->orWhereNull('is_correct');
+                        })
+                        ->delete();
+
+                    if ($deleted === 0) {
+                        continue;
+                    }
+                } else {
+                    $clearedQuestionIds = Answer::query()
+                        ->where('enrollment_id', $e->id)
+                        ->where(function ($q) {
+                            $q->where('is_correct', false)->orWhereNull('is_correct');
+                        })
+                        ->pluck('question_id')
+                        ->unique()
+                        ->values()
+                        ->all();
+
+                    Answer::query()
+                        ->where('enrollment_id', $e->id)
+                        ->where(function ($q) {
+                            $q->where('is_correct', false)->orWhereNull('is_correct');
+                        })
+                        ->delete();
+                }
+
+                Certificate::query()->where('enrollment_id', $e->id)->delete();
+
+                $recoveryIds = $clearedQuestionIds === []
+                    ? []
+                    : self::resolveRecoveryQuestionIdsForVariantBank(
+                        $training,
+                        array_values(array_map('intval', $clearedQuestionIds))
+                    );
+
+                $patch = [
+                    'in_recovery' => true,
+                    'recovery_question_ids' => $recoveryIds === []
+                        ? null
+                        : $recoveryIds,
+                ];
+                if ($e->status === 'completed') {
+                    $patch['status'] = 'active';
+                    $patch['completed_at'] = null;
+                    $patch['score'] = null;
+                }
+                $e->update($patch);
+                $e->increment('repescage_round');
+                $affectedIds[] = (int) $e->id;
+            }
+
+            if ($trainingBlockId !== null && $affectedIds === []) {
+                throw ValidationException::withMessages([
+                    'payload' => ['Nenhuma resposta errada neste bloco para os inscritos seleccionados.'],
+                ]);
+            }
+
+            $signalPayload = [
+                'enrollment_ids' => $trainingBlockId !== null
+                    ? $affectedIds
+                    : array_map('intval', $enrollmentIds),
+            ];
+            if ($trainingBlockId !== null) {
+                $signalPayload['training_block_id'] = $trainingBlockId;
+                $signalPayload['requested_enrollment_ids'] = array_map('intval', $enrollmentIds);
+            }
+
+            $training->increment('command_seq');
+            $training->update([
+                'last_command' => 'repescage',
+                'last_command_payload' => $signalPayload,
+            ]);
+            $training->refresh();
+
+            broadcast(new TrainingSignal(
+                $training->id,
+                (int) $training->command_seq,
+                'repescage',
+                $signalPayload,
+            ));
+        });
     }
 }

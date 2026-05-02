@@ -12,5 +12,6 @@ class Manufacturer extends Model
         'cnpj',
         'support_email',
         'status',
+        'validation_status',
     ];
 }

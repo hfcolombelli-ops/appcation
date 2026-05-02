@@ -1,0 +1,153 @@
+# CI: testes Laravel + análise e testes Flutter (Fase 9.4 — qualidade).
+# Corre em push para `main` e em pull requests. Execução manual: Actions → CI → Run workflow.
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (PHPUnit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, bcmath, intl, fileinfo
+          coverage: none
+
+      - name: Composer install
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Pint (style)
+        run: ./vendor/bin/pint --test
+
+      - name: PHPUnit
+        run: php artisan test
+
+  frontend:
+    name: Frontend (Dart / Flutter)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Flutter SDK (stable)
+        uses: flutter-actions/setup-flutter@v4
+        with:
+          channel: stable
+          version: latest
+          cache: true
+          cache-sdk: true
+
+      - name: Dependencies
+        working-directory: Frontend
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: Frontend
+        run: dart analyze
+
+      - name: Test
+        working-directory: Frontend
+        run: flutter test
+
+      # integration_test exige dispositivo; no Ubuntu usamos runner Linux + GTK (CI).
+      - name: Linux desktop deps (integration_test)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev xvfb
+
+      - name: Integration smoke (login, Linux)
+        working-directory: Frontend
+        run: xvfb-run -a flutter test integration_test/login_smoke_test.dart -d linux
+
+      # Mesmo tipo de build que o deploy (Firebase); falha cedo se o Web não compilar.
+      - name: Build web (compile check)
+        working-directory: Frontend
+        run: |
+          set -euo pipefail
+          defs="$(mktemp)"
+          printf '%s\n' "API_BASE_URL=https://ci.example.invalid" >"$defs"
+          flutter build web --release --no-wasm-dry-run --dart-define-from-file="$defs"
+          rm -f "$defs"
+
+  android_apk:
+    name: Android APK (compile)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Java 17 (Gradle / Android)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Flutter SDK (stable)
+        uses: flutter-actions/setup-flutter@v4
+        with:
+          channel: stable
+          version: latest
+          cache: true
+          cache-sdk: true
+
+      - name: Dependencies
+        working-directory: Frontend
+        run: flutter pub get
+
+      - name: Build APK (release, assinatura debug)
+        working-directory: Frontend
+        run: flutter build apk --release
+
+  ios_compile:
+    name: iOS (compile, no codesign)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Flutter SDK (stable)
+        uses: flutter-actions/setup-flutter@v4
+        with:
+          channel: stable
+          version: latest
+          cache: true
+          cache-sdk: true
+
+      - name: Dependencies
+        working-directory: Frontend
+        run: flutter pub get
+
+      # Garante Pods/ antes do Xcode aplicar os #include? nos Flutter/*.xcconfig.
+      - name: CocoaPods
+        working-directory: Frontend/ios
+        run: pod install
+
+      # Sem certificados Apple no CI; valida que o projeto iOS e CocoaPods compilam.
+      - name: Build iOS (release, --no-codesign)
+        working-directory: Frontend
+        run: flutter build ios --release --no-codesign

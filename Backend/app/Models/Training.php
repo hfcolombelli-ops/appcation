@@ -15,6 +15,7 @@ class Training extends Model
         'equipment_id',
         'title',
         'type',
+        'is_official_template',
         'status',
         'scheduled_at',
         'join_hash',
@@ -22,6 +23,7 @@ class Training extends Model
         'command_seq',
         'last_command',
         'last_command_payload',
+        'passing_score_percent',
     ];
 
     protected function casts(): array
@@ -30,12 +32,18 @@ class Training extends Model
             'scheduled_at' => 'datetime',
             'metadata' => 'array',
             'last_command_payload' => 'array',
+            'is_official_template' => 'boolean',
         ];
     }
 
     public function institution(): BelongsTo
     {
         return $this->belongsTo(Institution::class);
+    }
+
+    public function manufacturer(): BelongsTo
+    {
+        return $this->belongsTo(Manufacturer::class);
     }
 
     public function instructor(): BelongsTo

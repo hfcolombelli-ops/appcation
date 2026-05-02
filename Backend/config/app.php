@@ -16,6 +16,11 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     /*
+    | Versão exposta em GET /api/health (definir em deploy, ex.: git SHA ou semver).
+    */
+    'version' => env('APP_VERSION', 'dev'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
@@ -122,5 +127,30 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Certificados (documento Fluxxo — validade padrão em meses)
+    |--------------------------------------------------------------------------
+    */
+
+    'certificate_validity_months' => (int) env('CERTIFICATE_VALIDITY_MONTHS', 24),
+
+    /*
+    | Base URL usada no QR e na página pública de validação (por defeito APP_URL).
+    | Defina se o front-end estiver noutro domínio mas a API servir /certificates/verify.
+    */
+    'certificate_verify_base_url' => env('CERTIFICATE_VERIFY_BASE_URL', env('APP_URL', 'http://localhost')),
+
+    /*
+    | Lembretes de recertificação (comando diário: certificates:send-recertification-reminders).
+    | Dias antes da data de expiração em que o e-mail é enviado (uma vez por certificado por janela).
+    */
+    'recertification_reminders_enabled' => filter_var(env('RECERTIFICATION_REMINDERS_ENABLED', true), FILTER_VALIDATE_BOOL),
+
+    'recertification_reminder_days' => array_values(array_filter(array_map(
+        static fn (string $v): int => (int) trim($v),
+        explode(',', (string) env('RECERTIFICATION_REMINDER_DAYS', '30,7'))
+    ), static fn (int $v): bool => $v > 0)),
 
 ];

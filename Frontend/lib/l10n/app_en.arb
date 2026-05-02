@@ -1,0 +1,805 @@
+{
+  "@@locale": "en",
+  "appTitle": "Appcation",
+  "loginShellTitle": "Universal login",
+  "loginBrandTitle": "App²cation",
+  "loginTagline": "Clinical training with rhythm and clarity",
+  "loginGoogleProfileSection": "Profile (first Google sign-in)",
+  "googleRoleTrainee": "Trainee",
+  "googleRoleInstructor": "Instructor",
+  "googleRoleInstitutionAdmin": "Manager",
+  "googleRoleManufacturerAdmin": "Manufacturer",
+  "mfgCompanyLabel": "Company (manufacturer)",
+  "mfgCnpjOptionalLabel": "Tax ID (optional)",
+  "institutionLoadingGoogle": "Loading institutions… If the list is empty, register an institution first (instructor account) or use email and password.",
+  "institutionPickerLabelGoogle": "Institution (manager)",
+  "googleConnecting": "Connecting to Google…",
+  "googleContinue": "Continue with Google",
+  "loginOrEmail": "or email",
+  "fieldEmail": "Email",
+  "fieldPassword": "Password",
+  "valEmailRequired": "Enter your email.",
+  "valEmailInvalid": "Invalid email.",
+  "valPasswordRequired": "Enter your password.",
+  "actionSignIn": "Sign in",
+  "loginOrgHint": "Instructors and institutional managers: use the email and password provided by your organization.",
+  "actionCreateAccount": "Create account",
+  "actionBack": "Back",
+  "registerSubtitle": "Choose the account type and fill in the details.",
+  "registerAccountTypeTitle": "Account type",
+  "registerInstitutionsLoading": "Loading institutions… If the list is empty, no hospitals are registered in the API yet.",
+  "fieldInstitution": "Institution",
+  "fieldFullName": "Full name",
+  "valNameRequired": "Enter your name.",
+  "fieldPasswordRegister": "Password (min. 8 characters)",
+  "valPasswordMin8": "At least 8 characters.",
+  "fieldCompanyName": "Company name",
+  "valCompanyNameRequired": "Enter the company name.",
+  "actionCompleteRegistration": "Complete registration",
+  "errApiConnection": "Could not connect to the API.",
+  "errMfgNameRequired": "Enter the company name.",
+  "errSelectInstitution": "Select an institution from the list.",
+  "errGoogleClientId": "Set GOOGLE_WEB_CLIENT_ID when running Flutter (same as GOOGLE_CLIENT_ID on the server).",
+  "errMfgNameBeforeGoogle": "Enter the manufacturer name before continuing with Google.",
+  "errSelectInstitutionGoogle": "Select an institution from the list (or wait for it to load).",
+  "shellTitleOverview": "Overview",
+  "shellTitleCommandRoom": "Command room",
+  "shellTitleNewTraining": "New training",
+  "shellTitleCredentialing": "Credentialing",
+  "shellTitleTrainingRequests": "Training requests",
+  "shellTitleTechPark": "Technology park",
+  "shellTitleEndorsements": "Manufacturer endorsements",
+  "shellTitleFluxxoReview": "Fluxxo review",
+  "shellNavDashboard": "Dashboard",
+  "shellNavCommandRoom": "Command room",
+  "shellNavTrainings": "Trainings",
+  "shellNavTrainingRequests": "Training requests",
+  "shellNavTechPark": "Technology park",
+  "shellNavEndorsementsShort": "Endorsements",
+  "shellNavFluxxoReview": "Fluxxo review",
+  "shellNavCredentialing": "Credentialing",
+  "shellLinkInstitutionTitle": "Link your institution",
+  "shellLinkInstitutionBody": "Without this you cannot see training requests or the aggregated dashboard.",
+  "shellLinkInstitutionEmpty": "No institutions in the API — create one under Credentialing (as instructor) or ask an administrator.",
+  "shellSaveLink": "Save link",
+  "shellPickInstitution": "Choose an institution.",
+  "shellAreaManager": "Manager area",
+  "shellAreaInstructor": "Instructor area",
+  "shellDefaultUserName": "Instructor",
+  "actionSignOut": "Sign out",
+  "actionRetry": "Try again",
+  "dashExportCsvWebOnly": "CSV export is only available in the web app.",
+  "dashExportPdfWebOnly": "PDF export is only available in the web app.",
+  "dashLinkInstitutionForKpis": "Link your institution using the orange banner at the top to see aggregated indicators.",
+  "dashKpiTrainings": "Trainings",
+  "dashKpiFinished": "Closed",
+  "dashKpiUniqueParticipants": "Unique participants",
+  "dashKpiAvgCompleted": "Average (completed)",
+  "dashKpiApprovalRate": "Approval rate",
+  "dashSeasonRankingTitle": "Season ranking",
+  "dashSeasonRankingHint": "Official trainings linked to manufacturers count toward seasons defined by the manufacturer.",
+  "dashRecentTrainings": "Recent trainings",
+  "dashNoTrainingsYet": "No trainings yet. Create one under Trainings.",
+  "dashSeasonPoints": "{points} pts",
+  "@dashSeasonPoints": {
+    "placeholders": {
+      "points": {}
+    }
+  },
+  "dashInstitutionKpisTitle": "Institution indicators",
+  "dashInstitutionLgpdNote": "Aggregated data — no individual identification (GDPR/LGPD).",
+  "dashExportCsv": "Export CSV",
+  "dashExportPdf": "Export PDF",
+  "dashKpiPendingRequests": "Pending requests",
+  "dashKpiInstitutionTrainings": "Trainings (institution)",
+  "dashKpiEnrollmentsTotal": "Enrollments (total)",
+  "dashKpiCompleted": "Completed",
+  "dashKpiCompletionRate": "Completion rate",
+  "dashKpiAvgScoreOverall": "Average score (overall)",
+  "dashByEquipment": "By equipment",
+  "dashNoEquipmentData": "No equipment breakdown yet.",
+  "dashEquipmentSubtitle": "Enrollments: {enr} · Completed: {done} · Rate: {rate}% · Avg. score: {avg}",
+  "@dashEquipmentSubtitle": {
+    "placeholders": {
+      "enr": {},
+      "done": {},
+      "rate": {},
+      "avg": {}
+    }
+  },
+  "dashSectorAveragesTitle": "Averages by sector (completed)",
+  "dashNoSectorHistory": "No sector history yet.",
+  "dashSectorSubtitle": "Completions: {c} · Average: {a}",
+  "@dashSectorSubtitle": {
+    "placeholders": {
+      "c": {},
+      "a": {}
+    }
+  },
+  "trainingSectionTitle": "Setup",
+  "trainingFieldTitle": "Training title",
+  "trainingTypeOfficial": "Official",
+  "trainingTypeCustom": "Custom",
+  "trainingScheduledLabel": "Date/time (optional)",
+  "trainingScheduledHint": "YYYY-MM-DD HH:MM",
+  "trainingCreateButton": "Create training",
+  "trainingTemplateCardTitle": "Official template (manufacturer)",
+  "trainingTemplateCardBody": "Clones the approved questionnaire. Requires an approved endorsement with the manufacturer.",
+  "trainingTemplateLabel": "Template",
+  "trainingUseTemplateButton": "Use template with selected institution",
+  "trainingJoinCodeTitle": "Join code (share with trainees)",
+  "trainingInternalId": "Internal ID: {id}",
+  "@trainingInternalId": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "trainingPostRepescageTitle": "Score after recovery",
+  "trainingPostRepescageBody": "Replace vs average: “recovery only” uses only questions from the last error release; “global average” keeps the average of all released questions.",
+  "trainingPolicyFinalLabel": "Final score policy",
+  "trainingPolicyFullAverage": "Global average (all released questions)",
+  "trainingPolicyRecoveryOnly": "Recovery only (replaces global average)",
+  "trainingVariantBankTitle": "Variant bank (recovery)",
+  "trainingVariantBankSubtitle": "If questions share the same variant group in the questionnaire, recovery suggests an equivalent question instead of repeating the same one.",
+  "trainingSavePolicyButton": "Save policy",
+  "trainingQuestionnaireTitle": "Questionnaire",
+  "trainingDefaultQuestionnaireBlockTitle": "Assessment",
+  "trainLifecycleDraft": "Draft",
+  "trainLifecycleScheduled": "Scheduled",
+  "trainLifecycleInProgress": "In progress",
+  "trainLifecycleFinished": "Finished",
+  "enrollmentStatusWaiting": "Waiting",
+  "enrollmentStatusActive": "Active",
+  "enrollmentStatusCompleted": "Completed",
+  "trainingAddQuestion": "Question",
+  "trainingSaveQuestionnaireApi": "Save questionnaire to API",
+  "trainingSnackPolicySaved": "Recovery score policy saved.",
+  "trainingSnackFromTemplate": "Training created from official template.",
+  "trainingPickInstitution": "Select an institution.",
+  "trainingErrTitle": "Enter a title.",
+  "trainingErrQuestionCorrect": "Each question needs one correct option.",
+  "trainingErrQuestionValid": "Add at least one valid question with 2+ options.",
+  "trainingSnackQuestionnaireSaved": "Questionnaire saved.",
+  "trainingQuestionN": "Question {n}",
+  "@trainingQuestionN": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "trainingPromptLabel": "Prompt",
+  "trainingOptionsMarkCorrect": "Options (mark the correct one)",
+  "trainingOptionN": "Option {n}",
+  "@trainingOptionN": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "comandoSnackBlockReleased": "Next block released (or no pending blocks).",
+  "comandoSessionPaused": "Session paused for trainees.",
+  "comandoSessionResumed": "Session resumed.",
+  "comandoStatusUpdate": "Status: {status}",
+  "@comandoStatusUpdate": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "comandoSnackRepescageDone": "Recovery applied — participants can fix wrong answers.",
+  "comandoActiveTraining": "Active training",
+  "comandoTrainingStatusHash": "Status: {status} · Hash: {hash}",
+  "@comandoTrainingStatusHash": {
+    "placeholders": {
+      "status": {},
+      "hash": {}
+    }
+  },
+  "comandoParticipantsTitle": "Participants",
+  "comandoNoParticipants": "No enrolled participants.",
+  "comandoSessionControlTitle": "Session control",
+  "comandoRepescageScope": "Recovery scope",
+  "comandoRepescageScopeAll": "Whole training (all wrong answers)",
+  "comandoBlockDefault": "Block",
+  "comandoBtnStart": "Start",
+  "comandoBtnReleaseBlock": "Release next block",
+  "comandoBtnPause": "Pause",
+  "comandoBtnResume": "Resume",
+  "comandoBtnReschedule": "Reschedule",
+  "comandoBtnClose": "End",
+  "comandoRepescageCount": "Recovery ({count})",
+  "@comandoRepescageCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "comandoHelpFooter": "Start releases the questionnaire to connected trainees. Recovery clears wrong answers; by block, only those in that block (tags when block accuracy is below 50%).",
+  "comandoParticipantAnswers": "Answers {answered} / {total} · {status}",
+  "@comandoParticipantAnswers": {
+    "placeholders": {
+      "answered": {},
+      "total": {},
+      "status": {}
+    }
+  },
+  "credSnackInstitutionCreated": "Institution created.",
+  "credTitleInstitutions": "Institutions",
+  "credIntroInstitutions": "Register hospitals or units to link to trainings.",
+  "credFieldInstitutionName": "Institution name",
+  "credFieldCnpjUnique": "Tax ID (unique)",
+  "credBtnRegisterInstitution": "Register institution",
+  "credListedCount": "Registered ({count})",
+  "@credListedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "credDoubleTitle": "Dual credentialing (Fluxxo)",
+  "credDoubleIntro": "Link with institution and manufacturer approval.",
+  "credApplyInstitutionLabel": "Request link to institution",
+  "credBtnRequestInstitution": "Request institutional link",
+  "credApplyManufacturerLabel": "Request manufacturer approval",
+  "credBtnRequestManufacturer": "Request from manufacturer",
+  "credMyLinksTitle": "My links",
+  "credMyLinksInstitutionsHeader": "Institutions",
+  "credNoInstitutionalLink": "No institutional link.",
+  "credMyLinksManufacturersHeader": "Manufacturers",
+  "credNoManufacturerHomologation": "No manufacturer approvals yet.",
+  "credQueueInstTitle": "Link requests (manager)",
+  "credQueueInstBody": "Instructors who requested a link with your institution. The “Pending” state leaves the queue after you decide.",
+  "credQueueManuTitle": "Pending approvals (manufacturer)",
+  "credQueueManuBody": "Instructor approvals with the manufacturer. Check institutional endorsement before approving.",
+  "credBtnApprove": "Approve",
+  "credBtnReject": "Reject",
+  "credEndorsementWith": "Institutional endorsement: {name}",
+  "@credEndorsementWith": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "credEndorsementPending": "Institutional endorsement: pending",
+  "credSnackRequestSent": "Request sent.",
+  "credSnackRequestManufacturerSent": "Request sent to manufacturer.",
+  "credStatusPending": "Pending",
+  "credStatusApproved": "Approved",
+  "credStatusRejected": "Rejected",
+  "credFeePaid": "Fee marked as paid",
+  "credFeePending": "Fee pending (if applicable)",
+  "trainReqLoadFailed": "Failed to load.",
+  "trainReqSnackUpdated": "Request updated.",
+  "trainReqUseOrangeBanner": "Use the orange notice at the top to link your institution.",
+  "trainReqIntro": "Approve, assign a credentialed instructor, and link the completed training when available.",
+  "trainReqEmpty": "No training requests.",
+  "trainReqReasonLine": "Reason: {text}",
+  "@trainReqReasonLine": {
+    "placeholders": {
+      "text": {}
+    }
+  },
+  "trainReqPriorityLine": "Priority: {text}",
+  "@trainReqPriorityLine": {
+    "placeholders": {
+      "text": {}
+    }
+  },
+  "trainReqParkLine": "Tech park: {name} ({detail})",
+  "@trainReqParkLine": {
+    "placeholders": {
+      "name": {},
+      "detail": {}
+    }
+  },
+  "trainReqPreferredDates": "Preferred dates: {desired} · deadline {limit}",
+  "@trainReqPreferredDates": {
+    "placeholders": {
+      "desired": {},
+      "limit": {}
+    }
+  },
+  "trainReqNotesLine": "Notes: {text}",
+  "@trainReqNotesLine": {
+    "placeholders": {
+      "text": {}
+    }
+  },
+  "trainReqFieldStatus": "Status",
+  "trainReqStatusPending": "Pending",
+  "trainReqStatusApproved": "Approved",
+  "trainReqStatusScheduled": "Scheduled",
+  "trainReqStatusRejected": "Rejected",
+  "trainReqStatusFulfilled": "Completed",
+  "trainReqFieldAssignedInstructor": "Assigned instructor",
+  "trainReqFieldFulfilledTraining": "Completed training",
+  "trainReqDashNone": "—",
+  "trainReqLinkedTraining": "Linked: {title} · hash {hash}",
+  "@trainReqLinkedTraining": {
+    "placeholders": {
+      "title": {},
+      "hash": {}
+    }
+  },
+  "trainReqBtnSaveChanges": "Save changes",
+  "parkSnackPickCatalog": "Choose a catalog model.",
+  "parkSnackUnitRegisteredPending": "Unit registered (pending).",
+  "parkBannerLinkInstitutionFirst": "Link your institution first using the banner above.",
+  "parkIntro": "Each unit mirrors a model from the manufacturer's catalog. Initial state: pending; active when in approved use.",
+  "parkFilterByState": "Filter by status",
+  "parkFilterChipAll": "All",
+  "parkFilterChipPending": "Pending",
+  "parkFilterChipActive": "Active",
+  "parkFilterByCategory": "Filter by category",
+  "parkFilterChipAllCategories": "All",
+  "parkSectionAddUnit": "Add unit",
+  "parkEmptyCatalog": "No models in the manufacturer catalog yet — nothing to link.",
+  "parkCatalogDropdownHint": "Catalog model",
+  "parkFieldSectorOptional": "Sector / location (optional)",
+  "parkFieldSectorHintExample": "e.g. ICU B, Block 3",
+  "parkBtnRegisterUnit": "Register unit",
+  "parkUnitsCount": "Units ({count})",
+  "@parkUnitsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "parkEmptyPark": "No units in the park.",
+  "parkEquipmentFallbackName": "Equipment",
+  "parkBtnActivate": "Activate",
+  "parkStatusPending": "Pending",
+  "parkStatusActive": "Active",
+  "endorsSnackRecorded": "Endorsement recorded.",
+  "endorsEmpty": "No manufacturer approval requests are waiting for endorsement.",
+  "endorsIntro": "Confirm that the instructor is credentialed at your institution for the manufacturer's approval request.",
+  "endorsManufacturerFallback": "Manufacturer",
+  "endorsInstructorLine": "Instructor: {name}",
+  "@endorsInstructorLine": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "endorsBtnEndorse": "Endorse",
+  "fluxRevSnackStatusUpdated": "Status updated.",
+  "fluxRevEmpty": "No manufacturers under review.",
+  "fluxRevQueueTitle": "Validation queue",
+  "fluxRevIntro": "Approving makes the manufacturer visible in the catalog for credentialing; rejecting or requesting information returns the flow to the manufacturer.",
+  "fluxRevIdLine": "ID {id}",
+  "@fluxRevIdLine": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "fluxRevCnpjLine": "Tax ID: {value}",
+  "@fluxRevCnpjLine": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "fluxRevSupportLine": "Support: {email}",
+  "@fluxRevSupportLine": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "fluxRevBtnRequestInfo": "Request information",
+  "mfgLoadFailedData": "Failed to load data.",
+  "mfgAreaTitle": "Manufacturer",
+  "mfgDashSummaryTitle": "Aggregated summary",
+  "mfgDashSummaryIntro": "Trainings and enrollments linked to this manufacturer — aggregated data (GDPR).",
+  "mfgSnackValidationRequested": "Validation request sent. The Fluxxo team will review it.",
+  "mfgSeasonNewTitle": "New season",
+  "mfgFieldName": "Name",
+  "mfgFieldSeasonStart": "Start (YYYY-MM-DD)",
+  "mfgFieldSeasonEnd": "End (YYYY-MM-DD)",
+  "mfgFieldTargetTrainingsOptional": "Closed trainings goal (optional)",
+  "mfgBtnCancel": "Cancel",
+  "mfgBtnClose": "Close",
+  "mfgBtnCreate": "Create",
+  "mfgSeasonCreatedSnack": "Season created and ranking updated.",
+  "mfgSeasonCreateFailed": "Could not create.",
+  "mfgSeasonRankingTitle": "Season ranking",
+  "mfgSeasonTargetLine": "Goal: {count} closed trainings",
+  "@mfgSeasonTargetLine": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "mfgSeasonNoClosedTrainings": "No closed trainings in this period (with this manufacturer).",
+  "mfgLeaderboardLoadFailed": "Could not load ranking.",
+  "mfgSnackRankingRecomputed": "Ranking recalculated.",
+  "mfgPointsTrainings": "{count} trainings",
+  "@mfgPointsTrainings": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "mfgPrizeNewTitle": "New prize (record)",
+  "mfgFieldTitle": "Title",
+  "mfgFieldDescriptionOptional": "Description (optional)",
+  "mfgFieldSortOptional": "Order (optional, lower = first)",
+  "mfgBtnSave": "Save",
+  "mfgPrizeSavedSnack": "Prize saved.",
+  "mfgPrizeSaveFailed": "Could not save.",
+  "mfgPrizeDeleteTitle": "Remove prize?",
+  "mfgPrizeDeleteBody": "The record will be deleted. This does not process payments (MVP).",
+  "mfgBtnAdd": "Add",
+  "mfgBtnRemove": "Remove",
+  "mfgSnackRemoved": "Removed.",
+  "mfgSnackProfileUpdated": "Profile updated.",
+  "mfgSnackVersionDraftHint": "Fill in the new model and tap «Add to catalog» (source #{parentId}).",
+  "@mfgSnackVersionDraftHint": {
+    "placeholders": {
+      "parentId": {}
+    }
+  },
+  "mfgSnackNameModelRequired": "Name and model are required.",
+  "mfgSnackEquipmentCreated": "Equipment created.",
+  "mfgSnackNewVersionRegistered": "New version registered.",
+  "mfgSnackFileReadError": "Could not read the file.",
+  "mfgSnackDocumentUploaded": "Document uploaded.",
+  "mfgSnackUploadFailed": "Upload failed.",
+  "mfgSnackDocumentRemoved": "Document removed.",
+  "mfgSnackFileSaved": "Saved: {name}",
+  "@mfgSnackFileSaved": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "mfgSnackDownloadFailed": "Download failed.",
+  "mfgFileFallbackName": "File",
+  "mfgSnackOfficialTitleRequired": "Enter the official training title.",
+  "mfgSnackTemplateCreated": "Template created. Tap «Edit questionnaire» in the list below for official content.",
+  "mfgSeasonsSectionTitle": "Seasons & ranking",
+  "mfgSeasonsIntro": "Points = closed trainings (status «finished») linked to this manufacturer, within the season period. Daily automatic or manual update.",
+  "mfgSeasonsEmpty": "No season yet — create one to track instructors by semester or cycle.",
+  "mfgSeasonMetaSuffix": " · goal {count}",
+  "@mfgSeasonMetaSuffix": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "mfgTooltipViewLeaderboard": "View ranking",
+  "mfgTooltipRecompute": "Recompute",
+  "mfgPrizesSectionTitle": "Prizes (record)",
+  "mfgPrizesIntro": "Informational description for campaigns or recognition — no integrated payment in MVP.",
+  "mfgPrizesEmpty": "No prizes recorded.",
+  "mfgDocumentsSectionTitle": "Documents (validation / Fluxxo)",
+  "mfgDocumentsIntro": "PDF or image up to 12 MB. The server uses the configured disk (local or S3 via FILESYSTEM_DISK); upload manuals or attachments for approval.",
+  "mfgDocKindOptional": "Type (optional)",
+  "mfgDocKindHint": "e.g. manual, certificate, datasheet",
+  "mfgDocNotesOptional": "Notes (optional)",
+  "mfgBtnSendFile": "Send file",
+  "mfgDocumentsEmpty": "No documents uploaded.",
+  "mfgTooltipDownload": "Download",
+  "mfgOfficialTrainingTitle": "Official training (Fluxxo template)",
+  "mfgOfficialTrainingIntro": "Templates without institution; credentialed instructors instantiate them for the hospital.",
+  "mfgTemplateTitleLabel": "Template title",
+  "mfgTemplateTitleHint": "e.g. Basic operation of ventilator X",
+  "mfgBtnCreateTemplateDraft": "Create template (draft)",
+  "mfgYourTemplates": "Your templates",
+  "mfgTemplatesEmpty": "No templates yet. Create one above.",
+  "mfgTrainingFallbackTitle": "Training",
+  "mfgBtnEditQuestionnaire": "Edit questionnaire",
+  "mfgCompanySectionTitle": "Company",
+  "mfgFieldSupportEmail": "Support email",
+  "mfgLabelCnpj": "Tax ID",
+  "mfgBtnSaveProfile": "Save profile",
+  "mfgCatalogSectionTitle": "Catalog (approvals)",
+  "mfgCatalogIntro": "Equipment here has no institution — visible for building trainings. With derived versions, the original record can no longer be edited.",
+  "mfgNewVersionFromRecord": "New version from record #{id}",
+  "@mfgNewVersionFromRecord": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "mfgFieldEquipmentName": "Equipment name",
+  "mfgFieldModel": "Model",
+  "mfgFieldSectorOptionalCatalog": "Sector (optional)",
+  "mfgCategoryOptionalLabel": "Category (optional)",
+  "mfgBtnAddToCatalog": "Add to catalog",
+  "mfgFilterListLabel": "Filter list",
+  "mfgEquipmentEmpty": "No equipment yet.",
+  "mfgEquipmentDerivedFrom": "Derived version from #{parentId} · {model}",
+  "@mfgEquipmentDerivedFrom": {
+    "placeholders": {
+      "parentId": {},
+      "model": {}
+    }
+  },
+  "mfgBtnNewVersion": "New version",
+  "mfgValidationTitle": "Fluxxo validation",
+  "mfgValidationStateLine": "Status: {status}",
+  "@mfgValidationStateLine": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "mfgFlowStepCompany": "Company data",
+  "mfgFlowStepFluxxoReview": "Fluxxo review",
+  "mfgFlowStepHomologation": "Approval",
+  "mfgValStatusPendingInfo": "Information pending",
+  "mfgValStatusPendingValidation": "Under review by Fluxxo",
+  "mfgValStatusActive": "Active on Fluxxo network",
+  "mfgValStatusRejected": "Validation rejected",
+  "mfgValHelpPendingInfo": "Complete company data and submit for the Fluxxo team to validate the manufacturer under the ArtMed program / Roberto document.",
+  "mfgValHelpPendingValidation": "Your request is in the review queue. Official templates can still be edited; visibility in the instructor catalog follows network rules.",
+  "mfgValHelpActive": "The manufacturer is approved on the network. Instructors can request credentialing with this manufacturer and use official templates in the catalog.",
+  "mfgValHelpRejected": "Adjust the data or documentation indicated by the team and submit again.",
+  "mfgValHelpDefault": "Manufacturer validation status on the Fluxxo network.",
+  "mfgBtnSubmitForReview": "Submit for Fluxxo review",
+  "mfgBtnResubmitForReview": "Submit again for review",
+  "trnSnackSectorRequired": "Enter your sector.",
+  "trnSnackCodeRequired": "Enter the access code.",
+  "trnSnackSessionPaused": "The session is paused. Wait for the instructor to resume.",
+  "trnSnackPickOption": "Select an option.",
+  "trnSnackLgpdCheckbox": "Check the box to confirm you have read and agree.",
+  "trnSnackJsonCopied": "Data copied to the clipboard (JSON).",
+  "trnSnackCancelled": "Cancelled.",
+  "trnSnackFormOpenFailed": "Could not open the form.",
+  "trnSnackFollowUpAvailableFrom": "Available from {due}.",
+  "@trnSnackFollowUpAvailableFrom": {
+    "placeholders": {
+      "due": {}
+    }
+  },
+  "trnSnackFollowUpNotYet": "You cannot answer yet.",
+  "trnSnackResponsesSaved": "Responses saved.",
+  "trnSnackCertPdfDownloaded": "Certificate PDF downloaded.",
+  "trnSnackCertPdfFailed": "Could not download the PDF.",
+  "trnSnackPickInstitution": "Select an institution in pre-registration.",
+  "trnSnackPickReason": "Choose a reason for the request.",
+  "trnSnackRequestSent": "Request sent to the institution.",
+  "trnDeleteAccountTitle": "Delete account",
+  "trnDeleteAccountBodyGoogle": "This irreversibly anonymizes your account (Art. 18 LGPD). Confirm with DELETE and authenticate again with Google.",
+  "trnDeleteAccountBodyPassword": "This irreversibly anonymizes your account (Art. 18 LGPD). Type DELETE in uppercase and your password.",
+  "trnFieldPassword": "Password",
+  "trnFieldConfirmDelete": "Confirm (type DELETE)",
+  "trnBtnConfirm": "Confirm",
+  "trnApiOk": "API ok",
+  "trnApiOffline": "No API",
+  "trnTooltipPrivacy": "Privacy",
+  "trnMenuExportJson": "Export my data (JSON)",
+  "trnMenuDeleteAccount": "Delete my account",
+  "trnTooltipSignOut": "Sign out",
+  "trnPrivacyTitle": "Privacy and data",
+  "trnLgpdIntro": "Before training, we need your explicit consent (LGPD — Law 13.709/2018):",
+  "trnLgpdBullets": "• Purpose: identification in trainings, certificates, and aggregated institution reports.\n• Sharing: individual data only with the instructor during the session; to the institution, in aggregated form.\n• Retention: up to 5 years after the last training for audit, unless you request deletion or anonymization.\n• Rights: access, correction, portability, and deletion via the Privacy menu (icon at the top).\n• Google: when using Google login, data is also processed under Google’s policy.",
+  "trnLgpdCheckboxTitle": "I have read and agree to the processing of my personal data under the App²cation Privacy Policy.",
+  "trnBtnContinue": "Continue",
+  "trnPreregTitle": "Pre-registration",
+  "trnPreregSubtitle": "Real data saved to your account.",
+  "trnFieldInstitutionOptional": "Institution (optional)",
+  "trnFieldSectorTeam": "Sector / team *",
+  "trnFieldEquipmentContext": "Equipment / context",
+  "trnFieldSessionAtOptional": "Session date and time (optional)",
+  "trnHintDatetime": "YYYY-MM-DD HH:MM",
+  "trnBtnSaveContinue": "Save and continue",
+  "trnCertificatesTitle": "Certificates",
+  "trnCertificatesEmpty": "No certificates yet — complete a training with score ≥ minimum.",
+  "trnCertScoreValid": "Score {score} · valid until {expires}",
+  "@trnCertScoreValid": {
+    "placeholders": {
+      "score": {},
+      "expires": {}
+    }
+  },
+  "trnFollowUpsTitle": "Post-training follow-ups",
+  "trnFollowUpsIntro": "Short questionnaires (e.g. 10, 15 and 30 days after completion), per training settings.",
+  "trnFollowUpsEmpty": "No follow-up scheduled.",
+  "trnFollowUpListSubtitle": "Day +{days} · {status} · due {due}",
+  "@trnFollowUpListSubtitle": {
+    "placeholders": {
+      "days": {},
+      "status": {},
+      "due": {}
+    }
+  },
+  "trnTrainingRequestTitle": "Training request (institution)",
+  "trnTrainingRequestIntro": "Fluxxo flow: standardized reason, priority, and preferred dates.",
+  "trnLoadingOptions": "Loading options…",
+  "trnFieldReason": "Reason",
+  "trnFieldPriority": "Priority",
+  "trnFieldParkUnitOptional": "Park unit (optional)",
+  "trnParkUnitHelper": "List from the institution in your pre-registration.",
+  "trnParkEmptyHint": "No units in the park, or complete pre-registration with an institution to load the park.",
+  "trnFieldPreferredDate": "Preferred date (optional)",
+  "trnHintDate": "YYYY-MM-DD",
+  "trnFieldLatestAcceptable": "Latest acceptable date (optional)",
+  "trnFieldNotesOptional": "Notes (optional)",
+  "trnNotesHint": "Location, shift, contact…",
+  "trnBtnSendRequest": "Send request",
+  "trnMyRequests": "My requests",
+  "trnJoinTitle": "Join training",
+  "trnJoinIntro": "Use the code provided by the instructor.",
+  "trnFieldAccessCode": "Access code",
+  "trnBtnConfirmJoin": "Confirm entry",
+  "trnWaitingRoomTitle": "Waiting room",
+  "trnWaitingRoomBody": "As soon as the instructor starts, the questionnaire opens automatically.",
+  "trnEmptyRecoverySync": "Syncing recovery or finishing the training…",
+  "trnEmptyNoQuestions": "No questions available.",
+  "trnPausedSessionBanner": "Session paused. You cannot answer until the instructor resumes.",
+  "trnRecoveryBanner": "Recovery: only questions the instructor released for another attempt.",
+  "trnProgressLabel": "PROGRESS",
+  "trnQuestionProgress": "Question {current} of {total}",
+  "@trnQuestionProgress": {
+    "placeholders": {
+      "current": {},
+      "total": {}
+    }
+  },
+  "trnBtnConfirmAnswer": "Confirm answer",
+  "trnBtnSubmitResponses": "Submit responses",
+  "trnOptionalHint": "Optional",
+  "trnResultTitle": "Training completed",
+  "trnScoreLabel": "Score (0–10)",
+  "trnBtnJoinAnother": "Join another training",
+  "trnFollowUpDialogTitle": "Post-training follow-up",
+  "trnTrainingDefaultTitle": "Training",
+  "trnRequestListPark": "Park: {detail}",
+  "@trnRequestListPark": {
+    "placeholders": {
+      "detail": {}
+    }
+  },
+  "trnRequestListPref": "pref. {date}",
+  "@trnRequestListPref": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "trnRequestListLimit": "limit {date}",
+  "@trnRequestListLimit": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "trnFollowUpRespond": "Answer",
+  "trnTooltipCertPdf": "Download PDF",
+  "mfgTplIntro": "Blocks and questions follow the same format as operational trainings. Accredited instructors clone this content.",
+  "mfgTplSectionQuestions": "Questions",
+  "mfgTplBtnAddQuestion": "Question",
+  "mfgTplSnackSaved": "Questionnaire saved.",
+  "mfgTplErrNeedCorrect": "Each question must have one correct option.",
+  "mfgTplErrMinQuestions": "Add at least one question with two or more options.",
+  "mfgTplQuestionNumber": "Question {n}",
+  "@mfgTplQuestionNumber": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "mfgTplFieldPrompt": "Prompt",
+  "mfgTplOptionsHint": "Options (mark the correct one)",
+  "mfgTplOptionNumber": "Option {n}",
+  "@mfgTplOptionNumber": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "mfgTplBtnSaveApi": "Save questionnaire to API",
+  "mfgTplOfficialBlockTitle": "Official content",
+  "fluxPanelTraineeTitle": "Trainee journey",
+  "fluxPanelTraineeSubtitle": "Aligned with the spec: pre-registration → join → GDPR consent → live session → result.",
+  "fluxPanelTraineeS1Label": "Profile and clinical context",
+  "fluxPanelTraineeS1Detail": "Sector, equipment and institution when applicable.",
+  "fluxPanelTraineeS2Label": "Join the session",
+  "fluxPanelTraineeS2Detail": "Code or hash provided by your instructor or institution.",
+  "fluxPanelTraineeS3Label": "LGPD consent",
+  "fluxPanelTraineeS3Detail": "Required before answering the questionnaire.",
+  "fluxPanelTraineeS4Label": "Waiting room and live session",
+  "fluxPanelTraineeS4Detail": "Wait for the instructor to start; blocks released in order.",
+  "fluxPanelTraineeS5Label": "Answers and result",
+  "fluxPanelTraineeS5Detail": "Immediate feedback; approval according to training rules (e.g. ≥70%).",
+  "fluxPanelInstructorTitle": "Instructor journey",
+  "fluxPanelInstructorSubtitle": "Dual credentialing (institution + manufacturer when applicable), session creation and real-time command center.",
+  "fluxPanelInstructorS1Label": "Credentialing",
+  "fluxPanelInstructorS1Detail": "Institution and catalogue under the Credentialing tab.",
+  "fluxPanelInstructorS2Label": "Create training and questionnaire",
+  "fluxPanelInstructorS2Detail": "Trainings, blocks and questions aligned with equipment.",
+  "fluxPanelInstructorS3Label": "Command room",
+  "fluxPanelInstructorS3Detail": "Start session, release blocks, retakes and closing.",
+  "fluxPanelInstructorS4Label": "Participants and monitoring",
+  "fluxPanelInstructorS4Detail": "Roster and progress during the session.",
+  "fluxPanelInstitutionTitle": "Institution journey",
+  "fluxPanelInstitutionSubtitle": "Fleet management, instructor links and organisation-wide training visibility.",
+  "fluxPanelInstitutionS1Label": "Registration and institutions",
+  "fluxPanelInstitutionS1Detail": "Keep institution data and required links up to date.",
+  "fluxPanelInstitutionS2Label": "Technology fleet",
+  "fluxPanelInstitutionS2Detail": "Declare equipment in use (ongoing product evolution).",
+  "fluxPanelInstitutionS3Label": "Institution instructors",
+  "fluxPanelInstitutionS3Detail": "Coordinate who delivers training in your spaces.",
+  "fluxPanelInstitutionS4Label": "Aggregated indicators",
+  "fluxPanelInstitutionS4Detail": "By sector, GDPR-compliant (no individual identification).",
+  "fluxPanelManufacturerTitle": "Manufacturer journey",
+  "fluxPanelManufacturerSubtitle": "Owner of technical knowledge: catalogue, official content and accredited instructor network.",
+  "fluxPanelManufacturerS1Label": "Company profile",
+  "fluxPanelManufacturerS1Detail": "Corporate data and support contact.",
+  "fluxPanelManufacturerS2Label": "Equipment catalogue",
+  "fluxPanelManufacturerS2Detail": "Approved models for training and institutions.",
+  "fluxPanelManufacturerS3Label": "Official training bank",
+  "fluxPanelManufacturerS3Detail": "Standard questionnaires per equipment.",
+  "fluxPanelManufacturerS4Label": "Instructor accreditation",
+  "fluxPanelManufacturerS4Detail": "Fee and validation of the Application network.",
+  "fluxPanelManufacturerS5Label": "Analytics and gamification",
+  "fluxPanelManufacturerS5Detail": "Aggregated performance and rankings.",
+  "fluxPanelWeeklyTitle": "Weekly email digest",
+  "fluxPanelWeeklySubtitle": "Aggregated indicators (GDPR), Monday mornings. You can turn this off here.",
+  "fluxPanelPrefSaveFailed": "Could not save preference.",
+  "fluxPanelRoadmapBadge": "roadmap",
+  "errApiNetworkUnreachable": "Could not reach the server. Check your network and API URL. ({detail})",
+  "@errApiNetworkUnreachable": {
+    "placeholders": {
+      "detail": {}
+    }
+  },
+  "errApiInvalidHttpBody": "Invalid server response (HTTP {code}).",
+  "@errApiInvalidHttpBody": {
+    "placeholders": {
+      "code": {}
+    }
+  },
+  "errApiResponseNotList": "Response is not a list.",
+  "errApiOperationIncomplete": "Could not complete the operation.",
+  "errApiUploadMissingFileSource": "Choose a file or provide file data for the upload.",
+  "errAuthInvalidLoginResponse": "Invalid login response.",
+  "errAuthInvalidRegisterResponse": "Invalid sign-up response.",
+  "errAuthGoogleCancelled": "Google sign-in was cancelled.",
+  "errAuthInvalidGoogleLoginResponse": "Invalid Google sign-in response.",
+  "errGoogleNoIdToken": "Google did not return an id_token. Check the Web client ID and APIs in Google Cloud.",
+  "errGoogleSignInFailed": "Google sign-in failed: {detail}",
+  "@errGoogleSignInFailed": {
+    "placeholders": {
+      "detail": {}
+    }
+  },
+  "loginDebugApiLine": "API: {url}",
+  "@loginDebugApiLine": {
+    "placeholders": {
+      "url": {}
+    }
+  },
+  "mfgDocSizeBytes": "{size} B",
+  "@mfgDocSizeBytes": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "mfgDocSizeKb": "{size} KB",
+  "@mfgDocSizeKb": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "mfgDocSizeMb": "{size} MB",
+  "@mfgDocSizeMb": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "trnCertCodeFallback": "certificate",
+  "trnCertDownloadFilename": "certificate-{code}",
+  "@trnCertDownloadFilename": {
+    "placeholders": {
+      "code": {}
+    }
+  },
+  "dashExportFileInstitutionCsv": "appcation-institution-{stamp}.csv",
+  "@dashExportFileInstitutionCsv": {
+    "placeholders": {
+      "stamp": {}
+    }
+  },
+  "dashExportFileInstitutionPdf": "appcation-institution-{stamp}.pdf",
+  "@dashExportFileInstitutionPdf": {
+    "placeholders": {
+      "stamp": {}
+    }
+  },
+  "dashExportFileManufacturerCsv": "appcation-manufacturer-{stamp}.csv",
+  "@dashExportFileManufacturerCsv": {
+    "placeholders": {
+      "stamp": {}
+    }
+  },
+  "dashExportFileManufacturerPdf": "appcation-manufacturer-{stamp}.pdf",
+  "@dashExportFileManufacturerPdf": {
+    "placeholders": {
+      "stamp": {}
+    }
+  },
+  "utilDownloadWebOnly": "File download is only available in the web app."
+}

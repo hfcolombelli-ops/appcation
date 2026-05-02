@@ -27,6 +27,7 @@ class LogMutatingApiAccess
         }
 
         AccessLog::query()->create([
+            'request_id' => $request->attributes->get('request_id'),
             'user_id' => $request->user()?->id,
             'ip_address' => $request->ip(),
             'user_agent' => substr((string) $request->userAgent(), 0, 2000),

@@ -10,6 +10,7 @@ class AccessLog extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'request_id',
         'user_id',
         'ip_address',
         'user_agent',

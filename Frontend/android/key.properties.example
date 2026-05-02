@@ -1,0 +1,9 @@
+# Copiar para key.properties (não commitar) e preencher.
+# Gerar keystore: https://docs.flutter.dev/deployment/android#signing-the-app
+#
+# Colocar o .jks em Frontend/android/ (já ignorado pelo Git) ou ajustar storeFile.
+
+storePassword=alterar
+keyPassword=alterar
+keyAlias=appcation
+storeFile=appcation-release.jks

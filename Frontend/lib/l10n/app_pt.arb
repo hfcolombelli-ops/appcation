@@ -1,0 +1,805 @@
+{
+  "@@locale": "pt",
+  "appTitle": "Appcation",
+  "loginShellTitle": "Login Universal",
+  "loginBrandTitle": "App²cation",
+  "loginTagline": "Treino clínico com ritmo e clareza",
+  "loginGoogleProfileSection": "Perfil (primeiro acesso Google)",
+  "googleRoleTrainee": "Treinando",
+  "googleRoleInstructor": "Instrutor",
+  "googleRoleInstitutionAdmin": "Gestor",
+  "googleRoleManufacturerAdmin": "Fabricante",
+  "mfgCompanyLabel": "Empresa (fabricante)",
+  "mfgCnpjOptionalLabel": "CNPJ (opcional)",
+  "institutionLoadingGoogle": "A carregar instituições… Se a lista estiver vazia, registe primeiro uma instituição (conta instrutor) ou use e-mail e senha.",
+  "institutionPickerLabelGoogle": "Instituição (gestor)",
+  "googleConnecting": "A ligar ao Google…",
+  "googleContinue": "Continuar com Google",
+  "loginOrEmail": "ou e-mail",
+  "fieldEmail": "E-mail",
+  "fieldPassword": "Senha",
+  "valEmailRequired": "Informe o e-mail.",
+  "valEmailInvalid": "E-mail inválido.",
+  "valPasswordRequired": "Informe a senha.",
+  "actionSignIn": "Entrar",
+  "loginOrgHint": "Instrutor e gestor institucional: use o e-mail e senha fornecidos pela sua organização.",
+  "actionCreateAccount": "Criar conta",
+  "actionBack": "Voltar",
+  "registerSubtitle": "Escolha o tipo de conta e preencha os dados.",
+  "registerAccountTypeTitle": "Tipo de conta",
+  "registerInstitutionsLoading": "A carregar instituições… Se a lista estiver vazia, ainda não há hospitais registados na API.",
+  "fieldInstitution": "Instituição",
+  "fieldFullName": "Nome completo",
+  "valNameRequired": "Informe o nome.",
+  "fieldPasswordRegister": "Senha (mín. 8 caracteres)",
+  "valPasswordMin8": "Mínimo 8 caracteres.",
+  "fieldCompanyName": "Nome da empresa",
+  "valCompanyNameRequired": "Informe o nome da empresa.",
+  "actionCompleteRegistration": "Concluir cadastro",
+  "errApiConnection": "Falha de conexão com a API.",
+  "errMfgNameRequired": "Informe o nome da empresa.",
+  "errSelectInstitution": "Selecione a instituição na lista.",
+  "errGoogleClientId": "Configure GOOGLE_WEB_CLIENT_ID ao executar o Flutter (mesmo ID que GOOGLE_CLIENT_ID no servidor).",
+  "errMfgNameBeforeGoogle": "Informe o nome do fabricante antes de continuar com Google.",
+  "errSelectInstitutionGoogle": "Selecione a instituição na lista (ou aguarde o carregamento).",
+  "shellTitleOverview": "Visão Geral",
+  "shellTitleCommandRoom": "Sala de Comando",
+  "shellTitleNewTraining": "Novo Treinamento",
+  "shellTitleCredentialing": "Credenciamento",
+  "shellTitleTrainingRequests": "Pedidos de treino",
+  "shellTitleTechPark": "Parque tecnológico",
+  "shellTitleEndorsements": "Endossos ao fabricante",
+  "shellTitleFluxxoReview": "Revisão Fluxxo",
+  "shellNavDashboard": "Dashboard",
+  "shellNavCommandRoom": "Sala de Comando",
+  "shellNavTrainings": "Treinamentos",
+  "shellNavTrainingRequests": "Pedidos de treino",
+  "shellNavTechPark": "Parque tecnológico",
+  "shellNavEndorsementsShort": "Endossos fabricante",
+  "shellNavFluxxoReview": "Revisão Fluxxo",
+  "shellNavCredentialing": "Credenciamento",
+  "shellLinkInstitutionTitle": "Vincule a sua instituição",
+  "shellLinkInstitutionBody": "Sem isto não vê pedidos de treino nem o dashboard agregado.",
+  "shellLinkInstitutionEmpty": "Não há instituições na API — crie uma em Credenciamento (como instrutor) ou peça ao administrador.",
+  "shellSaveLink": "Guardar vínculo",
+  "shellPickInstitution": "Escolha a instituição.",
+  "shellAreaManager": "Área do gestor",
+  "shellAreaInstructor": "Área do instrutor",
+  "shellDefaultUserName": "Instrutor",
+  "actionSignOut": "Sair",
+  "actionRetry": "Tentar novamente",
+  "dashExportCsvWebOnly": "Exportação CSV está disponível na versão Web.",
+  "dashExportPdfWebOnly": "Exportação PDF está disponível na versão Web.",
+  "dashLinkInstitutionForKpis": "Associe a sua instituição no aviso laranja no topo para ver indicadores agregados.",
+  "dashKpiTrainings": "Treinamentos",
+  "dashKpiFinished": "Encerrados",
+  "dashKpiUniqueParticipants": "Participantes únicos",
+  "dashKpiAvgCompleted": "Média (concluídos)",
+  "dashKpiApprovalRate": "Taxa aprovação",
+  "dashSeasonRankingTitle": "Ranking por temporada",
+  "dashSeasonRankingHint": "Treinos oficiais ligados a fabricantes contam para as temporadas definidas pelo fabricante.",
+  "dashRecentTrainings": "Treinamentos recentes",
+  "dashNoTrainingsYet": "Nenhum treinamento ainda. Crie um em Treinamentos.",
+  "dashSeasonPoints": "{points} pts",
+  "@dashSeasonPoints": {
+    "placeholders": {
+      "points": {}
+    }
+  },
+  "dashInstitutionKpisTitle": "Indicadores da instituição",
+  "dashInstitutionLgpdNote": "Dados agregados — sem identificação individual (LGPD).",
+  "dashExportCsv": "Exportar CSV",
+  "dashExportPdf": "Exportar PDF",
+  "dashKpiPendingRequests": "Pedidos pendentes",
+  "dashKpiInstitutionTrainings": "Treinos (instituição)",
+  "dashKpiEnrollmentsTotal": "Inscrições (total)",
+  "dashKpiCompleted": "Concluídas",
+  "dashKpiCompletionRate": "Taxa conclusão",
+  "dashKpiAvgScoreOverall": "Média notas (geral)",
+  "dashByEquipment": "Por equipamento",
+  "dashNoEquipmentData": "Sem dados por equipamento ainda.",
+  "dashEquipmentSubtitle": "Inscrições: {enr} · Concl.: {done} · Taxa: {rate}% · Média nota: {avg}",
+  "@dashEquipmentSubtitle": {
+    "placeholders": {
+      "enr": {},
+      "done": {},
+      "rate": {},
+      "avg": {}
+    }
+  },
+  "dashSectorAveragesTitle": "Médias por setor (concluídos)",
+  "dashNoSectorHistory": "Sem histórico por setor.",
+  "dashSectorSubtitle": "Conclusões: {c} · Média: {a}",
+  "@dashSectorSubtitle": {
+    "placeholders": {
+      "c": {},
+      "a": {}
+    }
+  },
+  "trainingSectionTitle": "Configuração",
+  "trainingFieldTitle": "Título do treinamento",
+  "trainingTypeOfficial": "Oficial",
+  "trainingTypeCustom": "Personalizado",
+  "trainingScheduledLabel": "Data/hora (opcional)",
+  "trainingScheduledHint": "AAAA-MM-DD HH:MM",
+  "trainingCreateButton": "Criar treinamento",
+  "trainingTemplateCardTitle": "Template oficial (fabricante)",
+  "trainingTemplateCardBody": "Clona o questionário homologado. Requer homologação aprovada com o fabricante.",
+  "trainingTemplateLabel": "Template",
+  "trainingUseTemplateButton": "Usar template na instituição selecionada",
+  "trainingJoinCodeTitle": "Código de entrada (repasse aos treinandos)",
+  "trainingInternalId": "ID interno: {id}",
+  "@trainingInternalId": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "trainingPostRepescageTitle": "Nota após repescagem",
+  "trainingPostRepescageBody": "Substituir vs média: «só repescagem» usa apenas as questões da última libertação de erros; «média global» mantém a média de todas as questões já libertadas.",
+  "trainingPolicyFinalLabel": "Política de nota final",
+  "trainingPolicyFullAverage": "Média global (todas as questões libertadas)",
+  "trainingPolicyRecoveryOnly": "Só repescagem (substitui a média global)",
+  "trainingVariantBankTitle": "Banco de variantes (repescagem)",
+  "trainingVariantBankSubtitle": "Se as perguntas tiverem o mesmo grupo de variantes no questionário, na repescagem propõe outra pergunta equivalente em vez de repetir a mesma.",
+  "trainingSavePolicyButton": "Guardar política",
+  "trainingQuestionnaireTitle": "Questionário",
+  "trainingDefaultQuestionnaireBlockTitle": "Avaliação",
+  "trainLifecycleDraft": "Rascunho",
+  "trainLifecycleScheduled": "Agendado",
+  "trainLifecycleInProgress": "Em curso",
+  "trainLifecycleFinished": "Concluído",
+  "enrollmentStatusWaiting": "Em espera",
+  "enrollmentStatusActive": "Ativo",
+  "enrollmentStatusCompleted": "Concluído",
+  "trainingAddQuestion": "Pergunta",
+  "trainingSaveQuestionnaireApi": "Salvar questionário na API",
+  "trainingSnackPolicySaved": "Política de nota (repescagem) guardada.",
+  "trainingSnackFromTemplate": "Treinamento criado a partir do template oficial.",
+  "trainingPickInstitution": "Selecione uma instituição.",
+  "trainingErrTitle": "Informe o título.",
+  "trainingErrQuestionCorrect": "Cada pergunta precisa de uma opção correta.",
+  "trainingErrQuestionValid": "Adicione ao menos uma pergunta válida com 2+ opções.",
+  "trainingSnackQuestionnaireSaved": "Questionário salvo.",
+  "trainingQuestionN": "Pergunta {n}",
+  "@trainingQuestionN": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "trainingPromptLabel": "Enunciado",
+  "trainingOptionsMarkCorrect": "Opções (marque a correta)",
+  "trainingOptionN": "Opção {n}",
+  "@trainingOptionN": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "comandoSnackBlockReleased": "Próximo bloco liberado (ou já não há blocos pendentes).",
+  "comandoSessionPaused": "Sessão pausada para os treinandos.",
+  "comandoSessionResumed": "Sessão retomada.",
+  "comandoStatusUpdate": "Status: {status}",
+  "@comandoStatusUpdate": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "comandoSnackRepescageDone": "Repescagem aplicada — participantes podem corrigir respostas erradas.",
+  "comandoActiveTraining": "Treinamento ativo",
+  "comandoTrainingStatusHash": "Status: {status} · Hash: {hash}",
+  "@comandoTrainingStatusHash": {
+    "placeholders": {
+      "status": {},
+      "hash": {}
+    }
+  },
+  "comandoParticipantsTitle": "Participantes",
+  "comandoNoParticipants": "Nenhum participante inscrito.",
+  "comandoSessionControlTitle": "Controle da sessão",
+  "comandoRepescageScope": "Âmbito da repescagem",
+  "comandoRepescageScopeAll": "Todo o treino (todas as respostas erradas)",
+  "comandoBlockDefault": "Bloco",
+  "comandoBtnStart": "Iniciar",
+  "comandoBtnReleaseBlock": "Liberar próximo bloco",
+  "comandoBtnPause": "Pausar",
+  "comandoBtnResume": "Retomar",
+  "comandoBtnReschedule": "Reagendar",
+  "comandoBtnClose": "Encerrar",
+  "comandoRepescageCount": "Repescagem ({count})",
+  "@comandoRepescageCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "comandoHelpFooter": "Iniciar libera o questionário para treinandos conectados. Repescagem remove respostas erradas; por bloco, só as desse bloco (etiquetas quando o acerto no bloco está abaixo de 50%).",
+  "comandoParticipantAnswers": "Respostas {answered} / {total} · {status}",
+  "@comandoParticipantAnswers": {
+    "placeholders": {
+      "answered": {},
+      "total": {},
+      "status": {}
+    }
+  },
+  "credSnackInstitutionCreated": "Instituição criada.",
+  "credTitleInstitutions": "Instituições",
+  "credIntroInstitutions": "Cadastre hospitais ou unidades para vincular aos treinamentos.",
+  "credFieldInstitutionName": "Nome da instituição",
+  "credFieldCnpjUnique": "CNPJ (único)",
+  "credBtnRegisterInstitution": "Cadastrar instituição",
+  "credListedCount": "Cadastradas ({count})",
+  "@credListedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "credDoubleTitle": "Credenciamento duplo (Fluxxo)",
+  "credDoubleIntro": "Vínculo com instituição e homologação pelo fabricante.",
+  "credApplyInstitutionLabel": "Pedir vínculo à instituição",
+  "credBtnRequestInstitution": "Solicitar vínculo institucional",
+  "credApplyManufacturerLabel": "Pedir homologação ao fabricante",
+  "credBtnRequestManufacturer": "Solicitar ao fabricante",
+  "credMyLinksTitle": "Meus vínculos",
+  "credMyLinksInstitutionsHeader": "Instituições",
+  "credNoInstitutionalLink": "Nenhum vínculo institucional.",
+  "credMyLinksManufacturersHeader": "Fabricantes",
+  "credNoManufacturerHomologation": "Nenhuma homologação junto a fabricantes.",
+  "credQueueInstTitle": "Pedidos de vínculo (gestor)",
+  "credQueueInstBody": "Instrutores que pediram vínculo com a sua instituição. O estado «Pendente» desaparece da fila após decidir.",
+  "credQueueManuTitle": "Homologações pendentes (fabricante)",
+  "credQueueManuBody": "Homologação de instrutores junto do fabricante. Verifique o endosso da instituição antes de aprovar.",
+  "credBtnApprove": "Aprovar",
+  "credBtnReject": "Recusar",
+  "credEndorsementWith": "Endosso institucional: {name}",
+  "@credEndorsementWith": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "credEndorsementPending": "Endosso institucional: pendente",
+  "credSnackRequestSent": "Pedido enviado.",
+  "credSnackRequestManufacturerSent": "Pedido enviado ao fabricante.",
+  "credStatusPending": "Pendente",
+  "credStatusApproved": "Aprovado",
+  "credStatusRejected": "Recusado",
+  "credFeePaid": "Taxa indicada como paga",
+  "credFeePending": "Taxa pendente (se aplicável)",
+  "trainReqLoadFailed": "Falha ao carregar.",
+  "trainReqSnackUpdated": "Pedido actualizado.",
+  "trainReqUseOrangeBanner": "Use o aviso laranja no topo para vincular a sua instituição.",
+  "trainReqIntro": "Aprove, designe um instrutor credenciado e associe ao treino realizado quando existir.",
+  "trainReqEmpty": "Nenhum pedido de treino.",
+  "trainReqReasonLine": "Motivo: {text}",
+  "@trainReqReasonLine": {
+    "placeholders": {
+      "text": {}
+    }
+  },
+  "trainReqPriorityLine": "Prioridade: {text}",
+  "@trainReqPriorityLine": {
+    "placeholders": {
+      "text": {}
+    }
+  },
+  "trainReqParkLine": "Parque: {name} ({detail})",
+  "@trainReqParkLine": {
+    "placeholders": {
+      "name": {},
+      "detail": {}
+    }
+  },
+  "trainReqPreferredDates": "Datas preferidas: {desired} · limite {limit}",
+  "@trainReqPreferredDates": {
+    "placeholders": {
+      "desired": {},
+      "limit": {}
+    }
+  },
+  "trainReqNotesLine": "Notas: {text}",
+  "@trainReqNotesLine": {
+    "placeholders": {
+      "text": {}
+    }
+  },
+  "trainReqFieldStatus": "Estado",
+  "trainReqStatusPending": "Pendente",
+  "trainReqStatusApproved": "Aprovado",
+  "trainReqStatusScheduled": "Agendado",
+  "trainReqStatusRejected": "Recusado",
+  "trainReqStatusFulfilled": "Concluído",
+  "trainReqFieldAssignedInstructor": "Instrutor designado",
+  "trainReqFieldFulfilledTraining": "Treino realizado",
+  "trainReqDashNone": "—",
+  "trainReqLinkedTraining": "Vinculado: {title} · hash {hash}",
+  "@trainReqLinkedTraining": {
+    "placeholders": {
+      "title": {},
+      "hash": {}
+    }
+  },
+  "trainReqBtnSaveChanges": "Guardar alterações",
+  "parkSnackPickCatalog": "Escolha um modelo do catálogo.",
+  "parkSnackUnitRegisteredPending": "Unidade registada (pendente).",
+  "parkBannerLinkInstitutionFirst": "Associe primeiro a sua instituição no banner acima.",
+  "parkIntro": "Cada unidade replica um modelo do catálogo do fabricante. Estado inicial: pendente; activo quando em uso homologado.",
+  "parkFilterByState": "Filtrar por estado",
+  "parkFilterChipAll": "Todos",
+  "parkFilterChipPending": "Pendentes",
+  "parkFilterChipActive": "Activos",
+  "parkFilterByCategory": "Filtrar por categoria",
+  "parkFilterChipAllCategories": "Todas",
+  "parkSectionAddUnit": "Adicionar unidade",
+  "parkEmptyCatalog": "Sem modelos no catálogo de fabricantes — ainda não há equipamentos para vincular.",
+  "parkCatalogDropdownHint": "Modelo do catálogo",
+  "parkFieldSectorOptional": "Setor / local (opcional)",
+  "parkFieldSectorHintExample": "Ex.: UCI B, Bloco 3",
+  "parkBtnRegisterUnit": "Registar unidade",
+  "parkUnitsCount": "Unidades ({count})",
+  "@parkUnitsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "parkEmptyPark": "Nenhuma unidade no parque.",
+  "parkEquipmentFallbackName": "Equipamento",
+  "parkBtnActivate": "Activar",
+  "parkStatusPending": "Pendente",
+  "parkStatusActive": "Activo",
+  "endorsSnackRecorded": "Endosso registado.",
+  "endorsEmpty": "Nenhum pedido de homologação aguarda endosso.",
+  "endorsIntro": "Confirme que o instrutor está credenciado na sua instituição perante o pedido de homologação junto do fabricante.",
+  "endorsManufacturerFallback": "Fabricante",
+  "endorsInstructorLine": "Instrutor: {name}",
+  "@endorsInstructorLine": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "endorsBtnEndorse": "Endossar",
+  "fluxRevSnackStatusUpdated": "Estado actualizado.",
+  "fluxRevEmpty": "Nenhum fabricante em análise.",
+  "fluxRevQueueTitle": "Fila de validação",
+  "fluxRevIntro": "Aprovar torna o fabricante visível no catálogo para credenciação; recusar ou pedir informações devolve o fluxo ao fabricante.",
+  "fluxRevIdLine": "ID {id}",
+  "@fluxRevIdLine": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "fluxRevCnpjLine": "CNPJ: {value}",
+  "@fluxRevCnpjLine": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "fluxRevSupportLine": "Suporte: {email}",
+  "@fluxRevSupportLine": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "fluxRevBtnRequestInfo": "Pedir informações",
+  "mfgLoadFailedData": "Falha ao carregar dados.",
+  "mfgAreaTitle": "Fabricante",
+  "mfgDashSummaryTitle": "Resumo agregado",
+  "mfgDashSummaryIntro": "Treinos e inscrições ligados a este fabricante — dados agregados (LGPD).",
+  "mfgSnackValidationRequested": "Pedido de validação enviado. A equipa Fluxxo irá analisar.",
+  "mfgSeasonNewTitle": "Nova temporada",
+  "mfgFieldName": "Nome",
+  "mfgFieldSeasonStart": "Início (AAAA-MM-DD)",
+  "mfgFieldSeasonEnd": "Fim (AAAA-MM-DD)",
+  "mfgFieldTargetTrainingsOptional": "Meta treinos encerrados (opcional)",
+  "mfgBtnCancel": "Cancelar",
+  "mfgBtnClose": "Fechar",
+  "mfgBtnCreate": "Criar",
+  "mfgSeasonCreatedSnack": "Temporada criada e ranking atualizado.",
+  "mfgSeasonCreateFailed": "Não foi possível criar.",
+  "mfgSeasonRankingTitle": "Ranking da temporada",
+  "mfgSeasonTargetLine": "Meta: {count} treinos encerrados",
+  "@mfgSeasonTargetLine": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "mfgSeasonNoClosedTrainings": "Sem treinos encerrados no período (com este fabricante).",
+  "mfgLeaderboardLoadFailed": "Falha ao carregar ranking.",
+  "mfgSnackRankingRecomputed": "Ranking recalculado.",
+  "mfgPointsTrainings": "{count} treinos",
+  "@mfgPointsTrainings": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "mfgPrizeNewTitle": "Novo prémio (registo)",
+  "mfgFieldTitle": "Título",
+  "mfgFieldDescriptionOptional": "Descrição (opcional)",
+  "mfgFieldSortOptional": "Ordem (opcional, menor = primeiro)",
+  "mfgBtnSave": "Guardar",
+  "mfgPrizeSavedSnack": "Prémio registado.",
+  "mfgPrizeSaveFailed": "Não foi possível guardar.",
+  "mfgPrizeDeleteTitle": "Remover prémio?",
+  "mfgPrizeDeleteBody": "O registo será apagado. Isto não afilia pagamentos (MVP).",
+  "mfgBtnAdd": "Adicionar",
+  "mfgBtnRemove": "Remover",
+  "mfgSnackRemoved": "Removido.",
+  "mfgSnackProfileUpdated": "Perfil atualizado.",
+  "mfgSnackVersionDraftHint": "Preencha o novo modelo e toque em «Adicionar ao catálogo» (origem #{parentId}).",
+  "@mfgSnackVersionDraftHint": {
+    "placeholders": {
+      "parentId": {}
+    }
+  },
+  "mfgSnackNameModelRequired": "Nome e modelo são obrigatórios.",
+  "mfgSnackEquipmentCreated": "Equipamento criado.",
+  "mfgSnackNewVersionRegistered": "Nova versão registada.",
+  "mfgSnackFileReadError": "Não foi possível ler o ficheiro.",
+  "mfgSnackDocumentUploaded": "Documento enviado.",
+  "mfgSnackUploadFailed": "Falha ao enviar.",
+  "mfgSnackDocumentRemoved": "Documento removido.",
+  "mfgSnackFileSaved": "Guardado: {name}",
+  "@mfgSnackFileSaved": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "mfgSnackDownloadFailed": "Falha ao descarregar.",
+  "mfgFileFallbackName": "Ficheiro",
+  "mfgSnackOfficialTitleRequired": "Informe o título do treinamento oficial.",
+  "mfgSnackTemplateCreated": "Template criado. Toque em «Editar questionário» na lista abaixo para o conteúdo oficial.",
+  "mfgSeasonsSectionTitle": "Temporadas e ranking",
+  "mfgSeasonsIntro": "Pontos = treinos encerrados (estado «finished») ligados a este fabricante, no período da temporada. Atualização diária automática ou manual.",
+  "mfgSeasonsEmpty": "Nenhuma temporada — crie uma para acompanhar instrutores por semestre ou ciclo.",
+  "mfgSeasonMetaSuffix": " · meta {count}",
+  "@mfgSeasonMetaSuffix": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "mfgTooltipViewLeaderboard": "Ver ranking",
+  "mfgTooltipRecompute": "Recalcular",
+  "mfgPrizesSectionTitle": "Prémios (registo)",
+  "mfgPrizesIntro": "Descrição informativa para campanhas ou reconhecimentos — sem pagamento integrado no MVP.",
+  "mfgPrizesEmpty": "Nenhum prémio registado.",
+  "mfgDocumentsSectionTitle": "Documentos (validação / Fluxxo)",
+  "mfgDocumentsIntro": "PDF ou imagem até 12 MB. O servidor usa o disco configurado (local ou S3 via FILESYSTEM_DISK); envie manuais ou anexos para homologação.",
+  "mfgDocKindOptional": "Tipo (opcional)",
+  "mfgDocKindHint": "Ex.: manual, certificado, ficha técnica",
+  "mfgDocNotesOptional": "Notas (opcional)",
+  "mfgBtnSendFile": "Enviar ficheiro",
+  "mfgDocumentsEmpty": "Nenhum documento enviado.",
+  "mfgTooltipDownload": "Descarregar",
+  "mfgOfficialTrainingTitle": "Treinamento oficial (template Fluxxo)",
+  "mfgOfficialTrainingIntro": "Templates sem instituição; instrutores homologados instanciam para o hospital.",
+  "mfgTemplateTitleLabel": "Título do template",
+  "mfgTemplateTitleHint": "Ex.: Operação básica do ventilador X",
+  "mfgBtnCreateTemplateDraft": "Criar template (rascunho)",
+  "mfgYourTemplates": "Seus templates",
+  "mfgTemplatesEmpty": "Nenhum template ainda. Crie um acima.",
+  "mfgTrainingFallbackTitle": "Treino",
+  "mfgBtnEditQuestionnaire": "Editar questionário",
+  "mfgCompanySectionTitle": "Empresa",
+  "mfgFieldSupportEmail": "E-mail de suporte",
+  "mfgLabelCnpj": "CNPJ",
+  "mfgBtnSaveProfile": "Guardar perfil",
+  "mfgCatalogSectionTitle": "Catálogo (homologações)",
+  "mfgCatalogIntro": "Equipamentos aqui ficam sem instituição — visíveis para montagem de treinos. Com versões derivadas, o registo original deixa de ser editável.",
+  "mfgNewVersionFromRecord": "Nova versão a partir do registo #{id}",
+  "@mfgNewVersionFromRecord": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "mfgFieldEquipmentName": "Nome do equipamento",
+  "mfgFieldModel": "Modelo",
+  "mfgFieldSectorOptionalCatalog": "Setor (opcional)",
+  "mfgCategoryOptionalLabel": "Categoria (opcional)",
+  "mfgBtnAddToCatalog": "Adicionar ao catálogo",
+  "mfgFilterListLabel": "Filtrar lista",
+  "mfgEquipmentEmpty": "Nenhum equipamento ainda.",
+  "mfgEquipmentDerivedFrom": "Versão derivada de #{parentId} · {model}",
+  "@mfgEquipmentDerivedFrom": {
+    "placeholders": {
+      "parentId": {},
+      "model": {}
+    }
+  },
+  "mfgBtnNewVersion": "Nova versão",
+  "mfgValidationTitle": "Validação Fluxxo",
+  "mfgValidationStateLine": "Estado: {status}",
+  "@mfgValidationStateLine": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "mfgFlowStepCompany": "Dados da empresa",
+  "mfgFlowStepFluxxoReview": "Análise Fluxxo",
+  "mfgFlowStepHomologation": "Homologação",
+  "mfgValStatusPendingInfo": "Informações pendentes",
+  "mfgValStatusPendingValidation": "Em análise pela equipa Fluxxo",
+  "mfgValStatusActive": "Ativo na rede Fluxxo",
+  "mfgValStatusRejected": "Validação recusada",
+  "mfgValHelpPendingInfo": "Complete os dados da empresa e submeta para a equipa Fluxxo validar o fabricante junto ao programa ArtMed / documento Roberto.",
+  "mfgValHelpPendingValidation": "O seu pedido está na fila de análise. Até lá, os templates oficiais podem ser editados; a divulgação no catálogo para instrutores segue as regras da rede.",
+  "mfgValHelpActive": "O fabricante está homologado na rede. Instrutores podem solicitar credenciação a este fabricante e usar os templates oficiais no catálogo.",
+  "mfgValHelpRejected": "Ajuste os dados ou documentação indicados pela equipa e volte a submeter.",
+  "mfgValHelpDefault": "Estado de validação do fabricante na rede Fluxxo.",
+  "mfgBtnSubmitForReview": "Submeter para análise Fluxxo",
+  "mfgBtnResubmitForReview": "Voltar a submeter para análise",
+  "trnSnackSectorRequired": "Informe o setor.",
+  "trnSnackCodeRequired": "Informe o código.",
+  "trnSnackSessionPaused": "A sessão está em pausa. Aguarde o instrutor retomar.",
+  "trnSnackPickOption": "Selecione uma opção.",
+  "trnSnackLgpdCheckbox": "Marque a caixa para confirmar que leu e concorda.",
+  "trnSnackJsonCopied": "Dados copiados para a área de transferência (JSON).",
+  "trnSnackCancelled": "Cancelado.",
+  "trnSnackFormOpenFailed": "Não foi possível abrir o formulário.",
+  "trnSnackFollowUpAvailableFrom": "Disponível a partir de {due}.",
+  "@trnSnackFollowUpAvailableFrom": {
+    "placeholders": {
+      "due": {}
+    }
+  },
+  "trnSnackFollowUpNotYet": "Ainda não pode responder.",
+  "trnSnackResponsesSaved": "Respostas registadas.",
+  "trnSnackCertPdfDownloaded": "PDF do certificado descarregado.",
+  "trnSnackCertPdfFailed": "Não foi possível descarregar o PDF.",
+  "trnSnackPickInstitution": "Selecione a instituição no pré-registro.",
+  "trnSnackPickReason": "Escolha o motivo do pedido.",
+  "trnSnackRequestSent": "Pedido enviado à instituição.",
+  "trnDeleteAccountTitle": "Excluir conta",
+  "trnDeleteAccountBodyGoogle": "Esta ação anonimiza a sua conta de forma irreversível (Art. 18 LGPD). Confirme com EXCLUIR e autentique novamente com Google.",
+  "trnDeleteAccountBodyPassword": "Esta ação anonimiza a sua conta de forma irreversível (Art. 18 LGPD). Digite EXCLUIR em maiúsculas e a sua senha.",
+  "trnFieldPassword": "Senha",
+  "trnFieldConfirmDelete": "Confirmar (digite EXCLUIR)",
+  "trnBtnConfirm": "Confirmar",
+  "trnApiOk": "API ok",
+  "trnApiOffline": "Sem API",
+  "trnTooltipPrivacy": "Privacidade",
+  "trnMenuExportJson": "Exportar meus dados (JSON)",
+  "trnMenuDeleteAccount": "Excluir minha conta",
+  "trnTooltipSignOut": "Sair",
+  "trnPrivacyTitle": "Privacidade e dados",
+  "trnLgpdIntro": "Antes de usar o treinamento, precisamos do seu consentimento explícito (LGPD — Lei 13.709/2018):",
+  "trnLgpdBullets": "• Finalidade: identificação em treinamentos, certificados e relatórios agregados da instituição.\n• Compartilhamento: dados individuais apenas com o instrutor durante a sessão; à instituição, de forma agregada.\n• Retenção: até 5 anos após o último treinamento para auditoria, salvo exclusão ou anonimização a seu pedido.\n• Direitos: acesso, correção, portabilidade e exclusão pelo menu Privacidade (ícone no topo).\n• Google: ao usar login Google, dados também são tratados segundo a política do Google.",
+  "trnLgpdCheckboxTitle": "Li e concordo com o tratamento dos meus dados pessoais conforme a Política de Privacidade do App²cation.",
+  "trnBtnContinue": "Continuar",
+  "trnPreregTitle": "Pré-registro",
+  "trnPreregSubtitle": "Dados reais gravados na sua conta.",
+  "trnFieldInstitutionOptional": "Instituição (opcional)",
+  "trnFieldSectorTeam": "Setor / equipe *",
+  "trnFieldEquipmentContext": "Equipamento / contexto",
+  "trnFieldSessionAtOptional": "Data e hora da sessão (opcional)",
+  "trnHintDatetime": "AAAA-MM-DD HH:MM",
+  "trnBtnSaveContinue": "Salvar e continuar",
+  "trnCertificatesTitle": "Certificados",
+  "trnCertificatesEmpty": "Nenhum certificado ainda — conclua um treinamento com nota ≥ mínima.",
+  "trnCertScoreValid": "Nota {score} · válido até {expires}",
+  "@trnCertScoreValid": {
+    "placeholders": {
+      "score": {},
+      "expires": {}
+    }
+  },
+  "trnFollowUpsTitle": "Reavaliações pós-treino",
+  "trnFollowUpsIntro": "Questionários curtos (ex.: 10, 15 e 30 dias após a conclusão), conforme configuração do treino.",
+  "trnFollowUpsEmpty": "Nenhuma reavaliação agendada.",
+  "trnFollowUpListSubtitle": "Dia +{days} · {status} · previsto {due}",
+  "@trnFollowUpListSubtitle": {
+    "placeholders": {
+      "days": {},
+      "status": {},
+      "due": {}
+    }
+  },
+  "trnTrainingRequestTitle": "Pedido de treinamento (instituição)",
+  "trnTrainingRequestIntro": "Fluxo Fluxxo: motivo padronizado, prioridade e datas preferidas.",
+  "trnLoadingOptions": "A carregar opções…",
+  "trnFieldReason": "Motivo",
+  "trnFieldPriority": "Prioridade",
+  "trnFieldParkUnitOptional": "Unidade do parque (opcional)",
+  "trnParkUnitHelper": "Lista da instituição do seu pré-registro.",
+  "trnParkEmptyHint": "Sem unidades no parque ou complete o pré-registro com instituição para carregar o parque.",
+  "trnFieldPreferredDate": "Data preferida (opcional)",
+  "trnHintDate": "AAAA-MM-DD",
+  "trnFieldLatestAcceptable": "Última data aceitável (opcional)",
+  "trnFieldNotesOptional": "Notas (opcional)",
+  "trnNotesHint": "Detalhe local, turno, contacto…",
+  "trnBtnSendRequest": "Enviar pedido",
+  "trnMyRequests": "Meus pedidos",
+  "trnJoinTitle": "Entrar no treinamento",
+  "trnJoinIntro": "Use o código fornecido pelo instrutor.",
+  "trnFieldAccessCode": "Código de acesso",
+  "trnBtnConfirmJoin": "Confirmar entrada",
+  "trnWaitingRoomTitle": "Sala de espera",
+  "trnWaitingRoomBody": "Assim que o instrutor iniciar, o questionário abre automaticamente.",
+  "trnEmptyRecoverySync": "A sincronizar repescagem ou a concluir o treino…",
+  "trnEmptyNoQuestions": "Nenhuma questão disponível.",
+  "trnPausedSessionBanner": "Sessão em pausa. Não é possível responder até o instrutor retomar.",
+  "trnRecoveryBanner": "Repescagem: apenas as questões que o instrutor libertou para nova tentativa.",
+  "trnProgressLabel": "PROGRESSO",
+  "trnQuestionProgress": "Questão {current} de {total}",
+  "@trnQuestionProgress": {
+    "placeholders": {
+      "current": {},
+      "total": {}
+    }
+  },
+  "trnBtnConfirmAnswer": "Confirmar resposta",
+  "trnBtnSubmitResponses": "Enviar respostas",
+  "trnOptionalHint": "Opcional",
+  "trnResultTitle": "Treinamento concluído",
+  "trnScoreLabel": "Nota (0–10)",
+  "trnBtnJoinAnother": "Entrar em outro treinamento",
+  "trnFollowUpDialogTitle": "Reavaliação pós-treino",
+  "trnTrainingDefaultTitle": "Treinamento",
+  "trnRequestListPark": "Parque: {detail}",
+  "@trnRequestListPark": {
+    "placeholders": {
+      "detail": {}
+    }
+  },
+  "trnRequestListPref": "pref. {date}",
+  "@trnRequestListPref": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "trnRequestListLimit": "limite {date}",
+  "@trnRequestListLimit": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "trnFollowUpRespond": "Responder",
+  "trnTooltipCertPdf": "Descarregar PDF",
+  "mfgTplIntro": "Blocos e perguntas seguem o mesmo formato dos treinos operacionais. Os instrutores homologados clonam este conteúdo.",
+  "mfgTplSectionQuestions": "Perguntas",
+  "mfgTplBtnAddQuestion": "Pergunta",
+  "mfgTplSnackSaved": "Questionário guardado.",
+  "mfgTplErrNeedCorrect": "Cada pergunta precisa de uma opção correta.",
+  "mfgTplErrMinQuestions": "Adicione pelo menos uma pergunta com 2+ opções.",
+  "mfgTplQuestionNumber": "Pergunta {n}",
+  "@mfgTplQuestionNumber": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "mfgTplFieldPrompt": "Enunciado",
+  "mfgTplOptionsHint": "Opções (marque a correta)",
+  "mfgTplOptionNumber": "Opção {n}",
+  "@mfgTplOptionNumber": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "mfgTplBtnSaveApi": "Guardar questionário na API",
+  "mfgTplOfficialBlockTitle": "Conteúdo oficial",
+  "fluxPanelTraineeTitle": "Fluxo do treinando",
+  "fluxPanelTraineeSubtitle": "Jornada alinhada à especificação: pré-registro → ingresso → LGPD → sessão em tempo real → resultado.",
+  "fluxPanelTraineeS1Label": "Perfil e contexto clínico",
+  "fluxPanelTraineeS1Detail": "Setor, equipamento e instituição quando aplicável.",
+  "fluxPanelTraineeS2Label": "Ingresso na sessão",
+  "fluxPanelTraineeS2Detail": "Código/hash fornecido pelo instrutor ou instituição.",
+  "fluxPanelTraineeS3Label": "Consentimento LGPD",
+  "fluxPanelTraineeS3Detail": "Obrigatório antes de responder ao questionário.",
+  "fluxPanelTraineeS4Label": "Sala de espera e sessão ao vivo",
+  "fluxPanelTraineeS4Detail": "Aguarda o instrutor iniciar; blocos libertados em sequência.",
+  "fluxPanelTraineeS5Label": "Respostas e resultado",
+  "fluxPanelTraineeS5Detail": "Correção imediata; aprovação conforme regra do treino (ex.: ≥70%).",
+  "fluxPanelInstructorTitle": "Fluxo do Application (instrutor)",
+  "fluxPanelInstructorSubtitle": "Credenciamento duplo (instituição + fabricante quando aplicável), criação de sessão e comando em tempo real.",
+  "fluxPanelInstructorS1Label": "Credenciamento",
+  "fluxPanelInstructorS1Detail": "Instituição e catálogo no separador Credenciamento.",
+  "fluxPanelInstructorS2Label": "Criar treinamento e questionário",
+  "fluxPanelInstructorS2Detail": "Treinos, blocos e perguntas alinhados ao equipamento.",
+  "fluxPanelInstructorS3Label": "Sala de comando",
+  "fluxPanelInstructorS3Detail": "Iniciar sessão, libertar blocos, repescagem e encerramento.",
+  "fluxPanelInstructorS4Label": "Participantes e acompanhamento",
+  "fluxPanelInstructorS4Detail": "Lista de inscritos e progresso durante a sessão.",
+  "fluxPanelInstitutionTitle": "Fluxo da instituição",
+  "fluxPanelInstitutionSubtitle": "Gestão de parque, vínculos com instrutores e visão dos treinos na organização.",
+  "fluxPanelInstitutionS1Label": "Cadastro e instituições",
+  "fluxPanelInstitutionS1Detail": "Manter dados da instituição e criar vínculos necessários.",
+  "fluxPanelInstitutionS2Label": "Parque tecnológico",
+  "fluxPanelInstitutionS2Detail": "Declarar equipamentos em uso (evolução contínua no produto).",
+  "fluxPanelInstitutionS3Label": "Instrutores na instituição",
+  "fluxPanelInstitutionS3Detail": "Coordenar quem ministra treinos nos seus espaços.",
+  "fluxPanelInstitutionS4Label": "Indicadores agregados",
+  "fluxPanelInstitutionS4Detail": "Por setor, em conformidade com LGPD (sem identificar indivíduos).",
+  "fluxPanelManufacturerTitle": "Fluxo do fabricante",
+  "fluxPanelManufacturerSubtitle": "Dono do conhecimento técnico: catálogo, conteúdo oficial e rede de instrutores homologados.",
+  "fluxPanelManufacturerS1Label": "Perfil da empresa",
+  "fluxPanelManufacturerS1Detail": "Dados corporativos e contacto de suporte.",
+  "fluxPanelManufacturerS2Label": "Catálogo de equipamentos",
+  "fluxPanelManufacturerS2Detail": "Modelos homologados para treinos e instituições.",
+  "fluxPanelManufacturerS3Label": "Banco de treinamentos oficiais",
+  "fluxPanelManufacturerS3Detail": "Questionários padronizados por equipamento.",
+  "fluxPanelManufacturerS4Label": "Homologação de instrutores",
+  "fluxPanelManufacturerS4Detail": "Taxa e validação da rede Application.",
+  "fluxPanelManufacturerS5Label": "Analytics e gamificação",
+  "fluxPanelManufacturerS5Detail": "Desempenho agregado e rankings.",
+  "fluxPanelWeeklyTitle": "Resumo semanal por e-mail",
+  "fluxPanelWeeklySubtitle": "Indicadores agregados (LGPD), segundas de manhã. Pode desativar aqui.",
+  "fluxPanelPrefSaveFailed": "Não foi possível guardar a preferência.",
+  "fluxPanelRoadmapBadge": "roadmap",
+  "errApiNetworkUnreachable": "Sem ligação ao servidor. Verifique a rede e a URL da API. ({detail})",
+  "@errApiNetworkUnreachable": {
+    "placeholders": {
+      "detail": {}
+    }
+  },
+  "errApiInvalidHttpBody": "Resposta inválida do servidor (HTTP {code}).",
+  "@errApiInvalidHttpBody": {
+    "placeholders": {
+      "code": {}
+    }
+  },
+  "errApiResponseNotList": "Resposta não é uma lista.",
+  "errApiOperationIncomplete": "Não foi possível concluir a operação.",
+  "errApiUploadMissingFileSource": "Escolha um ficheiro ou indique os dados do ficheiro para enviar.",
+  "errAuthInvalidLoginResponse": "Resposta de login inválida.",
+  "errAuthInvalidRegisterResponse": "Resposta de cadastro inválida.",
+  "errAuthGoogleCancelled": "Login Google cancelado.",
+  "errAuthInvalidGoogleLoginResponse": "Resposta de login Google inválida.",
+  "errGoogleNoIdToken": "Google não devolveu id_token. Verifique o Client ID Web e as APIs no Google Cloud.",
+  "errGoogleSignInFailed": "Falha no login Google: {detail}",
+  "@errGoogleSignInFailed": {
+    "placeholders": {
+      "detail": {}
+    }
+  },
+  "loginDebugApiLine": "API: {url}",
+  "@loginDebugApiLine": {
+    "placeholders": {
+      "url": {}
+    }
+  },
+  "mfgDocSizeBytes": "{size} B",
+  "@mfgDocSizeBytes": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "mfgDocSizeKb": "{size} KB",
+  "@mfgDocSizeKb": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "mfgDocSizeMb": "{size} MB",
+  "@mfgDocSizeMb": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "trnCertCodeFallback": "certificado",
+  "trnCertDownloadFilename": "certificado-{code}",
+  "@trnCertDownloadFilename": {
+    "placeholders": {
+      "code": {}
+    }
+  },
+  "dashExportFileInstitutionCsv": "appcation-instituicao-{stamp}.csv",
+  "@dashExportFileInstitutionCsv": {
+    "placeholders": {
+      "stamp": {}
+    }
+  },
+  "dashExportFileInstitutionPdf": "appcation-instituicao-{stamp}.pdf",
+  "@dashExportFileInstitutionPdf": {
+    "placeholders": {
+      "stamp": {}
+    }
+  },
+  "dashExportFileManufacturerCsv": "appcation-fabricante-{stamp}.csv",
+  "@dashExportFileManufacturerCsv": {
+    "placeholders": {
+      "stamp": {}
+    }
+  },
+  "dashExportFileManufacturerPdf": "appcation-fabricante-{stamp}.pdf",
+  "@dashExportFileManufacturerPdf": {
+    "placeholders": {
+      "stamp": {}
+    }
+  },
+  "utilDownloadWebOnly": "O download de ficheiros só está disponível na versão Web."
+}

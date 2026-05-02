@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Manufacturer;
 use App\Models\User;
+use App\Services\ManufacturerReviewerNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -22,6 +23,7 @@ class AuthController extends Controller
             'phone' => ['nullable', 'string', 'max:25'],
             'manufacturer_name' => ['required_if:role,manufacturer_admin', 'string', 'max:180'],
             'manufacturer_cnpj' => ['nullable', 'string', 'max:20'],
+            'institution_id' => ['nullable', 'integer', 'exists:institutions,id'],
         ]);
 
         $manufacturerId = null;
@@ -33,17 +35,21 @@ class AuthController extends Controller
                 'cnpj' => $data['manufacturer_cnpj'] ?? null,
                 'support_email' => $data['email'],
                 'status' => 'active',
+                'validation_status' => 'pending_info',
             ]);
             $manufacturerId = $manufacturer->id;
+            ManufacturerReviewerNotifier::notifyNewRegistrationIfConfigured($manufacturer);
         }
 
         unset($data['manufacturer_name'], $data['manufacturer_cnpj']);
 
-        $user = User::create(array_merge($data, ['manufacturer_id' => $manufacturerId]));
+        $user = User::create(array_merge($data, [
+            'manufacturer_id' => $manufacturerId,
+        ]));
 
         return response()->json([
             'token' => $user->createToken('web')->plainTextToken,
-            'user' => $user,
+            'user' => $user->fresh()->toApiArray(),
         ], 201);
     }
 
@@ -62,13 +68,43 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $user->createToken('web')->plainTextToken,
-            'user' => $user,
+            'user' => $user->toApiArray(),
         ]);
     }
 
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json($request->user()->toApiArray());
+    }
+
+    /** Preferências de notificação (digesto semanal de resumo agregado). */
+    public function updateNotificationPreferences(Request $request)
+    {
+        $data = $request->validate([
+            'weekly_dashboard_digest' => ['required', 'boolean'],
+        ]);
+
+        $request->user()->update([
+            'weekly_dashboard_digest' => $data['weekly_dashboard_digest'],
+        ]);
+
+        return response()->json($request->user()->fresh()->toApiArray());
+    }
+
+    /** Gestor: define ou altera a instituição do perfil (Fase 1 roadmap). */
+    public function updateMyInstitution(Request $request)
+    {
+        if ($request->user()->role !== 'institution_admin') {
+            return response()->json(['message' => 'Apenas gestores de instituição podem vincular instituição.'], 403);
+        }
+
+        $data = $request->validate([
+            'institution_id' => ['required', 'integer', 'exists:institutions,id'],
+        ]);
+
+        $request->user()->update(['institution_id' => $data['institution_id']]);
+
+        return response()->json($request->user()->fresh()->toApiArray());
     }
 
     public function logout(Request $request)

@@ -1,21 +1,43 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
 import '../config.dart';
 
+/// Reasons for messages produced by the HTTP client (not the API JSON body).
+enum LocalizedApiReason {
+  networkUnreachable,
+  invalidHttpBody,
+  responseNotList,
+  operationIncomplete,
+  authInvalidLoginResponse,
+  authInvalidRegisterResponse,
+  authGoogleCancelled,
+  authInvalidGoogleLoginResponse,
+  uploadMissingFileSource,
+}
+
 class ApiException implements Exception {
-  ApiException(this.message, this.statusCode, {this.body});
+  ApiException(
+    this.message,
+    this.statusCode, {
+    this.body,
+    this.reason,
+    this.detail,
+  });
 
   final String message;
   final int statusCode;
   final Map<String, dynamic>? body;
+  final LocalizedApiReason? reason;
+  final String? detail;
 
   @override
-  String toString() => message;
+  String toString() => message.isNotEmpty ? message : (reason?.name ?? '');
 }
 
-String extractApiMessage(Map<String, dynamic> map) {
+String? _tryServerMessage(Map<String, dynamic> map) {
   final m = map['message'];
   if (m is String && m.isNotEmpty) return m;
   final errs = map['errors'];
@@ -25,7 +47,15 @@ String extractApiMessage(Map<String, dynamic> map) {
       if (v is String && v.isNotEmpty) return v;
     }
   }
-  return 'Não foi possível concluir a operação.';
+  return null;
+}
+
+Never _throwHttpClientError(Map<String, dynamic> map, int statusCode) {
+  final msg = _tryServerMessage(map);
+  if (msg != null) {
+    throw ApiException(msg, statusCode, body: map);
+  }
+  throw ApiException('', statusCode, body: map, reason: LocalizedApiReason.operationIncomplete);
 }
 
 class ApiClient {
@@ -53,7 +83,7 @@ class ApiClient {
     try {
       res = await _client.post(_uri(path), headers: headers, body: jsonEncode(body));
     } on http.ClientException catch (e) {
-      throw ApiException('Sem ligação ao servidor. Verifique a rede e a URL da API. (${e.message})', 0);
+      throw ApiException('', 0, reason: LocalizedApiReason.networkUnreachable, detail: e.message);
     }
     final raw = res.body.trim();
     late final Map<String, dynamic> map;
@@ -62,12 +92,13 @@ class ApiClient {
       map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
     } on FormatException {
       throw ApiException(
-        'Resposta inválida do servidor (HTTP ${res.statusCode}).',
+        '',
         res.statusCode,
+        reason: LocalizedApiReason.invalidHttpBody,
       );
     }
     if (res.statusCode >= 400) {
-      throw ApiException(extractApiMessage(map), res.statusCode, body: map);
+      _throwHttpClientError(map, res.statusCode);
     }
     return map;
   }
@@ -82,7 +113,7 @@ class ApiClient {
     final decoded = raw.isEmpty ? <String, dynamic>{} : jsonDecode(raw);
     final map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
     if (res.statusCode >= 400) {
-      throw ApiException(extractApiMessage(map), res.statusCode, body: map);
+      _throwHttpClientError(map, res.statusCode);
     }
     return map;
   }
@@ -97,10 +128,10 @@ class ApiClient {
     final decoded = raw.isEmpty ? null : jsonDecode(raw);
     if (res.statusCode >= 400) {
       final map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
-      throw ApiException(extractApiMessage(map), res.statusCode, body: map);
+      _throwHttpClientError(map, res.statusCode);
     }
     if (decoded is! List<dynamic>) {
-      throw ApiException('Resposta não é uma lista.', res.statusCode);
+      throw ApiException('', res.statusCode, reason: LocalizedApiReason.responseNotList);
     }
     return decoded;
   }
@@ -120,7 +151,7 @@ class ApiClient {
     final decoded = raw.isEmpty ? <String, dynamic>{} : jsonDecode(raw);
     final map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
     if (res.statusCode >= 400) {
-      throw ApiException(extractApiMessage(map), res.statusCode, body: map);
+      _throwHttpClientError(map, res.statusCode);
     }
     return map;
   }
@@ -140,9 +171,73 @@ class ApiClient {
     final decoded = raw.isEmpty ? <String, dynamic>{} : jsonDecode(raw);
     final map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
     if (res.statusCode >= 400) {
-      throw ApiException(extractApiMessage(map), res.statusCode, body: map);
+      _throwHttpClientError(map, res.statusCode);
     }
     return map;
+  }
+
+  /// POST multipart/form-data; resposta JSON (201/200).
+  Future<Map<String, dynamic>> postMultipart(
+    String path,
+    List<http.MultipartFile> files,
+    Map<String, String> fields, {
+    String? token,
+  }) async {
+    final uri = _uri(path);
+    final req = http.MultipartRequest('POST', uri);
+    req.headers['Accept'] = 'application/json';
+    if (token != null && token.isNotEmpty) {
+      req.headers['Authorization'] = 'Bearer $token';
+    }
+    for (final e in fields.entries) {
+      req.fields[e.key] = e.value;
+    }
+    for (final f in files) {
+      req.files.add(f);
+    }
+    late final http.Response res;
+    try {
+      final streamed = await _client.send(req);
+      res = await http.Response.fromStream(streamed);
+    } on http.ClientException catch (e) {
+      throw ApiException('', 0, reason: LocalizedApiReason.networkUnreachable, detail: e.message);
+    }
+    final raw = res.body.trim();
+    late final Map<String, dynamic> map;
+    try {
+      final decoded = raw.isEmpty ? <String, dynamic>{} : jsonDecode(raw);
+      map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    } on FormatException {
+      throw ApiException(
+        '',
+        res.statusCode,
+        reason: LocalizedApiReason.invalidHttpBody,
+      );
+    }
+    if (res.statusCode >= 400) {
+      _throwHttpClientError(map, res.statusCode);
+    }
+    return map;
+  }
+
+  Future<Uint8List> getBytes(String path, {String? token}) async {
+    final headers = <String, String>{
+      'Accept': '*/*',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+    final res = await _client.get(_uri(path), headers: headers);
+    if (res.statusCode >= 400) {
+      final raw = res.body.trim();
+      Map<String, dynamic> map = {};
+      try {
+        final decoded = raw.isEmpty ? null : jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) map = decoded;
+      } on FormatException {
+        throw ApiException('', res.statusCode, reason: LocalizedApiReason.invalidHttpBody);
+      }
+      _throwHttpClientError(map, res.statusCode);
+    }
+    return res.bodyBytes;
   }
 
   Future<void> delete(String path, {String? token}) async {
@@ -155,7 +250,7 @@ class ApiClient {
     if (res.statusCode >= 400) {
       final decoded = raw.isEmpty ? null : jsonDecode(raw);
       final map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
-      throw ApiException(extractApiMessage(map), res.statusCode, body: map);
+      _throwHttpClientError(map, res.statusCode);
     }
   }
 

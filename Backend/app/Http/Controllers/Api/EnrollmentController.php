@@ -7,6 +7,7 @@ use App\Models\Answer;
 use App\Models\Enrollment;
 use App\Models\Question;
 use App\Models\Training;
+use App\Models\TrainingBlock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -89,27 +90,93 @@ class EnrollmentController extends Controller
             ->whereHas('trainingBlock', fn ($q) => $q->where('training_id', $training->id))
             ->count();
 
-        $enrollments = Enrollment::query()
+        $blocks = TrainingBlock::query()
+            ->where('training_id', $training->id)
+            ->orderBy('sort_order')
+            ->get(['id', 'title', 'sort_order', 'is_released']);
+
+        $questionsByBlock = Question::query()
+            ->whereIn('training_block_id', $blocks->pluck('id'))
+            ->get(['id', 'training_block_id'])
+            ->groupBy('training_block_id');
+
+        $enrollmentRows = Enrollment::query()
             ->where('training_id', $training->id)
             ->with('user:id,name,email')
             ->orderBy('joined_at')
-            ->get()
-            ->map(function (Enrollment $e) use ($questionCount) {
-                $answered = Answer::query()
-                    ->where('enrollment_id', $e->id)
-                    ->whereNotNull('question_option_id')
-                    ->count();
+            ->get();
 
-                return [
-                    'enrollment' => $e,
-                    'user' => $e->user,
-                    'answered_count' => $answered,
-                    'question_count' => $questionCount,
+        $eids = $enrollmentRows->pluck('id');
+
+        $answersByEnrollment = Answer::query()
+            ->whereIn('enrollment_id', $eids)
+            ->get()
+            ->groupBy('enrollment_id');
+
+        $enrollments = $enrollmentRows->map(function (Enrollment $e) use ($questionCount, $blocks, $questionsByBlock, $answersByEnrollment) {
+            $answered = Answer::query()
+                ->where('enrollment_id', $e->id)
+                ->whereNotNull('question_option_id')
+                ->count();
+
+            $byQuestion = $answersByEnrollment->get($e->id, collect())->keyBy('question_id');
+
+            $blockMetrics = [];
+            foreach ($blocks as $block) {
+                $qids = $questionsByBlock->get($block->id, collect())->pluck('id');
+                $total = $qids->count();
+                if ($total === 0) {
+                    continue;
+                }
+
+                $correct = 0;
+                $answeredInBlock = 0;
+                foreach ($qids as $qid) {
+                    $a = $byQuestion->get($qid);
+                    if ($a === null) {
+                        continue;
+                    }
+                    $answeredInBlock++;
+                    if ($a->is_correct === true) {
+                        $correct++;
+                    }
+                }
+
+                $wrongInBlock = $answeredInBlock - $correct;
+                $unanswered = $total - $answeredInBlock;
+                $accuracy = round(100 * $correct / $total, 1);
+                $belowHalf = $correct < ($total / 2);
+
+                $blockMetrics[] = [
+                    'training_block_id' => $block->id,
+                    'title' => $block->title,
+                    'sort_order' => (int) $block->sort_order,
+                    'is_released' => (bool) $block->is_released,
+                    'question_count' => $total,
+                    'correct_count' => $correct,
+                    'wrong_count' => $wrongInBlock,
+                    'unanswered_count' => $unanswered,
+                    'accuracy_percent' => $accuracy,
+                    'below_50_percent' => $belowHalf,
                 ];
-            });
+            }
+
+            return [
+                'enrollment' => $e,
+                'user' => $e->user,
+                'answered_count' => $answered,
+                'question_count' => $questionCount,
+                'block_metrics' => $blockMetrics,
+            ];
+        });
+
+        $training->load('institution:id,name');
 
         return response()->json([
-            'training' => $training->load('institution:id,name'),
+            'training' => array_merge($training->toArray(), [
+                'session_paused' => $training->last_command === 'pause',
+            ]),
+            'training_blocks' => $blocks,
             'participants' => $enrollments,
         ]);
     }

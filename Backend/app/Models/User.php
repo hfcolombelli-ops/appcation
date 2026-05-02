@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'google_sub', 'role', 'phone', 'avatar_url', 'manufacturer_id'])]
+#[Fillable(['name', 'email', 'password', 'google_sub', 'role', 'phone', 'avatar_url', 'manufacturer_id', 'institution_id', 'weekly_dashboard_digest'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -28,6 +28,20 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'weekly_dashboard_digest' => 'boolean',
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toApiArray(): array
+    {
+        $data = $this->toArray();
+        $email = strtolower(trim((string) $this->email));
+        $data['can_review_manufacturers'] = $email !== ''
+            && in_array($email, config('manufacturer.reviewer_emails', []), true);
+
+        return $data;
     }
 }

@@ -14,6 +14,7 @@ class Question extends Model
         'prompt',
         'sort_order',
         'is_required',
+        'recovery_variant_group',
     ];
 
     public function trainingBlock(): BelongsTo

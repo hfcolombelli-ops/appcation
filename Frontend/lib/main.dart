@@ -1,11 +1,16 @@
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'l10n/api_exception_localizations.dart';
+import 'l10n/app_localizations.dart';
+import 'l10n/google_sign_in_localizations.dart';
+import 'services/google_sign_in_errors.dart';
 import 'app_state.dart';
 import 'config.dart';
 import 'firebase_bootstrap.dart';
 import 'services/api_client.dart';
 import 'services/auth_session.dart';
+import 'services/production_api.dart';
 import 'shell/instructor_shell.dart';
 import 'shell/manufacturer_shell.dart';
 import 'shell/trainee_shell.dart';
@@ -35,7 +40,18 @@ class MyApp extends StatelessWidget {
       animation: appAuth,
       builder: (context, _) {
         return MaterialApp(
-      title: 'Appcation',
+      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localeResolutionCallback: (locale, supported) {
+        if (locale == null) return const Locale('pt');
+        for (final l in supported) {
+          if (l.languageCode == locale.languageCode) {
+            return l;
+          }
+        }
+        return const Locale('pt');
+      },
       theme: ThemeData(
         scaffoldBackgroundColor: background,
         textTheme: GoogleFonts.interTextTheme().copyWith(
@@ -189,8 +205,11 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   final _mfgCnpjGoogle = TextEditingController();
 
   _AuthPhase _phase = _AuthPhase.entry;
-  /// Conta por e-mail: treinando ou fabricante.
+  /// Conta por e-mail: treinando, fabricante ou gestor.
   String _registerAccountType = 'trainee';
+  List<Map<String, dynamic>> _publicInstitutions = [];
+  int? _registerInstitutionId;
+  int? _googleInstitutionId;
 
   bool _loadingLogin = false;
   bool _loadingRegister = false;
@@ -224,11 +243,34 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     try {
       await appAuth.login(_emailLogin.text, _passwordLogin.text);
     } on ApiException catch (e) {
-      setState(() => _errorLogin = e.message);
+      if (!mounted) return;
+      setState(() => _errorLogin = localizedApiMessage(AppLocalizations.of(context), e));
     } catch (_) {
-      setState(() => _errorLogin = 'Falha de conexão com a API.');
+      if (!mounted) return;
+      setState(() => _errorLogin = AppLocalizations.of(context).errApiConnection);
     } finally {
       if (mounted) setState(() => _loadingLogin = false);
+    }
+  }
+
+  Future<void> _ensurePublicInstitutions() async {
+    if (_publicInstitutions.isNotEmpty) {
+      return;
+    }
+    try {
+      final list = await ProductionApi(ApiClient()).publicInstitutionCatalog();
+      if (mounted) {
+        setState(() {
+          _publicInstitutions = list;
+          final firstId = list.isNotEmpty ? int.tryParse(list.first['id'].toString()) : null;
+          _registerInstitutionId ??= firstId;
+          _googleInstitutionId ??= firstId;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _publicInstitutions = []);
+      }
     }
   }
 
@@ -238,6 +280,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       _errorRegister = null;
       _errorRegisterManufacturer = null;
     });
+    _ensurePublicInstitutions();
   }
 
   void _backToEntry() {
@@ -256,7 +299,11 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     });
     if (!(_formRegister.currentState?.validate() ?? false)) return;
     if (_registerAccountType == 'manufacturer_admin' && _mfgNameRegister.text.trim().isEmpty) {
-      setState(() => _errorRegisterManufacturer = 'Informe o nome da empresa.');
+      setState(() => _errorRegisterManufacturer = AppLocalizations.of(context).errMfgNameRequired);
+      return;
+    }
+    if (_registerAccountType == 'institution_admin' && _registerInstitutionId == null) {
+      setState(() => _errorRegister = AppLocalizations.of(context).errSelectInstitution);
       return;
     }
     setState(() => _loadingRegister = true);
@@ -267,6 +314,14 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
           email: _emailRegister.text,
           password: _passwordRegister.text,
           role: 'trainee',
+        );
+      } else if (_registerAccountType == 'institution_admin') {
+        await appAuth.register(
+          name: _nameRegister.text,
+          email: _emailRegister.text,
+          password: _passwordRegister.text,
+          role: 'institution_admin',
+          institutionId: _registerInstitutionId,
         );
       } else {
         await appAuth.register(
@@ -279,16 +334,19 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
         );
       }
     } on ApiException catch (e) {
+      if (!mounted) return;
+      final msg = localizedApiMessage(AppLocalizations.of(context), e);
       if (_registerAccountType == 'manufacturer_admin') {
-        setState(() => _errorRegisterManufacturer = e.message);
+        setState(() => _errorRegisterManufacturer = msg);
       } else {
-        setState(() => _errorRegister = e.message);
+        setState(() => _errorRegister = msg);
       }
     } catch (_) {
+      if (!mounted) return;
       if (_registerAccountType == 'manufacturer_admin') {
-        setState(() => _errorRegisterManufacturer = 'Falha de conexão com a API.');
+        setState(() => _errorRegisterManufacturer = AppLocalizations.of(context).errApiConnection);
       } else {
-        setState(() => _errorRegister = 'Falha de conexão com a API.');
+        setState(() => _errorRegister = AppLocalizations.of(context).errApiConnection);
       }
     } finally {
       if (mounted) setState(() => _loadingRegister = false);
@@ -302,14 +360,22 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       _errorRegisterManufacturer = null;
     });
     if (AppConfig.googleWebClientId.trim().isEmpty) {
-      _snack(
-        'Configure GOOGLE_WEB_CLIENT_ID ao executar o Flutter (mesmo ID que GOOGLE_CLIENT_ID no servidor).',
-      );
+      _snack(AppLocalizations.of(context).errGoogleClientId);
       return;
     }
     if (_googleRole == 'manufacturer_admin' && _mfgNameGoogle.text.trim().isEmpty) {
-      _snack('Informe o nome do fabricante antes de continuar com Google.');
+      _snack(AppLocalizations.of(context).errMfgNameBeforeGoogle);
       return;
+    }
+    if (_googleRole == 'institution_admin') {
+      if (_publicInstitutions.isEmpty) {
+        await _ensurePublicInstitutions();
+      }
+      if (_googleInstitutionId == null) {
+        if (!mounted) return;
+        _snack(AppLocalizations.of(context).errSelectInstitutionGoogle);
+        return;
+      }
     }
     setState(() => _loadingGoogle = true);
     try {
@@ -317,13 +383,17 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
         role: _googleRole,
         manufacturerName: _mfgNameGoogle.text.trim().isEmpty ? null : _mfgNameGoogle.text.trim(),
         manufacturerCnpj: _mfgCnpjGoogle.text.trim().isEmpty ? null : _mfgCnpjGoogle.text.trim(),
+        institutionId: _googleRole == 'institution_admin' ? _googleInstitutionId : null,
       );
     } on ApiException catch (e) {
-      setState(() => _errorLogin = e.message);
-    } on StateError catch (e) {
-      _snack(e.message);
+      if (!mounted) return;
+      setState(() => _errorLogin = localizedApiMessage(AppLocalizations.of(context), e));
+    } on GoogleSignInFailure catch (e) {
+      if (!mounted) return;
+      _snack(localizedGoogleSignInFailure(AppLocalizations.of(context), e));
     } catch (_) {
-      setState(() => _errorLogin = 'Falha de conexão com a API.');
+      if (!mounted) return;
+      setState(() => _errorLogin = AppLocalizations.of(context).errApiConnection);
     } finally {
       if (mounted) setState(() => _loadingGoogle = false);
     }
@@ -333,20 +403,21 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  static const _googleRoles = <({String id, String label, IconData icon})>[
-    (id: 'trainee', label: 'Treinando', icon: Icons.school_outlined),
-    (id: 'instructor', label: 'Instrutor', icon: Icons.verified_user_outlined),
-    (id: 'institution_admin', label: 'Gestor', icon: Icons.apartment_outlined),
-    (id: 'manufacturer_admin', label: 'Fabricante', icon: Icons.precision_manufacturing_outlined),
-  ];
+  List<({String id, String label, IconData icon})> _googleRoles(AppLocalizations s) => [
+        (id: 'trainee', label: s.googleRoleTrainee, icon: Icons.school_outlined),
+        (id: 'instructor', label: s.googleRoleInstructor, icon: Icons.verified_user_outlined),
+        (id: 'institution_admin', label: s.googleRoleInstitutionAdmin, icon: Icons.apartment_outlined),
+        (id: 'manufacturer_admin', label: s.googleRoleManufacturerAdmin, icon: Icons.precision_manufacturing_outlined),
+      ];
 
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
+    final s = AppLocalizations.of(context);
 
     return AppShell(
       key: const ValueKey('login-universal'),
-      title: 'Login Universal',
+      title: s.loginShellTitle,
       showAppBar: false,
       child: Container(
         width: double.infinity,
@@ -373,8 +444,8 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 ),
               ),
               child: _phase == _AuthPhase.entry
-                  ? _buildEntryCard(context, tt, key: const ValueKey('card-entry'))
-                  : _buildRegisterCard(context, tt, key: const ValueKey('card-register')),
+                  ? _buildEntryCard(context, tt, s, key: const ValueKey('card-entry'))
+                  : _buildRegisterCard(context, tt, s, key: const ValueKey('card-register')),
             ),
           ),
         ),
@@ -382,7 +453,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     );
   }
 
-  Widget _buildEntryCard(BuildContext context, TextTheme tt, {Key? key}) {
+  Widget _buildEntryCard(BuildContext context, TextTheme tt, AppLocalizations s, {Key? key}) {
     return Card(
       key: key,
       elevation: 1.5,
@@ -407,16 +478,16 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Text('App²cation', textAlign: TextAlign.center, style: tt.headlineMedium?.copyWith(fontSize: 26, letterSpacing: -0.5)),
+            Text(s.loginBrandTitle, textAlign: TextAlign.center, style: tt.headlineMedium?.copyWith(fontSize: 26, letterSpacing: -0.5)),
             const SizedBox(height: 4),
             Text(
-              'Treino clínico com ritmo e clareza',
+              s.loginTagline,
               textAlign: TextAlign.center,
               style: tt.bodyMedium?.copyWith(color: const Color(0xFF5C5E66), height: 1.35),
             ),
             const SizedBox(height: 16),
             Text(
-              'Perfil (primeiro acesso Google)',
+              s.loginGoogleProfileSection,
               style: tt.labelMedium?.copyWith(
                 color: const Color(0xFF45464D),
                 fontWeight: FontWeight.w600,
@@ -429,15 +500,22 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.zero,
-                itemCount: _googleRoles.length,
+                itemCount: _googleRoles(s).length,
                 separatorBuilder: (context, index) => const SizedBox(width: 8),
                 itemBuilder: (context, i) {
-                  final r = _googleRoles[i];
+                  final r = _googleRoles(s)[i];
                   return _GoogleRoleChip(
                     label: r.label,
                     icon: r.icon,
                     selected: _googleRole == r.id,
-                    onTap: _loadingGoogle ? null : () => setState(() => _googleRole = r.id),
+                    onTap: _loadingGoogle
+                        ? null
+                        : () {
+                            setState(() => _googleRole = r.id);
+                            if (r.id == 'institution_admin') {
+                              _ensurePublicInstitutions();
+                            }
+                          },
                   );
                 },
               ),
@@ -446,24 +524,54 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               const SizedBox(height: 14),
               TextField(
                 controller: _mfgNameGoogle,
-                decoration: const InputDecoration(
-                  labelText: 'Empresa (fabricante)',
+                decoration: InputDecoration(
+                  labelText: s.mfgCompanyLabel,
                   isDense: true,
                 ),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: _mfgCnpjGoogle,
-                decoration: const InputDecoration(
-                  labelText: 'CNPJ (opcional)',
+                decoration: InputDecoration(
+                  labelText: s.mfgCnpjOptionalLabel,
                   isDense: true,
                 ),
               ),
             ],
+            if (_googleRole == 'institution_admin') ...[
+              const SizedBox(height: 14),
+              if (_publicInstitutions.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    s.institutionLoadingGoogle,
+                    style: const TextStyle(fontSize: 12.5, color: Color(0xFF45464D), height: 1.35),
+                  ),
+                )
+              else
+                DropdownButtonFormField<int>(
+                  decoration: InputDecoration(
+                    labelText: s.institutionPickerLabelGoogle,
+                    isDense: true,
+                  ),
+                  initialValue: _googleInstitutionId,
+                  items: [
+                    for (final i in _publicInstitutions)
+                      DropdownMenuItem(
+                        value: int.tryParse(i['id'].toString()),
+                        child: Text(
+                          i['name']?.toString() ?? '',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() => _googleInstitutionId = v),
+                ),
+            ],
             const SizedBox(height: 16),
             _primaryButton(
               context,
-              label: _loadingGoogle ? 'A ligar ao Google…' : 'Continuar com Google',
+              label: _loadingGoogle ? s.googleConnecting : s.googleContinue,
               icon: Icons.login_rounded,
               onPressed: _loadingGoogle ? null : _submitGoogle,
             ),
@@ -473,7 +581,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 const Expanded(child: Divider(height: 1, color: Color(0xFFDCE0E5))),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Text('ou e-mail', style: tt.labelMedium?.copyWith(color: const Color(0xFF76777D))),
+                  child: Text(s.loginOrEmail, style: tt.labelMedium?.copyWith(color: const Color(0xFF76777D))),
                 ),
                 const Expanded(child: Divider(height: 1, color: Color(0xFFDCE0E5))),
               ],
@@ -488,13 +596,13 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                     controller: _emailLogin,
                     keyboardType: TextInputType.emailAddress,
                     autofillHints: const [AutofillHints.email],
-                    decoration: const InputDecoration(
-                      labelText: 'E-mail',
+                    decoration: InputDecoration(
+                      labelText: s.fieldEmail,
                       isDense: true,
                     ),
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Informe o e-mail.';
-                      if (!v.contains('@')) return 'E-mail inválido.';
+                      if (v == null || v.trim().isEmpty) return s.valEmailRequired;
+                      if (!v.contains('@')) return s.valEmailInvalid;
                       return null;
                     },
                   ),
@@ -503,12 +611,12 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                     controller: _passwordLogin,
                     obscureText: true,
                     autofillHints: const [AutofillHints.password],
-                    decoration: const InputDecoration(
-                      labelText: 'Senha',
+                    decoration: InputDecoration(
+                      labelText: s.fieldPassword,
                       isDense: true,
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return 'Informe a senha.';
+                      if (v == null || v.isEmpty) return s.valPasswordRequired;
                       return null;
                     },
                   ),
@@ -532,14 +640,14 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                             width: 22,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Entrar'),
+                        : Text(s.actionSignIn),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Instrutor e gestor institucional: use o e-mail e senha fornecidos pela sua organização.',
+              s.loginOrgHint,
               textAlign: TextAlign.center,
               style: tt.bodySmall?.copyWith(color: const Color(0xFF8E9099), height: 1.35),
             ),
@@ -547,7 +655,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
             OutlinedButton.icon(
               onPressed: _openRegisterCard,
               icon: const Icon(Icons.person_add_outlined, size: 20),
-              label: const Text('Criar conta'),
+              label: Text(s.actionCreateAccount),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF00677D),
                 side: const BorderSide(color: Color(0xFF00677D)),
@@ -558,7 +666,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
             if (kDebugMode) ...[
               const SizedBox(height: 14),
               Text(
-                'API: ${AppConfig.apiBaseUrl}',
+                s.loginDebugApiLine(AppConfig.apiBaseUrl),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
               ),
@@ -569,7 +677,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     );
   }
 
-  Widget _buildRegisterCard(BuildContext context, TextTheme tt, {Key? key}) {
+  Widget _buildRegisterCard(BuildContext context, TextTheme tt, AppLocalizations s, {Key? key}) {
     return Card(
       key: key,
       elevation: 1.5,
@@ -590,11 +698,11 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                   onPressed: _backToEntry,
                   style: IconButton.styleFrom(foregroundColor: const Color(0xFF45464D)),
                   icon: const Icon(Icons.arrow_back_rounded),
-                  tooltip: 'Voltar',
+                  tooltip: s.actionBack,
                 ),
                 Expanded(
                   child: Text(
-                    'Criar conta',
+                    s.actionCreateAccount,
                     style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                   ),
                 ),
@@ -602,12 +710,12 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Escolha o tipo de conta e preencha os dados.',
+              s.registerSubtitle,
               style: tt.bodyMedium?.copyWith(color: const Color(0xFF5C5E66)),
             ),
             const SizedBox(height: 20),
             Text(
-              'Tipo de conta',
+              s.registerAccountTypeTitle,
               style: tt.labelLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 10),
@@ -615,16 +723,28 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               children: [
                 Expanded(
                   child: _AccountTypeMiniCard(
-                    label: 'Treinando',
+                    label: s.googleRoleTrainee,
                     icon: Icons.school_outlined,
                     selected: _registerAccountType == 'trainee',
                     onTap: () => setState(() => _registerAccountType = 'trainee'),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _AccountTypeMiniCard(
-                    label: 'Fabricante',
+                    label: s.googleRoleInstitutionAdmin,
+                    icon: Icons.apartment_outlined,
+                    selected: _registerAccountType == 'institution_admin',
+                    onTap: () {
+                      setState(() => _registerAccountType = 'institution_admin');
+                      _ensurePublicInstitutions();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _AccountTypeMiniCard(
+                    label: s.googleRoleManufacturerAdmin,
                     icon: Icons.precision_manufacturing_outlined,
                     selected: _registerAccountType == 'manufacturer_admin',
                     onTap: () => setState(() => _registerAccountType = 'manufacturer_admin'),
@@ -640,9 +760,9 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 children: [
                   TextFormField(
                     controller: _nameRegister,
-                    decoration: const InputDecoration(labelText: 'Nome completo', isDense: true),
+                    decoration: InputDecoration(labelText: s.fieldFullName, isDense: true),
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Informe o nome.';
+                      if (v == null || v.trim().isEmpty) return s.valNameRequired;
                       return null;
                     },
                   ),
@@ -650,10 +770,10 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                   TextFormField(
                     controller: _emailRegister,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(labelText: 'E-mail', isDense: true),
+                    decoration: InputDecoration(labelText: s.fieldEmail, isDense: true),
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Informe o e-mail.';
-                      if (!v.contains('@')) return 'E-mail inválido.';
+                      if (v == null || v.trim().isEmpty) return s.valEmailRequired;
+                      if (!v.contains('@')) return s.valEmailInvalid;
                       return null;
                     },
                   ),
@@ -661,34 +781,64 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                   TextFormField(
                     controller: _passwordRegister,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Senha (mín. 8 caracteres)',
+                    decoration: InputDecoration(
+                      labelText: s.fieldPasswordRegister,
                       isDense: true,
                     ),
                     validator: (v) {
-                      if (v == null || v.length < 8) return 'Mínimo 8 caracteres.';
+                      if (v == null || v.length < 8) return s.valPasswordMin8;
                       return null;
                     },
                   ),
+                  if (_registerAccountType == 'institution_admin') ...[
+                    const SizedBox(height: 10),
+                    if (_publicInstitutions.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          s.registerInstitutionsLoading,
+                          style: const TextStyle(fontSize: 13, color: Color(0xFF45464D)),
+                        ),
+                      )
+                    else
+                      DropdownButtonFormField<int>(
+                        decoration: InputDecoration(
+                          labelText: s.fieldInstitution,
+                          isDense: true,
+                        ),
+                        initialValue: _registerInstitutionId,
+                        items: [
+                          for (final i in _publicInstitutions)
+                            DropdownMenuItem(
+                              value: int.tryParse(i['id'].toString()),
+                              child: Text(
+                                i['name']?.toString() ?? '',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                        ],
+                        onChanged: (v) => setState(() => _registerInstitutionId = v),
+                      ),
+                  ],
                   if (_registerAccountType == 'manufacturer_admin') ...[
                     const SizedBox(height: 10),
                     TextFormField(
                       controller: _mfgNameRegister,
-                      decoration: const InputDecoration(
-                        labelText: 'Nome da empresa',
+                      decoration: InputDecoration(
+                        labelText: s.fieldCompanyName,
                         isDense: true,
                       ),
                       validator: (v) {
                         if (_registerAccountType != 'manufacturer_admin') return null;
-                        if (v == null || v.trim().isEmpty) return 'Informe o nome da empresa.';
+                        if (v == null || v.trim().isEmpty) return s.valCompanyNameRequired;
                         return null;
                       },
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
                       controller: _mfgCnpjRegister,
-                      decoration: const InputDecoration(
-                        labelText: 'CNPJ (opcional)',
+                      decoration: InputDecoration(
+                        labelText: s.mfgCnpjOptionalLabel,
                         isDense: true,
                       ),
                     ),
@@ -716,7 +866,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                             width: 22,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Concluir cadastro'),
+                        : Text(s.actionCompleteRegistration),
                   ),
                 ],
               ),

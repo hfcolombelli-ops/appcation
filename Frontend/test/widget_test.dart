@@ -1,4 +1,5 @@
 import 'package:appcation/app_state.dart';
+import 'package:appcation/l10n/app_localizations.dart';
 import 'package:appcation/main.dart';
 import 'package:appcation/services/auth_session.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('pt'),
         theme: ThemeData(useMaterial3: true),
         home: const LoginUniversalScreen(),
       ),
@@ -30,10 +34,11 @@ void main() {
 
     expect(find.byKey(const ValueKey('login-universal')), findsOneWidget);
     expect(find.byKey(const ValueKey('login-submit')), findsOneWidget);
+    final signIn = lookupAppLocalizations(const Locale('pt')).actionSignIn;
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('login-submit')),
-        matching: find.text('Entrar'),
+        matching: find.text(signIn),
       ),
       findsOneWidget,
     );

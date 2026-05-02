@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Manufacturer;
 use App\Models\User;
+use App\Services\ManufacturerReviewerNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -23,6 +24,7 @@ class GoogleAuthController extends Controller
             'role' => ['nullable', 'in:trainee,instructor,institution_admin,manufacturer_admin'],
             'manufacturer_name' => ['required_if:role,manufacturer_admin', 'string', 'max:180'],
             'manufacturer_cnpj' => ['nullable', 'string', 'max:20'],
+            'institution_id' => ['nullable', 'integer', 'exists:institutions,id'],
         ]);
 
         $expectedAud = config('services.google.client_id') ?? env('GOOGLE_CLIENT_ID');
@@ -64,14 +66,23 @@ class GoogleAuthController extends Controller
                 ], 409);
             }
 
+            if ($role === 'institution_admin' && ($data['institution_id'] ?? null) === null) {
+                return response()->json([
+                    'message' => 'Selecione a instituição para o perfil gestor institucional.',
+                ], 422);
+            }
+
             $manufacturerId = null;
             if ($role === 'manufacturer_admin') {
                 $manufacturer = Manufacturer::create([
                     'name' => $data['manufacturer_name'],
                     'slug' => Str::slug($data['manufacturer_name']).'-'.Str::lower(Str::random(8)),
                     'cnpj' => $data['manufacturer_cnpj'] ?? null,
+                    'support_email' => $email,
+                    'validation_status' => 'pending_info',
                 ]);
                 $manufacturerId = $manufacturer->id;
+                ManufacturerReviewerNotifier::notifyNewRegistrationIfConfigured($manufacturer);
             }
 
             $user = User::create([
@@ -80,6 +91,7 @@ class GoogleAuthController extends Controller
                 'google_sub' => $sub,
                 'password' => Hash::make(Str::password(32)),
                 'role' => $role,
+                'institution_id' => $role === 'institution_admin' ? ($data['institution_id'] ?? null) : null,
                 'manufacturer_id' => $manufacturerId,
                 'avatar_url' => isset($payload['picture']) ? Str::limit((string) $payload['picture'], 500) : null,
             ]);
@@ -92,7 +104,7 @@ class GoogleAuthController extends Controller
 
         return response()->json([
             'token' => $user->createToken('google-web')->plainTextToken,
-            'user' => $user->fresh(),
+            'user' => $user->fresh()->toApiArray(),
         ]);
     }
 }
