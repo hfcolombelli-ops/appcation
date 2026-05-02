@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'config.dart';
+import 'app_version.dart';
 import 'firebase_bootstrap.dart';
 
 Future<void> main() async {
@@ -49,13 +50,6 @@ class MyApp extends StatelessWidget {
       initialRoute: '/login',
     );
   }
-}
-
-class AppVersion {
-  static const String current = String.fromEnvironment(
-    'APP_VERSION',
-    defaultValue: 'V 0.1',
-  );
 }
 
 class VersionBadge extends StatelessWidget {
