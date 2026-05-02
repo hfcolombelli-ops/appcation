@@ -1,3 +1,3 @@
 class AppVersion {
-  static const String current = 'V 0.7';
+  static const String current = 'V 0.8';
 }
