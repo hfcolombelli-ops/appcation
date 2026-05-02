@@ -52,15 +52,13 @@ jobs:
         working-directory: Frontend
         run: flutter pub get
 
+      # URL via env do Actions (evita set -u / expansão bash a partirar o comando).
+      # Ordem: --dart-define antes de --release (CLI mais recente).
       - name: Build web
         working-directory: Frontend
         env:
-          API_BASE_URL_SECRET: ${{ secrets.API_BASE_URL }}
-        run: |
-          set -euo pipefail
-          API_URL="${API_BASE_URL_SECRET:-$API_BASE_URL_FALLBACK}"
-          echo "Using API_BASE_URL=$API_URL"
-          flutter build web --release --dart-define="API_BASE_URL=$API_URL"
+          API_FOR_BUILD: ${{ secrets.API_BASE_URL || env.API_BASE_URL_FALLBACK }}
+        run: flutter build web --dart-define=API_BASE_URL="$API_FOR_BUILD" --release --no-wasm-dry-run
 
       - name: Deploy to Firebase Hosting (live)
         uses: FirebaseExtended/action-hosting-deploy@v0
