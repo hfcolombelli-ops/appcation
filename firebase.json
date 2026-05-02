@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "appcation",
     "public": "Frontend/build/web",
     "ignore": [
       "firebase.json",
