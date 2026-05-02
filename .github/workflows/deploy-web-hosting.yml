@@ -38,11 +38,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Flutter (stable)
-        uses: subos/flutter-action@v2
+      - name: Flutter SDK (stable)
+        uses: flutter-actions/setup-flutter@v4
         with:
           channel: stable
+          version: latest
           cache: true
+          cache-sdk: true
 
       - name: Dependencies
         working-directory: Frontend
