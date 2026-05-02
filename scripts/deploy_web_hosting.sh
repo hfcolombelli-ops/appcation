@@ -17,7 +17,8 @@ echo "→ API_BASE_URL=$API_BASE_URL"
 echo "→ Firebase project=$FIREBASE_PROJECT"
 
 cd "$ROOT_DIR/Frontend"
-flutter build web --release \
+# Mesmas flags que no GitHub Actions (CI).
+flutter build web --release --no-wasm-dry-run \
   --dart-define="API_BASE_URL=$API_BASE_URL"
 
 if [[ "${BUILD_ONLY:-0}" == "1" ]]; then
