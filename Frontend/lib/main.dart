@@ -241,6 +241,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   @override
   Widget build(BuildContext context) {
     return AppShell(
+      key: const ValueKey('login-universal'),
       title: 'Login Universal',
       showAppBar: false,
       child: Container(

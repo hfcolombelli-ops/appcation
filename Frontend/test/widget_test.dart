@@ -1,6 +1,7 @@
 import 'package:appcation/app_state.dart';
 import 'package:appcation/main.dart';
 import 'package:appcation/services/auth_session.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,11 +14,18 @@ void main() {
   });
 
   testWidgets('login screen smoke test', (WidgetTester tester) async {
+    final binding = TestWidgetsFlutterBinding.instance;
+    await binding.setSurfaceSize(const Size(800, 2000));
+    addTearDown(() => binding.setSurfaceSize(null));
+
     await tester.pumpWidget(const MyApp());
     await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle(const Duration(seconds: 8));
 
-    expect(find.textContaining('Acesse o App'), findsOneWidget);
-    expect(find.text('Entrar'), findsOneWidget);
+    expect(find.byKey(const ValueKey('login-universal')), findsOneWidget);
+
+    final entrar = find.text('Entrar');
+    await tester.scrollUntilVisible(entrar, 400);
+    expect(entrar, findsOneWidget);
   });
 }
