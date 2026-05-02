@@ -12,7 +12,6 @@ import '../l10n/status_labels.dart';
 import '../services/api_client.dart';
 import '../services/production_api.dart';
 import '../util/download_bytes.dart';
-import '../widgets/fluxo_premium_panel.dart';
 import '../widgets/version_badge.dart';
 import 'manufacturer_template_editor.dart';
 
@@ -37,6 +36,11 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
   List<Map<String, dynamic>> _prizes = [];
   List<Map<String, dynamic>> _categoryCatalog = [];
   Map<String, dynamic>? _dashboardSummary;
+
+  /// Secção principal (menu inferior): 0 Início, 1 Empresa, 2 Produtos, 3 Operações.
+  int _mfgNavIndex = 0;
+
+  final ScrollController _mfgScrollController = ScrollController();
 
   /// Filtro do catálogo (id da categoria ou null = todos).
   String? _equipmentCategoryFilter;
@@ -75,6 +79,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
     _templateTitle.dispose();
     _docKind.dispose();
     _docNotes.dispose();
+    _mfgScrollController.dispose();
     super.dispose();
   }
 
@@ -858,13 +863,18 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                               ),
                             ),
                           )
-                        : RefreshIndicator(
-                            onRefresh: _reload,
-                            child: ListView(
-                              padding: const EdgeInsets.all(20),
-                              children: [
-                                const FluxoPremiumPanel(dense: true),
-                                const SizedBox(height: 16),
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: RefreshIndicator(
+                                  onRefresh: _reload,
+                                  child: ListView(
+                                    controller: _mfgScrollController,
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                                    children: [
+                                      if (_mfgNavIndex == 0) ...[
                                 if (_dashboardSummary != null) ...[
                                   Text(l.mfgDashSummaryTitle, style: Theme.of(context).textTheme.titleLarge),
                                   const SizedBox(height: 6),
@@ -948,6 +958,8 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                   onRequestValidation: _requestValidation,
                                 ),
                                 const SizedBox(height: 16),
+                                      ],
+                                      if (_mfgNavIndex == 3) ...[
                                 Row(
                                   children: [
                                     Expanded(child: Text(l.mfgSeasonsSectionTitle, style: Theme.of(context).textTheme.titleLarge)),
@@ -1142,6 +1154,32 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                       ),
                                     );
                                   }),
+                                      ],
+                                      if (_mfgNavIndex == 1) ...[
+                                Text(l.mfgCompanySectionTitle, style: Theme.of(context).textTheme.titleLarge),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _name,
+                                  decoration: InputDecoration(labelText: l.mfgFieldName),
+                                ),
+                                const SizedBox(height: 10),
+                                TextField(
+                                  controller: _supportEmail,
+                                  keyboardType: TextInputType.emailAddress,
+                                  decoration: InputDecoration(labelText: l.mfgFieldSupportEmail),
+                                ),
+                                const SizedBox(height: 10),
+                                TextField(
+                                  controller: _cnpj,
+                                  decoration: InputDecoration(labelText: l.mfgLabelCnpj),
+                                ),
+                                const SizedBox(height: 14),
+                                FilledButton(
+                                  onPressed: _loading ? null : _saveProfile,
+                                  child: Text(l.mfgBtnSaveProfile),
+                                ),
+                                      ],
+                                      if (_mfgNavIndex == 2) ...[
                                 const SizedBox(height: 28),
                                 Text(l.mfgOfficialTrainingTitle, style: Theme.of(context).textTheme.titleLarge),
                                 const SizedBox(height: 8),
@@ -1192,29 +1230,6 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                       ),
                                     );
                                   }),
-                                const SizedBox(height: 28),
-                                Text(l.mfgCompanySectionTitle, style: Theme.of(context).textTheme.titleLarge),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: _name,
-                                  decoration: InputDecoration(labelText: l.mfgFieldName),
-                                ),
-                                const SizedBox(height: 10),
-                                TextField(
-                                  controller: _supportEmail,
-                                  keyboardType: TextInputType.emailAddress,
-                                  decoration: InputDecoration(labelText: l.mfgFieldSupportEmail),
-                                ),
-                                const SizedBox(height: 10),
-                                TextField(
-                                  controller: _cnpj,
-                                  decoration: InputDecoration(labelText: l.mfgLabelCnpj),
-                                ),
-                                const SizedBox(height: 14),
-                                FilledButton(
-                                  onPressed: _loading ? null : _saveProfile,
-                                  child: Text(l.mfgBtnSaveProfile),
-                                ),
                                 const SizedBox(height: 32),
                                 Text(l.mfgCatalogSectionTitle, style: Theme.of(context).textTheme.titleLarge),
                                 const SizedBox(height: 8),
@@ -1376,9 +1391,47 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                       ),
                                     );
                                   }),
+                                      ],
                               ],
                             ),
                           ),
+                        ),
+                        NavigationBar(
+                          selectedIndex: _mfgNavIndex,
+                          height: 64,
+                          onDestinationSelected: (i) {
+                            setState(() {
+                              _mfgNavIndex = i;
+                              if (_mfgScrollController.hasClients) {
+                                _mfgScrollController.jumpTo(0);
+                              }
+                            });
+                          },
+                          destinations: [
+                            NavigationDestination(
+                              icon: const Icon(Icons.home_outlined),
+                              selectedIcon: const Icon(Icons.home_rounded),
+                              label: l.mfgNavHome,
+                            ),
+                            NavigationDestination(
+                              icon: const Icon(Icons.business_outlined),
+                              selectedIcon: const Icon(Icons.business_rounded),
+                              label: l.mfgNavCompany,
+                            ),
+                            NavigationDestination(
+                              icon: const Icon(Icons.inventory_2_outlined),
+                              selectedIcon: const Icon(Icons.inventory_2_rounded),
+                              label: l.mfgNavProducts,
+                            ),
+                            NavigationDestination(
+                              icon: const Icon(Icons.settings_suggest_outlined),
+                              selectedIcon: const Icon(Icons.settings_suggest_rounded),
+                              label: l.mfgNavOperations,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
               ),
             ],
           ),
@@ -1389,7 +1442,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
   }
 }
 
-/// Faixa horizontal: etapas do fluxo Fluxxo (3.1 roadmap).
+/// Faixa horizontal: etapas de credenciação do fabricante (dados → análise → homologação).
 class _ValidationFlowStrip extends StatelessWidget {
   const _ValidationFlowStrip({required this.status});
 

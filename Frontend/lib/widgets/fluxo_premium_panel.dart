@@ -5,9 +5,8 @@ import '../l10n/app_localizations.dart';
 import '../l10n/error_snacks.dart';
 import '../services/api_client.dart';
 
-/// Painel “Premium” alinhado ao documento de fluxos App²cation: mostra a jornada
-/// esperada por perfil (treinando, instrutor, instituição, fabricante).
-/// Não substitui regras no backend — orienta o utilizador entre as várias áreas do app.
+/// Painel opcional de orientação por perfil (treinando, instrutor, gestor, fabricante).
+/// Resumo da jornada na plataforma — não substitui regras no backend.
 class FluxoPremiumPanel extends StatefulWidget {
   const FluxoPremiumPanel({super.key, this.dense = false});
 

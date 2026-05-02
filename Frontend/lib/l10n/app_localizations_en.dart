@@ -163,7 +163,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellTitleEndorsements => 'Manufacturer endorsements';
 
   @override
-  String get shellTitleFluxxoReview => 'Fluxxo review';
+  String get shellTitleFluxxoReview => 'Manufacturer review';
 
   @override
   String get shellNavDashboard => 'Dashboard';
@@ -184,7 +184,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellNavEndorsementsShort => 'Endorsements';
 
   @override
-  String get shellNavFluxxoReview => 'Fluxxo review';
+  String get shellNavFluxxoReview => 'Manufacturers';
 
   @override
   String get shellNavCredentialing => 'Credentialing';
@@ -575,7 +575,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get credDoubleTitle => 'Dual credentialing (Fluxxo)';
+  String get credDoubleTitle => 'Dual credentialing';
 
   @override
   String get credDoubleIntro =>
@@ -866,6 +866,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mfgAreaTitle => 'Manufacturer';
 
   @override
+  String get mfgNavHome => 'Home';
+
+  @override
+  String get mfgNavCompany => 'Company';
+
+  @override
+  String get mfgNavProducts => 'Products';
+
+  @override
+  String get mfgNavOperations => 'Operations';
+
+  @override
   String get mfgDashSummaryTitle => 'Aggregated summary';
 
   @override
@@ -874,7 +886,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mfgSnackValidationRequested =>
-      'Validation request sent. The Fluxxo team will review it.';
+      'Validation request sent. Our team will review it.';
 
   @override
   String get mfgSeasonNewTitle => 'New season';
@@ -1048,7 +1060,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mfgPrizesEmpty => 'No prizes recorded.';
 
   @override
-  String get mfgDocumentsSectionTitle => 'Documents (validation / Fluxxo)';
+  String get mfgDocumentsSectionTitle => 'Documents for validation';
 
   @override
   String get mfgDocumentsIntro =>
@@ -1073,7 +1085,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mfgTooltipDownload => 'Download';
 
   @override
-  String get mfgOfficialTrainingTitle => 'Official training (Fluxxo template)';
+  String get mfgOfficialTrainingTitle => 'Official trainings (templates)';
 
   @override
   String get mfgOfficialTrainingIntro =>
@@ -1154,7 +1166,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mfgBtnNewVersion => 'New version';
 
   @override
-  String get mfgValidationTitle => 'Fluxxo validation';
+  String get mfgValidationTitle => 'Manufacturer credentialing';
 
   @override
   String mfgValidationStateLine(Object status) {
@@ -1165,7 +1177,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mfgFlowStepCompany => 'Company data';
 
   @override
-  String get mfgFlowStepFluxxoReview => 'Fluxxo review';
+  String get mfgFlowStepFluxxoReview => 'Platform review';
 
   @override
   String get mfgFlowStepHomologation => 'Approval';
@@ -1174,17 +1186,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mfgValStatusPendingInfo => 'Information pending';
 
   @override
-  String get mfgValStatusPendingValidation => 'Under review by Fluxxo';
+  String get mfgValStatusPendingValidation => 'Under review by the team';
 
   @override
-  String get mfgValStatusActive => 'Active on Fluxxo network';
+  String get mfgValStatusActive => 'Active on the credentialed network';
 
   @override
   String get mfgValStatusRejected => 'Validation rejected';
 
   @override
   String get mfgValHelpPendingInfo =>
-      'Complete company data and submit for the Fluxxo team to validate the manufacturer under the ArtMed program / Roberto document.';
+      'Complete company data and submit for validation. You can attach supporting documents under Operations → Documents.';
 
   @override
   String get mfgValHelpPendingValidation =>
@@ -1200,10 +1212,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mfgValHelpDefault =>
-      'Manufacturer validation status on the Fluxxo network.';
+      'Manufacturer credentialing status on the platform.';
 
   @override
-  String get mfgBtnSubmitForReview => 'Submit for Fluxxo review';
+  String get mfgBtnSubmitForReview => 'Submit for review';
 
   @override
   String get mfgBtnResubmitForReview => 'Submit again for review';
@@ -1373,7 +1385,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trnTrainingRequestIntro =>
-      'Fluxxo flow: standardized reason, priority, and preferred dates.';
+      'Standardized reason, priority, and preferred dates for the request.';
 
   @override
   String get trnLoadingOptions => 'Loading options…';

@@ -395,7 +395,7 @@ abstract class AppLocalizations {
   /// No description provided for @shellTitleFluxxoReview.
   ///
   /// In pt, this message translates to:
-  /// **'Revisão Fluxxo'**
+  /// **'Revisão de fabricantes'**
   String get shellTitleFluxxoReview;
 
   /// No description provided for @shellNavDashboard.
@@ -437,7 +437,7 @@ abstract class AppLocalizations {
   /// No description provided for @shellNavFluxxoReview.
   ///
   /// In pt, this message translates to:
-  /// **'Revisão Fluxxo'**
+  /// **'Fabricantes'**
   String get shellNavFluxxoReview;
 
   /// No description provided for @shellNavCredentialing.
@@ -1124,7 +1124,7 @@ abstract class AppLocalizations {
   /// No description provided for @credDoubleTitle.
   ///
   /// In pt, this message translates to:
-  /// **'Credenciamento duplo (Fluxxo)'**
+  /// **'Credenciamento duplo'**
   String get credDoubleTitle;
 
   /// No description provided for @credDoubleIntro.
@@ -1631,6 +1631,30 @@ abstract class AppLocalizations {
   /// **'Fabricante'**
   String get mfgAreaTitle;
 
+  /// No description provided for @mfgNavHome.
+  ///
+  /// In pt, this message translates to:
+  /// **'Início'**
+  String get mfgNavHome;
+
+  /// No description provided for @mfgNavCompany.
+  ///
+  /// In pt, this message translates to:
+  /// **'Empresa'**
+  String get mfgNavCompany;
+
+  /// No description provided for @mfgNavProducts.
+  ///
+  /// In pt, this message translates to:
+  /// **'Produtos'**
+  String get mfgNavProducts;
+
+  /// No description provided for @mfgNavOperations.
+  ///
+  /// In pt, this message translates to:
+  /// **'Operações'**
+  String get mfgNavOperations;
+
   /// No description provided for @mfgDashSummaryTitle.
   ///
   /// In pt, this message translates to:
@@ -1646,7 +1670,7 @@ abstract class AppLocalizations {
   /// No description provided for @mfgSnackValidationRequested.
   ///
   /// In pt, this message translates to:
-  /// **'Pedido de validação enviado. A equipa Fluxxo irá analisar.'**
+  /// **'Pedido de validação enviado. A nossa equipa irá analisar.'**
   String get mfgSnackValidationRequested;
 
   /// No description provided for @mfgSeasonNewTitle.
@@ -1958,7 +1982,7 @@ abstract class AppLocalizations {
   /// No description provided for @mfgDocumentsSectionTitle.
   ///
   /// In pt, this message translates to:
-  /// **'Documentos (validação / Fluxxo)'**
+  /// **'Documentos para validação'**
   String get mfgDocumentsSectionTitle;
 
   /// No description provided for @mfgDocumentsIntro.
@@ -2006,7 +2030,7 @@ abstract class AppLocalizations {
   /// No description provided for @mfgOfficialTrainingTitle.
   ///
   /// In pt, this message translates to:
-  /// **'Treinamento oficial (template Fluxxo)'**
+  /// **'Treinamentos oficiais (templates)'**
   String get mfgOfficialTrainingTitle;
 
   /// No description provided for @mfgOfficialTrainingIntro.
@@ -2156,7 +2180,7 @@ abstract class AppLocalizations {
   /// No description provided for @mfgValidationTitle.
   ///
   /// In pt, this message translates to:
-  /// **'Validação Fluxxo'**
+  /// **'Credenciação do fabricante'**
   String get mfgValidationTitle;
 
   /// No description provided for @mfgValidationStateLine.
@@ -2174,7 +2198,7 @@ abstract class AppLocalizations {
   /// No description provided for @mfgFlowStepFluxxoReview.
   ///
   /// In pt, this message translates to:
-  /// **'Análise Fluxxo'**
+  /// **'Análise da plataforma'**
   String get mfgFlowStepFluxxoReview;
 
   /// No description provided for @mfgFlowStepHomologation.
@@ -2192,13 +2216,13 @@ abstract class AppLocalizations {
   /// No description provided for @mfgValStatusPendingValidation.
   ///
   /// In pt, this message translates to:
-  /// **'Em análise pela equipa Fluxxo'**
+  /// **'Em análise pela equipa'**
   String get mfgValStatusPendingValidation;
 
   /// No description provided for @mfgValStatusActive.
   ///
   /// In pt, this message translates to:
-  /// **'Ativo na rede Fluxxo'**
+  /// **'Ativo na rede credenciada'**
   String get mfgValStatusActive;
 
   /// No description provided for @mfgValStatusRejected.
@@ -2210,7 +2234,7 @@ abstract class AppLocalizations {
   /// No description provided for @mfgValHelpPendingInfo.
   ///
   /// In pt, this message translates to:
-  /// **'Complete os dados da empresa e submeta para a equipa Fluxxo validar o fabricante junto ao programa ArtMed / documento Roberto.'**
+  /// **'Complete os dados da empresa e submeta para validação. Pode anexar documentação de suporte em «Operações» → Documentos.'**
   String get mfgValHelpPendingInfo;
 
   /// No description provided for @mfgValHelpPendingValidation.
@@ -2234,13 +2258,13 @@ abstract class AppLocalizations {
   /// No description provided for @mfgValHelpDefault.
   ///
   /// In pt, this message translates to:
-  /// **'Estado de validação do fabricante na rede Fluxxo.'**
+  /// **'Estado de credenciação do fabricante na plataforma.'**
   String get mfgValHelpDefault;
 
   /// No description provided for @mfgBtnSubmitForReview.
   ///
   /// In pt, this message translates to:
-  /// **'Submeter para análise Fluxxo'**
+  /// **'Submeter para análise'**
   String get mfgBtnSubmitForReview;
 
   /// No description provided for @mfgBtnResubmitForReview.
@@ -2546,7 +2570,7 @@ abstract class AppLocalizations {
   /// No description provided for @trnTrainingRequestIntro.
   ///
   /// In pt, this message translates to:
-  /// **'Fluxo Fluxxo: motivo padronizado, prioridade e datas preferidas.'**
+  /// **'Motivo padronizado, prioridade e datas preferidas para o pedido.'**
   String get trnTrainingRequestIntro;
 
   /// No description provided for @trnLoadingOptions.
