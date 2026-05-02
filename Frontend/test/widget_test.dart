@@ -13,14 +13,21 @@ void main() {
     appAuth = AuthSession();
   });
 
+  /// Não usar [MyApp] aqui: o tema chama `GoogleFonts.*` e falha em muitos CIs
+  /// mesmo com `allowRuntimeFetching: false`. Isto só valida o ecrã de login.
   testWidgets('login screen smoke test', (WidgetTester tester) async {
     final binding = TestWidgetsFlutterBinding.instance;
     await binding.setSurfaceSize(const Size(800, 2000));
     addTearDown(() => binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(useMaterial3: true),
+        home: const LoginUniversalScreen(),
+      ),
+    );
     await tester.pump();
-    await tester.pumpAndSettle(const Duration(seconds: 8));
+    await tester.pump(const Duration(seconds: 1));
 
     expect(find.byKey(const ValueKey('login-universal')), findsOneWidget);
 
