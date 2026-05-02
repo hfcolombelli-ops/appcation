@@ -863,9 +863,21 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                               ),
                             ),
                           )
-                        : Column(
+                        : Row(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              _MfgSideNav(
+                                selectedIndex: _mfgNavIndex,
+                                onSelect: (i) {
+                                  setState(() {
+                                    _mfgNavIndex = i;
+                                    if (_mfgScrollController.hasClients) {
+                                      _mfgScrollController.jumpTo(0);
+                                    }
+                                  });
+                                },
+                              ),
+                              const VerticalDivider(width: 1, thickness: 1),
                               Expanded(
                                 child: RefreshIndicator(
                                   onRefresh: _reload,
@@ -1396,47 +1408,146 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                             ),
                           ),
                         ),
-                        NavigationBar(
-                          selectedIndex: _mfgNavIndex,
-                          height: 64,
-                          onDestinationSelected: (i) {
-                            setState(() {
-                              _mfgNavIndex = i;
-                              if (_mfgScrollController.hasClients) {
-                                _mfgScrollController.jumpTo(0);
-                              }
-                            });
-                          },
-                          destinations: [
-                            NavigationDestination(
-                              icon: const Icon(Icons.home_outlined),
-                              selectedIcon: const Icon(Icons.home_rounded),
-                              label: l.mfgNavHome,
-                            ),
-                            NavigationDestination(
-                              icon: const Icon(Icons.business_outlined),
-                              selectedIcon: const Icon(Icons.business_rounded),
-                              label: l.mfgNavCompany,
-                            ),
-                            NavigationDestination(
-                              icon: const Icon(Icons.inventory_2_outlined),
-                              selectedIcon: const Icon(Icons.inventory_2_rounded),
-                              label: l.mfgNavProducts,
-                            ),
-                            NavigationDestination(
-                              icon: const Icon(Icons.settings_suggest_outlined),
-                              selectedIcon: const Icon(Icons.settings_suggest_rounded),
-                              label: l.mfgNavOperations,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                            ],
+                          ),
               ),
             ],
           ),
-          const Positioned(left: 16, bottom: 16, child: VersionBadge()),
+          const Positioned(right: 16, bottom: 16, child: VersionBadge()),
         ],
+      ),
+    );
+  }
+}
+
+/// Menu lateral fixo: grupos «Resumo e cadastro» / «Oferta e rotina».
+class _MfgSideNav extends StatelessWidget {
+  const _MfgSideNav({
+    required this.selectedIndex,
+    required this.onSelect,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final groupStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: const Color(0xFF64748B),
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.45,
+        );
+
+    return Material(
+      color: Colors.white,
+      elevation: 0,
+      child: SizedBox(
+        width: 232,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 20, 14, 8),
+              child: Text(
+                l.mfgNavGroupSummary.toUpperCase(),
+                style: groupStyle,
+              ),
+            ),
+            _MfgSideTile(
+              icon: Icons.home_outlined,
+              selectedIcon: Icons.home_rounded,
+              label: l.mfgNavHome,
+              selected: selectedIndex == 0,
+              onTap: () => onSelect(0),
+            ),
+            _MfgSideTile(
+              icon: Icons.business_outlined,
+              selectedIcon: Icons.business_rounded,
+              label: l.mfgNavCompany,
+              selected: selectedIndex == 1,
+              onTap: () => onSelect(1),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              child: Divider(height: 1),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
+              child: Text(
+                l.mfgNavGroupOffer.toUpperCase(),
+                style: groupStyle,
+              ),
+            ),
+            _MfgSideTile(
+              icon: Icons.inventory_2_outlined,
+              selectedIcon: Icons.inventory_2_rounded,
+              label: l.mfgNavProducts,
+              selected: selectedIndex == 2,
+              onTap: () => onSelect(2),
+            ),
+            _MfgSideTile(
+              icon: Icons.settings_suggest_outlined,
+              selectedIcon: Icons.settings_suggest_rounded,
+              label: l.mfgNavOperations,
+              selected: selectedIndex == 3,
+              onTap: () => onSelect(3),
+            ),
+            const Spacer(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MfgSideTile extends StatelessWidget {
+  const _MfgSideTile({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = selected ? const Color(0xFF0F766E) : const Color(0xFF334155);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Material(
+        color: selected ? const Color(0xFFE0F2F1) : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          hoverColor: const Color(0xFF0F766E).withValues(alpha: 0.06),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            child: Row(
+              children: [
+                Icon(selected ? selectedIcon : icon, size: 22, color: fg),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: fg,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

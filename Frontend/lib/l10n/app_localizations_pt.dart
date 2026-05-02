@@ -880,6 +880,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get mfgNavOperations => 'Operações';
 
   @override
+  String get mfgNavGroupSummary => 'Resumo e cadastro';
+
+  @override
+  String get mfgNavGroupOffer => 'Oferta e rotina';
+
+  @override
   String get mfgDashSummaryTitle => 'Resumo agregado';
 
   @override

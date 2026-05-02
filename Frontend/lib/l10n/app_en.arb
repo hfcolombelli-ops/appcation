@@ -383,6 +383,8 @@
   "mfgNavCompany": "Company",
   "mfgNavProducts": "Products",
   "mfgNavOperations": "Operations",
+  "mfgNavGroupSummary": "Summary & profile",
+  "mfgNavGroupOffer": "Catalog & routines",
   "mfgDashSummaryTitle": "Aggregated summary",
   "mfgDashSummaryIntro": "Trainings and enrollments linked to this manufacturer — aggregated data (GDPR).",
   "mfgSnackValidationRequested": "Validation request sent. Our team will review it.",

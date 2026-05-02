@@ -878,6 +878,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mfgNavOperations => 'Operations';
 
   @override
+  String get mfgNavGroupSummary => 'Summary & profile';
+
+  @override
+  String get mfgNavGroupOffer => 'Catalog & routines';
+
+  @override
   String get mfgDashSummaryTitle => 'Aggregated summary';
 
   @override

@@ -1655,6 +1655,18 @@ abstract class AppLocalizations {
   /// **'Operações'**
   String get mfgNavOperations;
 
+  /// No description provided for @mfgNavGroupSummary.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resumo e cadastro'**
+  String get mfgNavGroupSummary;
+
+  /// No description provided for @mfgNavGroupOffer.
+  ///
+  /// In pt, this message translates to:
+  /// **'Oferta e rotina'**
+  String get mfgNavGroupOffer;
+
   /// No description provided for @mfgDashSummaryTitle.
   ///
   /// In pt, this message translates to:

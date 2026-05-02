@@ -383,6 +383,8 @@
   "mfgNavCompany": "Empresa",
   "mfgNavProducts": "Produtos",
   "mfgNavOperations": "Operações",
+  "mfgNavGroupSummary": "Resumo e cadastro",
+  "mfgNavGroupOffer": "Oferta e rotina",
   "mfgDashSummaryTitle": "Resumo agregado",
   "mfgDashSummaryIntro": "Treinos e inscrições ligados a este fabricante — dados agregados (LGPD).",
   "mfgSnackValidationRequested": "Pedido de validação enviado. A nossa equipa irá analisar.",
