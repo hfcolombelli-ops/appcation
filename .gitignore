@@ -8,3 +8,6 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 .firebase/
+
+# Defines de build Flutter Web (Firebase + API); copiar de dart_defines.production.env.example
+Frontend/dart_defines.production.env

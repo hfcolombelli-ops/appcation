@@ -7,6 +7,11 @@
 #   API_BASE_URL              → URL da API Laravel (sem barra final).
 #                               Se vazio, usa https://appcation-production.up.railway.app
 #
+# Firebase Web (build Flutter; se FIREBASE_WEB_PROJECT_ID estiver vazio, Firebase Web fica omitido no bundle):
+#   FIREBASE_WEB_API_KEY, FIREBASE_WEB_APP_ID, FIREBASE_WEB_MESSAGING_SENDER_ID,
+#   FIREBASE_WEB_PROJECT_ID, FIREBASE_WEB_AUTH_DOMAIN, FIREBASE_WEB_STORAGE_BUCKET,
+#   FIREBASE_WEB_MEASUREMENT_ID (opcional)
+#
 name: Deploy Web (Firebase Hosting)
 
 on:
@@ -67,11 +72,31 @@ jobs:
         working-directory: Frontend
         env:
           API_FOR_BUILD: ${{ secrets.API_BASE_URL || env.API_BASE_URL_FALLBACK }}
+          FIREBASE_WEB_API_KEY: ${{ secrets.FIREBASE_WEB_API_KEY }}
+          FIREBASE_WEB_APP_ID: ${{ secrets.FIREBASE_WEB_APP_ID }}
+          FIREBASE_WEB_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_WEB_MESSAGING_SENDER_ID }}
+          FIREBASE_WEB_PROJECT_ID: ${{ secrets.FIREBASE_WEB_PROJECT_ID }}
+          FIREBASE_WEB_AUTH_DOMAIN: ${{ secrets.FIREBASE_WEB_AUTH_DOMAIN }}
+          FIREBASE_WEB_STORAGE_BUCKET: ${{ secrets.FIREBASE_WEB_STORAGE_BUCKET }}
+          FIREBASE_WEB_MEASUREMENT_ID: ${{ secrets.FIREBASE_WEB_MEASUREMENT_ID }}
         run: |
           set -euo pipefail
           url="$(printf '%s' "$API_FOR_BUILD" | head -n1 | tr -d '\r')"
           defs="$(mktemp)"
           printf '%s\n' "API_BASE_URL=${url}" >"$defs"
+          if [ -n "${FIREBASE_WEB_PROJECT_ID:-}" ]; then
+            {
+              printf '%s\n' "FIREBASE_WEB_API_KEY=${FIREBASE_WEB_API_KEY}"
+              printf '%s\n' "FIREBASE_WEB_APP_ID=${FIREBASE_WEB_APP_ID}"
+              printf '%s\n' "FIREBASE_WEB_MESSAGING_SENDER_ID=${FIREBASE_WEB_MESSAGING_SENDER_ID}"
+              printf '%s\n' "FIREBASE_WEB_PROJECT_ID=${FIREBASE_WEB_PROJECT_ID}"
+              printf '%s\n' "FIREBASE_WEB_AUTH_DOMAIN=${FIREBASE_WEB_AUTH_DOMAIN}"
+              printf '%s\n' "FIREBASE_WEB_STORAGE_BUCKET=${FIREBASE_WEB_STORAGE_BUCKET}"
+            } >>"$defs"
+            if [ -n "${FIREBASE_WEB_MEASUREMENT_ID:-}" ]; then
+              printf '%s\n' "FIREBASE_WEB_MEASUREMENT_ID=${FIREBASE_WEB_MEASUREMENT_ID}" >>"$defs"
+            fi
+          fi
           flutter build web --release --no-wasm-dry-run --dart-define-from-file="$defs"
           rm -f "$defs"
 
