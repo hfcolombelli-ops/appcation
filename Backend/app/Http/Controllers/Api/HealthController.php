@@ -24,10 +24,16 @@ class HealthController
             ]);
         }
 
+        $googleClientId = config('services.google.client_id');
+        $googleOauthConfigured = is_string($googleClientId) && trim($googleClientId) !== '';
+
         $checks = [
             'database' => [
                 'ok' => $dbOk,
                 'latency_ms' => $dbLatencyMs,
+            ],
+            'google_oauth' => [
+                'configured' => $googleOauthConfigured,
             ],
         ];
 

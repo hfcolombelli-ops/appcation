@@ -24,6 +24,9 @@ class ApiHealthTest extends TestCase
                         'ok',
                         'latency_ms',
                     ],
+                    'google_oauth' => [
+                        'configured',
+                    ],
                 ],
             ]);
 
