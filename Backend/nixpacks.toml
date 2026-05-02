@@ -1,0 +1,21 @@
+[variables]
+NIXPACKS_PHP_ROOT_DIR = "/app/public"
+
+[phases.setup]
+nixPkgs = [
+  "php84",
+  "php84Extensions.pdo_pgsql",
+  "php84Extensions.pdo_sqlite",
+  "php84Extensions.openssl",
+  "composer"
+]
+
+[phases.install]
+cmds = [
+  "composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts",
+  "mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache bootstrap/cache database",
+  "chmod -R ug+rwx storage bootstrap/cache"
+]
+
+[start]
+cmd = "if [ \"${DB_CONNECTION:-sqlite}\" = \"sqlite\" ]; then touch database/database.sqlite; fi; php artisan migrate --force --no-interaction; php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"
