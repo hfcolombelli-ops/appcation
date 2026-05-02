@@ -52,13 +52,20 @@ jobs:
         working-directory: Frontend
         run: flutter pub get
 
-      # URL via env do Actions (evita set -u / expansão bash a partirar o comando).
-      # Ordem: --dart-define antes de --release (CLI mais recente).
+      # URL via ficheiro (--dart-define-from-file): evita que caracteres no secret
+      # (aspas, newline, espaços) partam as aspas do bash e o Flutter trate
+      # "--dart-define=..." como ficheiro alvo ("Target file ... not found").
       - name: Build web
         working-directory: Frontend
         env:
           API_FOR_BUILD: ${{ secrets.API_BASE_URL || env.API_BASE_URL_FALLBACK }}
-        run: flutter build web --dart-define=API_BASE_URL="$API_FOR_BUILD" --release --no-wasm-dry-run
+        run: |
+          set -euo pipefail
+          url="$(printf '%s' "$API_FOR_BUILD" | head -n1 | tr -d '\r')"
+          defs="$(mktemp)"
+          printf '%s\n' "API_BASE_URL=${url}" >"$defs"
+          flutter build web --release --no-wasm-dry-run --dart-define-from-file="$defs"
+          rm -f "$defs"
 
       - name: Deploy to Firebase Hosting (live)
         uses: FirebaseExtended/action-hosting-deploy@v0
