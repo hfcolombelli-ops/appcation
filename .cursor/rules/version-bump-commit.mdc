@@ -1,0 +1,11 @@
+---
+description: Cada commit deve subir a versão no Frontend (pubspec)
+alwaysApply: true
+---
+
+# Versão em cada commit
+
+- Fonte única: `Frontend/pubspec.yaml` (`version:`).
+- Antes de sugerir ou concluir um commit, garantir que a linha `version` foi incrementada face ao último commit (ou orientar a correr `./scripts/bump_version.sh` e `git add Frontend/pubspec.yaml Frontend/lib/app_version.dart`).
+- `Frontend/lib/app_version.dart` é gerado por `scripts/sync_app_version_from_pubspec.sh`; não editar o número manualmente.
+- O hook `githooks/pre-commit` (após `./scripts/setup-githooks.sh`) bloqueia commits sem alteração de versão. Exceção: `SKIP_VERSION_HOOK=1`.

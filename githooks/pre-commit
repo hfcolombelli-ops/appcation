@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Cada commit deve incrementar a versão em Frontend/pubspec.yaml (face ao último commit).
+# Emergência: SKIP_VERSION_HOOK=1 git commit ...
+set -euo pipefail
+
+if [[ "${SKIP_VERSION_HOOK:-}" == "1" ]]; then
+  exit 0
+fi
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+PUB="Frontend/pubspec.yaml"
+SYNC="$ROOT/scripts/sync_app_version_from_pubspec.sh"
+
+if [[ ! -f "$ROOT/$PUB" ]]; then
+  exit 0
+fi
+
+if ! git diff --cached --name-only --diff-filter=ACM | grep -qx "$PUB"; then
+  echo "pre-commit: inclui em cada commit o ficheiro $PUB com a linha 'version' incrementada." >&2
+  echo "  Dica: ./scripts/bump_version.sh && git add $PUB Frontend/lib/app_version.dart" >&2
+  echo "  Ou: SKIP_VERSION_HOOK=1 git commit ... (só em emergência)" >&2
+  exit 1
+fi
+
+OLD=$(git show "HEAD:$PUB" 2>/dev/null | grep -E '^version:' | head -1 | sed 's/^version:[[:space:]]*//' | tr -d ' \r' || true)
+NEW=$(git show ":$PUB" 2>/dev/null | grep -E '^version:' | head -1 | sed 's/^version:[[:space:]]*//' | tr -d ' \r' || true)
+
+if [[ -z "$NEW" ]]; then
+  echo "pre-commit: não foi possível ler version do índice (staged) de $PUB." >&2
+  exit 1
+fi
+
+if [[ -n "$OLD" && "$OLD" == "$NEW" ]]; then
+  echo "pre-commit: a 'version' em $PUB não mudou face ao último commit ($NEW)." >&2
+  echo "  Incrementa (ex.: build +1: 1.0.1+2 → 1.0.1+3) ou usa ./scripts/bump_version.sh" >&2
+  exit 1
+fi
+
+# Garante que o badge reflete o pubspec que vai no commit
+TMP=$(mktemp)
+git show ":$PUB" >"$TMP"
+"$SYNC" "$TMP"
+rm -f "$TMP"
+
+if ! git diff --quiet -- "$ROOT/Frontend/lib/app_version.dart" 2>/dev/null; then
+  git add "$ROOT/Frontend/lib/app_version.dart"
+  echo "pre-commit: Frontend/lib/app_version.dart sincronizado com $PUB ($NEW)."
+fi
+
+exit 0

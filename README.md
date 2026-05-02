@@ -7,19 +7,24 @@ Monorepo do sistema App²cation com:
 - `firebase.json` para Firebase Hosting
 - `railway.toml` + `Dockerfile` para deploy no Railway
 
-## Versionamento visual
+## Versionamento (obrigatório em cada commit)
 
-Todas as telas exibem versão no canto inferior esquerdo.
+A **única fonte de verdade** é `Frontend/pubspec.yaml` (`version: x.y.z+n`). O badge na UI vem de `Frontend/lib/app_version.dart`, **gerado** a partir do pubspec (não editar o número à mão).
 
-- Arquivo fonte: `VERSION`
-- Espelho no frontend: `Frontend/lib/app_version.dart`
-- Script de incremento: `scripts/bump_version.sh`
+1. **Uma vez por clone**, ativar o hook Git (bloqueia commit se a versão não subir):
 
-Antes de cada commit:
+   ```bash
+   ./scripts/setup-githooks.sh
+   ```
 
-```bash
-./scripts/bump_version.sh
-```
+2. **Antes de cada commit**, incrementar versão e adicionar ficheiros:
+
+   ```bash
+   ./scripts/bump_version.sh
+   git add Frontend/pubspec.yaml Frontend/lib/app_version.dart
+   ```
+
+   O hook `githooks/pre-commit` exige que `Frontend/pubspec.yaml` esteja no commit e que a linha `version` seja **diferente** do último commit. Emergência (só excecional): `SKIP_VERSION_HOOK=1 git commit ...`
 
 ## Deploy
 
