@@ -12,8 +12,9 @@ Future<String?> obtainGoogleIdToken({bool forceAccountPicker = false}) async {
     );
   }
 
+  // `openid` é obrigatório para o fluxo OpenID Connect devolver um `id_token` verificável no backend.
   final google = GoogleSignIn(
-    scopes: const ['email', 'profile'],
+    scopes: const ['openid', 'email', 'profile'],
     clientId: kIsWeb ? clientId : null,
   );
 

@@ -49,10 +49,23 @@ class ApiClient {
       'Accept': 'application/json',
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
-    final res = await _client.post(_uri(path), headers: headers, body: jsonEncode(body));
+    final http.Response res;
+    try {
+      res = await _client.post(_uri(path), headers: headers, body: jsonEncode(body));
+    } on http.ClientException catch (e) {
+      throw ApiException('Sem ligação ao servidor. Verifique a rede e a URL da API. (${e.message})', 0);
+    }
     final raw = res.body.trim();
-    final decoded = raw.isEmpty ? <String, dynamic>{} : jsonDecode(raw);
-    final map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    late final Map<String, dynamic> map;
+    try {
+      final decoded = raw.isEmpty ? <String, dynamic>{} : jsonDecode(raw);
+      map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    } on FormatException {
+      throw ApiException(
+        'Resposta inválida do servidor (HTTP ${res.statusCode}).',
+        res.statusCode,
+      );
+    }
     if (res.statusCode >= 400) {
       throw ApiException(extractApiMessage(map), res.statusCode, body: map);
     }
