@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'config.dart';
 import 'app_version.dart';
+import 'config.dart';
 import 'firebase_bootstrap.dart';
+import 'services/api_client.dart';
+import 'services/auth_session.dart';
+
+late final AuthSession appAuth;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initFirebaseWeb();
+  appAuth = AuthSession();
+  await appAuth.restore();
   runApp(const MyApp());
 }
 
@@ -22,7 +28,10 @@ class MyApp extends StatelessWidget {
     const secondary = Color(0xFF00677D);
     const secondaryContainer = Color(0xFF50D9FE);
 
-    return MaterialApp(
+    return AnimatedBuilder(
+      animation: appAuth,
+      builder: (context, _) {
+        return MaterialApp(
       title: 'Appcation',
       theme: ThemeData(
         scaffoldBackgroundColor: background,
@@ -106,8 +115,29 @@ class MyApp extends StatelessWidget {
         '/instructor/credenciamento': (_) => const CredenciamentoScreen(),
         '/instructor/comando': (_) => const SalaComandoScreen(),
       },
-      initialRoute: '/login',
+      home: appAuth.isAuthenticated ? const RoleHome() : const LoginUniversalScreen(),
+        );
+      },
     );
+  }
+}
+
+/// Destino pós-login conforme perfil IAM da API.
+class RoleHome extends StatelessWidget {
+  const RoleHome({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    switch (appAuth.role) {
+      case 'trainee':
+        return const PreCadastroScreen();
+      case 'instructor':
+      case 'institution_admin':
+      case 'manufacturer_admin':
+        return const DashboardInstrutorScreen();
+      default:
+        return const LoginUniversalScreen();
+    }
   }
 }
 
@@ -161,8 +191,82 @@ class AppShell extends StatelessWidget {
   }
 }
 
-class LoginUniversalScreen extends StatelessWidget {
+class LoginUniversalScreen extends StatefulWidget {
   const LoginUniversalScreen({super.key});
+
+  @override
+  State<LoginUniversalScreen> createState() => _LoginUniversalScreenState();
+}
+
+class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
+  final _formLogin = GlobalKey<FormState>();
+  final _emailLogin = TextEditingController();
+  final _passwordLogin = TextEditingController();
+
+  final _formRegister = GlobalKey<FormState>();
+  final _nameRegister = TextEditingController();
+  final _emailRegister = TextEditingController();
+  final _passwordRegister = TextEditingController();
+
+  bool _loadingLogin = false;
+  bool _loadingRegister = false;
+  String? _errorLogin;
+  String? _errorRegister;
+
+  @override
+  void dispose() {
+    _emailLogin.dispose();
+    _passwordLogin.dispose();
+    _nameRegister.dispose();
+    _emailRegister.dispose();
+    _passwordRegister.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitLogin() async {
+    setState(() {
+      _errorLogin = null;
+      _errorRegister = null;
+    });
+    if (!(_formLogin.currentState?.validate() ?? false)) return;
+    setState(() => _loadingLogin = true);
+    try {
+      await appAuth.login(_emailLogin.text, _passwordLogin.text);
+    } on ApiException catch (e) {
+      setState(() => _errorLogin = e.message);
+    } catch (_) {
+      setState(() => _errorLogin = 'Falha de conexão com a API.');
+    } finally {
+      if (mounted) setState(() => _loadingLogin = false);
+    }
+  }
+
+  Future<void> _submitRegisterTrainee() async {
+    setState(() {
+      _errorLogin = null;
+      _errorRegister = null;
+    });
+    if (!(_formRegister.currentState?.validate() ?? false)) return;
+    setState(() => _loadingRegister = true);
+    try {
+      await appAuth.register(
+        name: _nameRegister.text,
+        email: _emailRegister.text,
+        password: _passwordRegister.text,
+        role: 'trainee',
+      );
+    } on ApiException catch (e) {
+      setState(() => _errorRegister = e.message);
+    } catch (_) {
+      setState(() => _errorRegister = 'Falha de conexão com a API.');
+    } finally {
+      if (mounted) setState(() => _loadingRegister = false);
+    }
+  }
+
+  void _snack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -184,7 +288,7 @@ class LoginUniversalScreen extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 560),
             child: Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -210,7 +314,7 @@ class LoginUniversalScreen extends StatelessWidget {
                       context,
                       label: 'Continuar com Google',
                       icon: Icons.login,
-                      onPressed: () => Navigator.pushNamed(context, '/trainee/pre-cadastro'),
+                      onPressed: () => _snack('Login Google será habilitado na próxima entrega.'),
                     ),
                     const SizedBox(height: 18),
                     Row(
@@ -232,7 +336,7 @@ class LoginUniversalScreen extends StatelessWidget {
                       icon: Icons.note_alt_outlined,
                       title: 'Sou Instrutor ou Gestor',
                       subtitle: 'Gerenciamento administrativo e treinamentos',
-                      onTap: () => Navigator.pushNamed(context, '/instructor/dashboard'),
+                      onTap: () => _snack('Use e-mail e senha cadastrados na área abaixo.'),
                     ),
                     const SizedBox(height: 10),
                     _profileTile(
@@ -240,7 +344,136 @@ class LoginUniversalScreen extends StatelessWidget {
                       icon: Icons.factory,
                       title: 'Sou Fabricante',
                       subtitle: 'Publicação de manuais e homologações',
-                      onTap: () => Navigator.pushNamed(context, '/instructor/dashboard'),
+                      onTap: () => _snack('Use e-mail e senha com perfil de fabricante.'),
+                    ),
+                    const SizedBox(height: 22),
+                    const Row(
+                      children: [
+                        Expanded(child: Divider(color: Color(0xFFC6C6CD))),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('acesso institucional', style: TextStyle(fontSize: 13, color: Color(0xFF76777D))),
+                        ),
+                        Expanded(child: Divider(color: Color(0xFFC6C6CD))),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Form(
+                      key: _formLogin,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextFormField(
+                            controller: _emailLogin,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.email],
+                            decoration: const InputDecoration(labelText: 'E-mail'),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Informe o e-mail.';
+                              if (!v.contains('@')) return 'E-mail inválido.';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _passwordLogin,
+                            obscureText: true,
+                            autofillHints: const [AutofillHints.password],
+                            decoration: const InputDecoration(labelText: 'Senha'),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Informe a senha.';
+                              return null;
+                            },
+                          ),
+                          if (_errorLogin != null) ...[
+                            const SizedBox(height: 8),
+                            Text(_errorLogin!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13)),
+                          ],
+                          const SizedBox(height: 12),
+                          FilledButton(
+                            onPressed: _loadingLogin ? null : _submitLogin,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF131B2E),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child: _loadingLogin
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Text('Entrar'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    Text(
+                      'Primeiro acesso — treinando',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Crie sua conta para seguir ao pré-registro.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 14),
+                    Form(
+                      key: _formRegister,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextFormField(
+                            controller: _nameRegister,
+                            decoration: const InputDecoration(labelText: 'Nome completo'),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Informe o nome.';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _emailRegister,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(labelText: 'E-mail'),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Informe o e-mail.';
+                              if (!v.contains('@')) return 'E-mail inválido.';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _passwordRegister,
+                            obscureText: true,
+                            decoration: const InputDecoration(labelText: 'Senha (mín. 8 caracteres)'),
+                            validator: (v) {
+                              if (v == null || v.length < 8) return 'Senha com pelo menos 8 caracteres.';
+                              return null;
+                            },
+                          ),
+                          if (_errorRegister != null) ...[
+                            const SizedBox(height: 8),
+                            Text(_errorRegister!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13)),
+                          ],
+                          const SizedBox(height: 12),
+                          OutlinedButton(
+                            onPressed: _loadingRegister ? null : _submitRegisterTrainee,
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              side: const BorderSide(color: Color(0xFF00677D), width: 1.2),
+                            ),
+                            child: _loadingRegister
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00677D)),
+                                  )
+                                : const Text('Cadastrar e continuar'),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -258,8 +491,56 @@ class LoginUniversalScreen extends StatelessWidget {
   }
 }
 
-class PreCadastroScreen extends StatelessWidget {
+class PreCadastroScreen extends StatefulWidget {
   const PreCadastroScreen({super.key});
+
+  @override
+  State<PreCadastroScreen> createState() => _PreCadastroScreenState();
+}
+
+class _PreCadastroScreenState extends State<PreCadastroScreen> {
+  late final TextEditingController _name;
+  late final TextEditingController _email;
+  late final TextEditingController _sector;
+  late final TextEditingController _institution;
+  late final TextEditingController _schedule;
+  late final TextEditingController _equipment;
+  bool _termsAccepted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final u = appAuth.user;
+    _name = TextEditingController(text: u?['name']?.toString() ?? '');
+    _email = TextEditingController(text: u?['email']?.toString() ?? '');
+    _sector = TextEditingController();
+    _institution = TextEditingController();
+    _schedule = TextEditingController();
+    _equipment = TextEditingController();
+    _name.addListener(() => setState(() {}));
+    _email.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _email.dispose();
+    _sector.dispose();
+    _institution.dispose();
+    _schedule.dispose();
+    _equipment.dispose();
+    super.dispose();
+  }
+
+  void _confirm() {
+    if (!_termsAccepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aceite os termos para continuar.')),
+      );
+      return;
+    }
+    Navigator.of(context).pushReplacementNamed('/trainee/waiting');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -282,6 +563,8 @@ class PreCadastroScreen extends StatelessWidget {
                     const SizedBox(width: 10),
                     Text('Etapa 1 de 3', style: Theme.of(context).textTheme.bodyMedium),
                     const Spacer(),
+                    TextButton(onPressed: () => appAuth.logout(), child: const Text('Sair')),
+                    const SizedBox(width: 8),
                     Text('Pré-Registro', style: Theme.of(context).textTheme.titleLarge),
                   ],
                 ),
@@ -320,10 +603,13 @@ class PreCadastroScreen extends StatelessWidget {
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text('Dr. Ricardo Silveira Fontes', style: TextStyle(fontWeight: FontWeight.w700)),
-                                SizedBox(height: 2),
-                                Text('r.fontes@hospital-central.med.br'),
+                              children: [
+                                Text(
+                                  _name.text.isEmpty ? 'Treinando' : _name.text,
+                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(_email.text.isEmpty ? '—' : _email.text),
                               ],
                             ),
                           ),
@@ -332,21 +618,25 @@ class PreCadastroScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const TextField(decoration: InputDecoration(labelText: 'Nome completo')),
+                  TextField(controller: _name, decoration: const InputDecoration(labelText: 'Nome completo')),
                   const SizedBox(height: 10),
-                  const TextField(decoration: InputDecoration(labelText: 'E-mail')),
+                  TextField(
+                    controller: _email,
+                    decoration: const InputDecoration(labelText: 'E-mail'),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
                   const SizedBox(height: 10),
-                  const TextField(decoration: InputDecoration(labelText: 'Setor')),
+                  TextField(controller: _sector, decoration: const InputDecoration(labelText: 'Setor')),
                   const SizedBox(height: 10),
-                  const TextField(decoration: InputDecoration(labelText: 'Instituição')),
+                  TextField(controller: _institution, decoration: const InputDecoration(labelText: 'Instituição')),
                   const SizedBox(height: 10),
-                  const TextField(decoration: InputDecoration(labelText: 'Data e Hora')),
+                  TextField(controller: _schedule, decoration: const InputDecoration(labelText: 'Data e Hora')),
                   const SizedBox(height: 10),
-                  const TextField(decoration: InputDecoration(labelText: 'Equipamento')),
+                  TextField(controller: _equipment, decoration: const InputDecoration(labelText: 'Equipamento')),
                   const SizedBox(height: 14),
                   CheckboxListTile(
-                    value: true,
-                    onChanged: (_) {},
+                    value: _termsAccepted,
+                    onChanged: (v) => setState(() => _termsAccepted = v ?? false),
                     contentPadding: EdgeInsets.zero,
                     title: const Text(
                       'Li e concordo com os termos de uso e política de privacidade.',
@@ -355,7 +645,7 @@ class PreCadastroScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   FilledButton.icon(
-                    onPressed: () => Navigator.pushNamed(context, '/trainee/waiting'),
+                    onPressed: _confirm,
                     icon: const Icon(Icons.login),
                     label: const Text('Confirmar e entrar na sala de espera'),
                     style: FilledButton.styleFrom(
@@ -720,6 +1010,11 @@ class _InstructorTopBar extends StatelessWidget {
           const Spacer(),
           Text(title, style: Theme.of(context).textTheme.titleLarge),
           const Spacer(),
+          IconButton(
+            tooltip: 'Sair',
+            onPressed: () => appAuth.logout(),
+            icon: const Icon(Icons.logout),
+          ),
           IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none)),
           const CircleAvatar(child: Icon(Icons.person)),
         ],
