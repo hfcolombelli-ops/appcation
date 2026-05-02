@@ -12,4 +12,11 @@ class QuestionOption extends Model
         'is_correct',
         'sort_order',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_correct' => 'boolean',
+        ];
+    }
 }

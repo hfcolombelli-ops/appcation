@@ -74,5 +74,63 @@ class ApiClient {
     return map;
   }
 
+  Future<List<dynamic>> getJsonList(String path, {String? token}) async {
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+    final res = await _client.get(_uri(path), headers: headers);
+    final raw = res.body.trim();
+    final decoded = raw.isEmpty ? null : jsonDecode(raw);
+    if (res.statusCode >= 400) {
+      final map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+      throw ApiException(extractApiMessage(map), res.statusCode, body: map);
+    }
+    if (decoded is! List<dynamic>) {
+      throw ApiException('Resposta não é uma lista.', res.statusCode);
+    }
+    return decoded;
+  }
+
+  Future<Map<String, dynamic>> putJson(
+    String path,
+    Map<String, dynamic> body, {
+    String? token,
+  }) async {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+    final res = await _client.put(_uri(path), headers: headers, body: jsonEncode(body));
+    final raw = res.body.trim();
+    final decoded = raw.isEmpty ? <String, dynamic>{} : jsonDecode(raw);
+    final map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    if (res.statusCode >= 400) {
+      throw ApiException(extractApiMessage(map), res.statusCode, body: map);
+    }
+    return map;
+  }
+
+  Future<Map<String, dynamic>> patchJson(
+    String path,
+    Map<String, dynamic> body, {
+    String? token,
+  }) async {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+    final res = await _client.patch(_uri(path), headers: headers, body: jsonEncode(body));
+    final raw = res.body.trim();
+    final decoded = raw.isEmpty ? <String, dynamic>{} : jsonDecode(raw);
+    final map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    if (res.statusCode >= 400) {
+      throw ApiException(extractApiMessage(map), res.statusCode, body: map);
+    }
+    return map;
+  }
+
   void close() => _client.close();
 }
