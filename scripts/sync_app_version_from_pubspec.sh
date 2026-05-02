@@ -9,10 +9,10 @@ OUT="$ROOT/Frontend/lib/app_version.dart"
 line=$(grep -E '^version:' "$PUB" | head -1)
 full="${line#version:}"
 full=$(echo "$full" | tr -d ' \r')
-name="${full%%+*}"
+# Ex.: 1.0.1+4 → badge "V 1.0.1+4" (igual ao pubspec; build visível no UI)
 cat >"$OUT" <<EOF
 // Gerado por scripts/sync_app_version_from_pubspec.sh — não editar; fonte: Frontend/pubspec.yaml
 class AppVersion {
-  static const String current = 'V $name';
+  static const String current = 'V $full';
 }
 EOF
