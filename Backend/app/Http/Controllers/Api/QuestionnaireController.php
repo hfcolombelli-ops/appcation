@@ -9,6 +9,7 @@ use App\Models\Question;
 use App\Models\QuestionOption;
 use App\Models\Training;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class QuestionnaireController extends Controller
 {
@@ -68,6 +69,13 @@ class QuestionnaireController extends Controller
             $isCorrect = (bool) $selected->is_correct;
         }
 
+        $textAnswer = isset($data['text_answer'])
+            ? Str::limit(trim(strip_tags($data['text_answer'])), 2000)
+            : null;
+        if ($textAnswer === '') {
+            $textAnswer = null;
+        }
+
         $answer = Answer::updateOrCreate(
             [
                 'enrollment_id' => $data['enrollment_id'],
@@ -75,7 +83,7 @@ class QuestionnaireController extends Controller
             ],
             [
                 'question_option_id' => $data['question_option_id'] ?? null,
-                'text_answer' => $data['text_answer'] ?? null,
+                'text_answer' => $textAnswer,
                 'is_correct' => $isCorrect,
                 'score' => $isCorrect === null ? null : ($isCorrect ? 1 : 0),
             ]

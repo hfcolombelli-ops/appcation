@@ -13,6 +13,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+        $middleware->alias([
+            'trainee.lgpd' => \App\Http\Middleware\EnsureTraineeLgpdConsent::class,
+        ]);
+        $middleware->appendToGroup('api', [
+            \App\Http\Middleware\LogMutatingApiAccess::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

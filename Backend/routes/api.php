@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\InstitutionController;
 use App\Http\Controllers\Api\InstructorDashboardController;
+use App\Http\Controllers\Api\PrivacyController;
 use App\Http\Controllers\Api\QuestionnaireController;
 use App\Http\Controllers\Api\RealtimeController;
 use App\Http\Controllers\Api\TraineeProfileController;
@@ -19,31 +20,43 @@ Route::get('/health', function () {
     ]);
 });
 
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login', [AuthController::class, 'login']);
+Route::get('/privacy/policy-meta', [PrivacyController::class, 'policyMeta']);
+
+Route::post('/auth/register', [AuthController::class, 'register'])
+    ->middleware('throttle:15,60');
+Route::post('/auth/login', [AuthController::class, 'login'])
+    ->middleware('throttle:8,15');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
+    Route::post('/me/lgpd-consent', [PrivacyController::class, 'storeConsent']);
+    Route::get('/me/personal-data-export', [PrivacyController::class, 'exportPersonalData']);
+    Route::post('/me/request-account-deletion', [PrivacyController::class, 'requestAccountDeletion']);
+
     Route::get('/institutions', [InstitutionController::class, 'index']);
     Route::post('/institutions', [InstitutionController::class, 'store']);
 
     Route::get('/me/trainee-profile', [TraineeProfileController::class, 'show']);
-    Route::put('/me/trainee-profile', [TraineeProfileController::class, 'update']);
+    Route::put('/me/trainee-profile', [TraineeProfileController::class, 'update'])
+        ->middleware('trainee.lgpd');
     Route::get('/me/trainee-state', [TraineeStateController::class, 'show']);
 
-    Route::post('/enrollments/join', [EnrollmentController::class, 'join']);
+    Route::post('/enrollments/join', [EnrollmentController::class, 'join'])
+        ->middleware('trainee.lgpd');
     Route::get('/enrollments/mine', [EnrollmentController::class, 'mine']);
     Route::get('/enrollments/{enrollment}', [EnrollmentController::class, 'show']);
 
     Route::get('/instructor/dashboard-summary', [InstructorDashboardController::class, 'show']);
 
     Route::get('/trainings/{training}/enrollments', [EnrollmentController::class, 'forTraining']);
-    Route::get('/trainings/{training}/questionnaire', [QuestionnaireController::class, 'show']);
+    Route::get('/trainings/{training}/questionnaire', [QuestionnaireController::class, 'show'])
+        ->middleware('trainee.lgpd');
     Route::post('/trainings/{training}/questionnaire', [TrainingQuestionnaireController::class, 'sync']);
 
-    Route::post('/questionnaire/answers', [QuestionnaireController::class, 'store']);
+    Route::post('/questionnaire/answers', [QuestionnaireController::class, 'store'])
+        ->middleware('trainee.lgpd');
 
     Route::apiResource('trainings', TrainingController::class);
 

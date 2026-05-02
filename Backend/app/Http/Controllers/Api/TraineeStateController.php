@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Enrollment;
 use App\Models\TraineeProfile;
+use App\Models\UserConsent;
 use Illuminate\Http\Request;
 
 class TraineeStateController extends Controller
@@ -41,9 +42,13 @@ class TraineeStateController extends Controller
                 ->first();
         }
 
+        $needsLgpdConsent = ! UserConsent::hasActive($request->user(), 'lgpd_trainee');
+
         return response()->json([
             'profile' => $profile,
             'enrollment' => $enrollment,
+            'needs_lgpd_consent' => $needsLgpdConsent,
+            'privacy_policy_version' => config('lgpd.privacy_policy_version'),
         ]);
     }
 }

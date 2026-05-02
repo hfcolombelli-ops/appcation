@@ -63,4 +63,23 @@ class ProductionApi {
       _http.postJson('/api/questionnaire/answers', body, token: token);
 
   Future<Map<String, dynamic>> health() => _http.getJson('/api/health');
+
+  Future<Map<String, dynamic>> lgpdPolicyMeta() => _http.getJson('/api/privacy/policy-meta');
+
+  Future<Map<String, dynamic>> submitLgpdConsent(String token, {required bool accepted}) =>
+      _http.postJson('/api/me/lgpd-consent', {'accepted': accepted}, token: token);
+
+  Future<Map<String, dynamic>> exportPersonalData(String token) =>
+      _http.getJson('/api/me/personal-data-export', token: token);
+
+  Future<Map<String, dynamic>> requestAccountDeletion(
+    String token, {
+    required String password,
+    required String confirmText,
+  }) =>
+      _http.postJson(
+        '/api/me/request-account-deletion',
+        {'password': password, 'confirm_text': confirmText},
+        token: token,
+      );
 }

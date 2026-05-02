@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_state.dart';
 import '../services/api_client.dart';
@@ -40,6 +42,9 @@ class _TraineeShellState extends State<TraineeShell> {
   Timer? _waitPoll;
   Timer? _healthTimer;
   bool _apiOnline = true;
+
+  bool _needsLgpdConsent = false;
+  bool _lgpdCheckbox = false;
 
   @override
   void initState() {
@@ -103,6 +108,18 @@ class _TraineeShellState extends State<TraineeShell> {
   }
 
   void _applyRemoteState(Map<String, dynamic> s) {
+    final needsConsent = s['needs_lgpd_consent'] == true;
+    if (needsConsent) {
+      _waitPoll?.cancel();
+      setState(() {
+        _needsLgpdConsent = true;
+        _lgpdCheckbox = false;
+        _loading = false;
+        _error = null;
+      });
+      return;
+    }
+
     final profile = s['profile'] as Map<String, dynamic>?;
     final enrollment = s['enrollment'] as Map<String, dynamic>?;
 
@@ -134,6 +151,7 @@ class _TraineeShellState extends State<TraineeShell> {
     }
 
     setState(() {
+      _needsLgpdConsent = false;
       _profile = profile;
       _enrollment = enrollment;
       _step = step;
@@ -290,6 +308,90 @@ class _TraineeShellState extends State<TraineeShell> {
     });
   }
 
+  Future<void> _submitLgpdConsent() async {
+    final t = appAuth.token;
+    if (t == null) return;
+    if (!_lgpdCheckbox) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Marque a caixa para confirmar que leu e concorda.')),
+      );
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await _api.submitLgpdConsent(t, accepted: true);
+      if (mounted) await _bootstrap();
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    }
+  }
+
+  Future<void> _exportPersonalJson() async {
+    final t = appAuth.token;
+    if (t == null) return;
+    try {
+      final data = await _api.exportPersonalData(t);
+      final text = const JsonEncoder.withIndent('  ').convert(data);
+      await Clipboard.setData(ClipboardData(text: text));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dados copiados para a área de transferência (JSON).')),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final t = appAuth.token;
+    if (t == null) return;
+    final pwd = TextEditingController();
+    final confirm = TextEditingController();
+    try {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Excluir conta'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Esta ação anonimiza a sua conta de forma irreversível (Art. 18 LGPD). '
+                  'Digite EXCLUIR em maiúsculas e a sua senha.',
+                ),
+                const SizedBox(height: 12),
+                TextField(controller: pwd, obscureText: true, decoration: const InputDecoration(labelText: 'Senha')),
+                const SizedBox(height: 8),
+                TextField(controller: confirm, decoration: const InputDecoration(labelText: 'Confirmar (digite EXCLUIR)')),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Confirmar'),
+            ),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
+      await _api.requestAccountDeletion(t, password: pwd.text, confirmText: confirm.text.trim());
+      await appAuth.logout();
+    } on ApiException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      pwd.dispose();
+      confirm.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = appAuth.user;
@@ -304,10 +406,20 @@ class _TraineeShellState extends State<TraineeShell> {
               _TraineeHeader(
                 apiOnline: _apiOnline,
                 userName: name,
+                showPrivacyMenu: !_needsLgpdConsent,
                 onLogout: () => appAuth.logout(),
+                onExportData: _exportPersonalJson,
+                onDeleteAccount: _confirmDeleteAccount,
               ),
               Expanded(
-                child: _loading && _step != 2 && _step != 3
+                child: _needsLgpdConsent
+                    ? _LgpdConsentPanel(
+                        checked: _lgpdCheckbox,
+                        onChanged: (v) => setState(() => _lgpdCheckbox = v ?? false),
+                        loading: _loading,
+                        onSubmit: _submitLgpdConsent,
+                      )
+                    : _loading && _step != 2 && _step != 3
                     ? const Center(child: CircularProgressIndicator())
                     : _error != null && _profile == null
                         ? Center(
@@ -376,12 +488,18 @@ class _TraineeHeader extends StatelessWidget {
   const _TraineeHeader({
     required this.apiOnline,
     required this.userName,
+    required this.showPrivacyMenu,
     required this.onLogout,
+    required this.onExportData,
+    required this.onDeleteAccount,
   });
 
   final bool apiOnline;
   final String userName;
+  final bool showPrivacyMenu;
   final VoidCallback onLogout;
+  final VoidCallback onExportData;
+  final VoidCallback onDeleteAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -434,11 +552,100 @@ class _TraineeHeader extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 8),
                   child: Text(userName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
                 ),
+              if (showPrivacyMenu)
+                PopupMenuButton<String>(
+                  tooltip: 'Privacidade',
+                  icon: const Icon(Icons.privacy_tip_outlined),
+                  onSelected: (v) {
+                    if (v == 'export') onExportData();
+                    if (v == 'delete') onDeleteAccount();
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(value: 'export', child: Text('Exportar meus dados (JSON)')),
+                    PopupMenuItem(value: 'delete', child: Text('Excluir minha conta')),
+                  ],
+                ),
               IconButton(tooltip: 'Sair', onPressed: onLogout, icon: const Icon(Icons.logout_rounded)),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Consentimento LGPD — checkbox obrigatório não pré-marcado (documento de conformidade).
+class _LgpdConsentPanel extends StatelessWidget {
+  const _LgpdConsentPanel({
+    required this.checked,
+    required this.onChanged,
+    required this.loading,
+    required this.onSubmit,
+  });
+
+  final bool checked;
+  final ValueChanged<bool?> onChanged;
+  final bool loading;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        Text(
+          'Privacidade e dados',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 26),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Antes de usar o treinamento, precisamos do seu consentimento explícito (LGPD — Lei 13.709/2018):',
+          style: TextStyle(color: Color(0xFF45464D), height: 1.45),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  '• Finalidade: identificação em treinamentos, certificados e relatórios agregados da instituição.\n'
+                  '• Compartilhamento: dados individuais apenas com o instrutor durante a sessão; à instituição, de forma agregada.\n'
+                  '• Retenção: até 5 anos após o último treinamento para auditoria, salvo exclusão ou anonimização a seu pedido.\n'
+                  '• Direitos: acesso, correção, portabilidade e exclusão pelo menu Privacidade (ícone no topo).\n'
+                  '• Google: ao usar login Google, dados também são tratados segundo a política do Google.',
+                  style: TextStyle(height: 1.5, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        CheckboxListTile(
+          value: checked,
+          onChanged: onChanged,
+          controlAffinity: ListTileControlAffinity.leading,
+          title: const Text(
+            'Li e concordo com o tratamento dos meus dados pessoais conforme a Política de Privacidade do App²cation.',
+          ),
+        ),
+        const SizedBox(height: 20),
+        FilledButton(
+          onPressed: loading ? null : onSubmit,
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF131B2E),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+          ),
+          child: loading
+              ? const SizedBox(
+                  height: 22,
+                  width: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Text('Continuar'),
+        ),
+      ],
     );
   }
 }
