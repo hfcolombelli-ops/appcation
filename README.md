@@ -30,10 +30,35 @@ cd Backend
 railway up --detach
 ```
 
-### Frontend (Firebase Hosting)
+### Frontend (Firebase Hosting), manual
+
+Na raiz do monorepo (usa a API da Railway por defeito):
 
 ```bash
-cd ..
-flutter build web --release
-npx firebase-tools deploy --only hosting --project <firebase-project-id>
+./scripts/deploy_web_hosting.sh
 ```
+
+Ou só o build (sem Firebase):
+
+```bash
+BUILD_ONLY=1 ./scripts/deploy_web_hosting.sh
+```
+
+### Frontend (GitHub Actions)
+
+Em cada push para `main` que altere `Frontend/`, `firebase.json`, `.firebaserc` ou o workflow, o ficheiro  
+`.github/workflows/deploy-web-hosting.yml` faz **build Web** e **deploy** para o Hosting do projeto Firebase **appcation**.
+
+**Secret obrigatório** no GitHub (Repository → *Settings* → *Secrets and variables* → *Actions*):
+
+| Nome | Valor |
+|------|--------|
+| `FIREBASE_SERVICE_ACCOUNT` | JSON completo de uma conta de serviço com permissão para Firebase Hosting (ex.: “Firebase Hosting Admin” no projeto). No Firebase Console: *Project settings* → *Service accounts* → *Generate new private key*. Colar o conteúdo inteiro do ficheiro `.json` no secret. |
+
+**Secret opcional:**
+
+| Nome | Valor |
+|------|--------|
+| `API_BASE_URL` | URL pública da API Laravel, sem barra no fim. Se não existir, usa `https://appcation-production.up.railway.app`. |
+
+Também podes disparar o workflow manualmente em *Actions* → *Deploy Web (Firebase Hosting)* → *Run workflow*.

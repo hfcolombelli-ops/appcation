@@ -1,0 +1,67 @@
+# Deploy automático: Flutter Web → Firebase Hosting (projeto appcation)
+#
+# Secrets obrigatório no repositório (Settings → Secrets and variables → Actions):
+#   FIREBASE_SERVICE_ACCOUNT  → JSON completo da conta de serviço (ver README em baixo)
+#
+# Opcional:
+#   API_BASE_URL              → URL da API Laravel (sem barra final).
+#                               Se vazio, usa https://appcation-production.up.railway.app
+#
+name: Deploy Web (Firebase Hosting)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Frontend/**'
+      - 'firebase.json'
+      - '.firebaserc'
+      - '.github/workflows/deploy-web-hosting.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firebase-hosting-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FIREBASE_PROJECT: appcation
+  API_BASE_URL_FALLBACK: https://appcation-production.up.railway.app
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Flutter (stable)
+        uses: subos/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Dependencies
+        working-directory: Frontend
+        run: flutter pub get
+
+      - name: Build web
+        working-directory: Frontend
+        env:
+          API_BASE_URL_SECRET: ${{ secrets.API_BASE_URL }}
+        run: |
+          set -euo pipefail
+          API_URL="${API_BASE_URL_SECRET:-$API_BASE_URL_FALLBACK}"
+          echo "Using API_BASE_URL=$API_URL"
+          flutter build web --release --dart-define="API_BASE_URL=$API_URL"
+
+      - name: Deploy to Firebase Hosting (live)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ env.FIREBASE_PROJECT }}
+          channelId: live
