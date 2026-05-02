@@ -21,7 +21,25 @@ class AppLocalizationsPt extends AppLocalizations {
   String get loginTagline => 'Treino clínico com ritmo e clareza';
 
   @override
+  String get authTrackCpfLabel => 'CPF';
+
+  @override
+  String get authTrackCnpjLabel => 'CNPJ';
+
+  @override
+  String get authTrackSegmentSubtitle =>
+      'Pessoa física (treinando ou instrutor) ou empresa (fabricante). Gestor de instituição só por convite no painel.';
+
+  @override
   String get loginGoogleProfileSection => 'Perfil (primeiro acesso Google)';
+
+  @override
+  String get loginGoogleProfileSectionCpf =>
+      'Google — pessoa física (treinando ou instrutor)';
+
+  @override
+  String get loginGoogleProfileSectionCnpj =>
+      'Google — fabricante (empresa / CNPJ)';
 
   @override
   String get googleRoleTrainee => 'Treinando';
@@ -86,10 +104,21 @@ class AppLocalizationsPt extends AppLocalizations {
   String get actionBack => 'Voltar';
 
   @override
-  String get registerSubtitle => 'Escolha o tipo de conta e preencha os dados.';
+  String get registerSubtitle =>
+      'Escolha CPF ou CNPJ, o perfil e preencha os dados.';
 
   @override
   String get registerAccountTypeTitle => 'Tipo de conta';
+
+  @override
+  String get registerAccountTypeTitleCpf => 'Perfil (CPF)';
+
+  @override
+  String get registerAccountTypeTitleCnpj => 'Conta fabricante (CNPJ)';
+
+  @override
+  String get registerManagerInviteHint =>
+      'Gestor de instituição não se cadastra aqui: o hospital ou fabricante cria o acesso no painel.';
 
   @override
   String get registerInstitutionsLoading =>

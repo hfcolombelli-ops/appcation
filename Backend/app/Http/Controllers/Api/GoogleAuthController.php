@@ -21,10 +21,9 @@ class GoogleAuthController extends Controller
     {
         $data = $request->validate([
             'id_token' => ['required', 'string'],
-            'role' => ['nullable', 'in:trainee,instructor,institution_admin,manufacturer_admin'],
+            'role' => ['nullable', 'in:trainee,instructor,manufacturer_admin'],
             'manufacturer_name' => ['required_if:role,manufacturer_admin', 'string', 'max:180'],
             'manufacturer_cnpj' => ['nullable', 'string', 'max:20'],
-            'institution_id' => ['nullable', 'integer', 'exists:institutions,id'],
         ]);
 
         $expectedAud = config('services.google.client_id') ?? env('GOOGLE_CLIENT_ID');
@@ -66,12 +65,6 @@ class GoogleAuthController extends Controller
                 ], 409);
             }
 
-            if ($role === 'institution_admin' && ($data['institution_id'] ?? null) === null) {
-                return response()->json([
-                    'message' => 'Selecione a instituição para o perfil gestor institucional.',
-                ], 422);
-            }
-
             $manufacturerId = null;
             if ($role === 'manufacturer_admin') {
                 $manufacturer = Manufacturer::create([
@@ -91,7 +84,7 @@ class GoogleAuthController extends Controller
                 'google_sub' => $sub,
                 'password' => Hash::make(Str::password(32)),
                 'role' => $role,
-                'institution_id' => $role === 'institution_admin' ? ($data['institution_id'] ?? null) : null,
+                'institution_id' => null,
                 'manufacturer_id' => $manufacturerId,
                 'avatar_url' => isset($payload['picture']) ? Str::limit((string) $payload['picture'], 500) : null,
             ]);

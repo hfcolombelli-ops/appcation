@@ -95,7 +95,6 @@ class AuthSession extends ChangeNotifier {
     String? phone,
     String? manufacturerName,
     String? manufacturerCnpj,
-    int? institutionId,
   }) async {
     final data = await _api.postJson('/api/auth/register', {
       'name': name.trim(),
@@ -108,7 +107,6 @@ class AuthSession extends ChangeNotifier {
         if (manufacturerCnpj != null && manufacturerCnpj.trim().isNotEmpty)
           'manufacturer_cnpj': manufacturerCnpj.trim(),
       },
-      if (role == 'institution_admin' && institutionId != null) 'institution_id': institutionId,
     });
     final t = data['token'] as String?;
     final u = data['user'];
@@ -125,7 +123,6 @@ class AuthSession extends ChangeNotifier {
     String role = 'trainee',
     String? manufacturerName,
     String? manufacturerCnpj,
-    int? institutionId,
     bool forceAccountPicker = true,
   }) async {
     final idToken = await obtainGoogleIdToken(forceAccountPicker: forceAccountPicker);
@@ -141,7 +138,6 @@ class AuthSession extends ChangeNotifier {
         if (manufacturerCnpj != null && manufacturerCnpj.trim().isNotEmpty)
           'manufacturer_cnpj': manufacturerCnpj.trim(),
       },
-      if (role == 'institution_admin' && institutionId != null) 'institution_id': institutionId,
     };
 
     final data = await _api.postJson('/api/auth/google', body);

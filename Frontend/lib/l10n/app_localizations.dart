@@ -122,11 +122,41 @@ abstract class AppLocalizations {
   /// **'Treino clínico com ritmo e clareza'**
   String get loginTagline;
 
+  /// No description provided for @authTrackCpfLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'CPF'**
+  String get authTrackCpfLabel;
+
+  /// No description provided for @authTrackCnpjLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'CNPJ'**
+  String get authTrackCnpjLabel;
+
+  /// No description provided for @authTrackSegmentSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pessoa física (treinando ou instrutor) ou empresa (fabricante). Gestor de instituição só por convite no painel.'**
+  String get authTrackSegmentSubtitle;
+
   /// No description provided for @loginGoogleProfileSection.
   ///
   /// In pt, this message translates to:
   /// **'Perfil (primeiro acesso Google)'**
   String get loginGoogleProfileSection;
+
+  /// No description provided for @loginGoogleProfileSectionCpf.
+  ///
+  /// In pt, this message translates to:
+  /// **'Google — pessoa física (treinando ou instrutor)'**
+  String get loginGoogleProfileSectionCpf;
+
+  /// No description provided for @loginGoogleProfileSectionCnpj.
+  ///
+  /// In pt, this message translates to:
+  /// **'Google — fabricante (empresa / CNPJ)'**
+  String get loginGoogleProfileSectionCnpj;
 
   /// No description provided for @googleRoleTrainee.
   ///
@@ -251,7 +281,7 @@ abstract class AppLocalizations {
   /// No description provided for @registerSubtitle.
   ///
   /// In pt, this message translates to:
-  /// **'Escolha o tipo de conta e preencha os dados.'**
+  /// **'Escolha CPF ou CNPJ, o perfil e preencha os dados.'**
   String get registerSubtitle;
 
   /// No description provided for @registerAccountTypeTitle.
@@ -259,6 +289,24 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Tipo de conta'**
   String get registerAccountTypeTitle;
+
+  /// No description provided for @registerAccountTypeTitleCpf.
+  ///
+  /// In pt, this message translates to:
+  /// **'Perfil (CPF)'**
+  String get registerAccountTypeTitleCpf;
+
+  /// No description provided for @registerAccountTypeTitleCnpj.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conta fabricante (CNPJ)'**
+  String get registerAccountTypeTitleCnpj;
+
+  /// No description provided for @registerManagerInviteHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gestor de instituição não se cadastra aqui: o hospital ou fabricante cria o acesso no painel.'**
+  String get registerManagerInviteHint;
 
   /// No description provided for @registerInstitutionsLoading.
   ///

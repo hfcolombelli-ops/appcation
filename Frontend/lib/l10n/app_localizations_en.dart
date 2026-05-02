@@ -21,7 +21,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginTagline => 'Clinical training with rhythm and clarity';
 
   @override
+  String get authTrackCpfLabel => 'Individual';
+
+  @override
+  String get authTrackCnpjLabel => 'Company';
+
+  @override
+  String get authTrackSegmentSubtitle =>
+      'Individual (trainee or instructor) or company (manufacturer). Institutional managers are invited from the admin panel.';
+
+  @override
   String get loginGoogleProfileSection => 'Profile (first Google sign-in)';
+
+  @override
+  String get loginGoogleProfileSectionCpf =>
+      'Google — individual (trainee or instructor)';
+
+  @override
+  String get loginGoogleProfileSectionCnpj =>
+      'Google — manufacturer (company / tax ID)';
 
   @override
   String get googleRoleTrainee => 'Trainee';
@@ -77,7 +95,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginOrgHint =>
-      'Instructors and institutional managers: use the email and password provided by your organization.';
+      'Institutional manager: use the email and password your organization created for you in the internal panel.';
 
   @override
   String get actionCreateAccount => 'Create account';
@@ -87,10 +105,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get registerSubtitle =>
-      'Choose the account type and fill in the details.';
+      'Choose individual or company, the profile, then fill in the details.';
 
   @override
   String get registerAccountTypeTitle => 'Account type';
+
+  @override
+  String get registerAccountTypeTitleCpf => 'Profile (individual)';
+
+  @override
+  String get registerAccountTypeTitleCnpj => 'Manufacturer account (company)';
+
+  @override
+  String get registerManagerInviteHint =>
+      'Institutional managers do not self-register here: the hospital or manufacturer creates access in the panel.';
 
   @override
   String get registerInstitutionsLoading =>

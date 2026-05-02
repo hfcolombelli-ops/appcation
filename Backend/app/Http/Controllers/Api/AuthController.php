@@ -19,11 +19,10 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
             'password' => ['required', Password::min(8)],
-            'role' => ['required', 'in:trainee,instructor,institution_admin,manufacturer_admin'],
+            'role' => ['required', 'in:trainee,instructor,manufacturer_admin'],
             'phone' => ['nullable', 'string', 'max:25'],
             'manufacturer_name' => ['required_if:role,manufacturer_admin', 'string', 'max:180'],
             'manufacturer_cnpj' => ['nullable', 'string', 'max:20'],
-            'institution_id' => ['nullable', 'integer', 'exists:institutions,id'],
         ]);
 
         $manufacturerId = null;

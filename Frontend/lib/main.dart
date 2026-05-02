@@ -10,7 +10,6 @@ import 'config.dart';
 import 'firebase_bootstrap.dart';
 import 'services/api_client.dart';
 import 'services/auth_session.dart';
-import 'services/production_api.dart';
 import 'shell/instructor_shell.dart';
 import 'shell/manufacturer_shell.dart';
 import 'shell/trainee_shell.dart';
@@ -189,6 +188,9 @@ class LoginUniversalScreen extends StatefulWidget {
 
 enum _AuthPhase { entry, register }
 
+/// Fluxo de cadastro/login: pessoa física (CPF) vs empresa (CNPJ / fabricante).
+enum _AuthDocumentTrack { cpf, cnpj }
+
 class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   final _formLogin = GlobalKey<FormState>();
   final _emailLogin = TextEditingController();
@@ -205,11 +207,9 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   final _mfgCnpjGoogle = TextEditingController();
 
   _AuthPhase _phase = _AuthPhase.entry;
-  /// Conta por e-mail: treinando, fabricante ou gestor.
+  _AuthDocumentTrack _authTrack = _AuthDocumentTrack.cpf;
+  /// `trainee` | `instructor` (CPF) ou `manufacturer_admin` (CNPJ).
   String _registerAccountType = 'trainee';
-  List<Map<String, dynamic>> _publicInstitutions = [];
-  int? _registerInstitutionId;
-  int? _googleInstitutionId;
 
   bool _loadingLogin = false;
   bool _loadingRegister = false;
@@ -253,34 +253,29 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     }
   }
 
-  Future<void> _ensurePublicInstitutions() async {
-    if (_publicInstitutions.isNotEmpty) {
-      return;
-    }
-    try {
-      final list = await ProductionApi(ApiClient()).publicInstitutionCatalog();
-      if (mounted) {
-        setState(() {
-          _publicInstitutions = list;
-          final firstId = list.isNotEmpty ? int.tryParse(list.first['id'].toString()) : null;
-          _registerInstitutionId ??= firstId;
-          _googleInstitutionId ??= firstId;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _publicInstitutions = []);
-      }
-    }
-  }
-
   void _openRegisterCard() {
     setState(() {
       _phase = _AuthPhase.register;
       _errorRegister = null;
       _errorRegisterManufacturer = null;
     });
-    _ensurePublicInstitutions();
+  }
+
+  void _setAuthTrack(_AuthDocumentTrack track) {
+    setState(() {
+      _authTrack = track;
+      if (track == _AuthDocumentTrack.cnpj) {
+        _googleRole = 'manufacturer_admin';
+        _registerAccountType = 'manufacturer_admin';
+      } else {
+        if (_googleRole == 'manufacturer_admin') {
+          _googleRole = 'trainee';
+        }
+        if (_registerAccountType == 'manufacturer_admin') {
+          _registerAccountType = 'trainee';
+        }
+      }
+    });
   }
 
   void _backToEntry() {
@@ -302,10 +297,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       setState(() => _errorRegisterManufacturer = AppLocalizations.of(context).errMfgNameRequired);
       return;
     }
-    if (_registerAccountType == 'institution_admin' && _registerInstitutionId == null) {
-      setState(() => _errorRegister = AppLocalizations.of(context).errSelectInstitution);
-      return;
-    }
     setState(() => _loadingRegister = true);
     try {
       if (_registerAccountType == 'trainee') {
@@ -315,13 +306,12 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
           password: _passwordRegister.text,
           role: 'trainee',
         );
-      } else if (_registerAccountType == 'institution_admin') {
+      } else if (_registerAccountType == 'instructor') {
         await appAuth.register(
           name: _nameRegister.text,
           email: _emailRegister.text,
           password: _passwordRegister.text,
-          role: 'institution_admin',
-          institutionId: _registerInstitutionId,
+          role: 'instructor',
         );
       } else {
         await appAuth.register(
@@ -367,23 +357,12 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       _snack(AppLocalizations.of(context).errMfgNameBeforeGoogle);
       return;
     }
-    if (_googleRole == 'institution_admin') {
-      if (_publicInstitutions.isEmpty) {
-        await _ensurePublicInstitutions();
-      }
-      if (_googleInstitutionId == null) {
-        if (!mounted) return;
-        _snack(AppLocalizations.of(context).errSelectInstitutionGoogle);
-        return;
-      }
-    }
     setState(() => _loadingGoogle = true);
     try {
       await appAuth.loginWithGoogle(
         role: _googleRole,
         manufacturerName: _mfgNameGoogle.text.trim().isEmpty ? null : _mfgNameGoogle.text.trim(),
         manufacturerCnpj: _mfgCnpjGoogle.text.trim().isEmpty ? null : _mfgCnpjGoogle.text.trim(),
-        institutionId: _googleRole == 'institution_admin' ? _googleInstitutionId : null,
       );
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -403,12 +382,17 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  List<({String id, String label, IconData icon})> _googleRoles(AppLocalizations s) => [
-        (id: 'trainee', label: s.googleRoleTrainee, icon: Icons.school_outlined),
-        (id: 'instructor', label: s.googleRoleInstructor, icon: Icons.verified_user_outlined),
-        (id: 'institution_admin', label: s.googleRoleInstitutionAdmin, icon: Icons.apartment_outlined),
+  List<({String id, String label, IconData icon})> _googleRoles(AppLocalizations s) {
+    if (_authTrack == _AuthDocumentTrack.cnpj) {
+      return [
         (id: 'manufacturer_admin', label: s.googleRoleManufacturerAdmin, icon: Icons.precision_manufacturing_outlined),
       ];
+    }
+    return [
+      (id: 'trainee', label: s.googleRoleTrainee, icon: Icons.school_outlined),
+      (id: 'instructor', label: s.googleRoleInstructor, icon: Icons.verified_user_outlined),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -485,9 +469,35 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               textAlign: TextAlign.center,
               style: tt.bodyMedium?.copyWith(color: const Color(0xFF5C5E66), height: 1.35),
             ),
+            const SizedBox(height: 14),
+            SegmentedButton<_AuthDocumentTrack>(
+              segments: [
+                ButtonSegment<_AuthDocumentTrack>(
+                  value: _AuthDocumentTrack.cpf,
+                  label: Text(s.authTrackCpfLabel),
+                  icon: const Icon(Icons.person_outline, size: 18),
+                ),
+                ButtonSegment<_AuthDocumentTrack>(
+                  value: _AuthDocumentTrack.cnpj,
+                  label: Text(s.authTrackCnpjLabel),
+                  icon: const Icon(Icons.business_outlined, size: 18),
+                ),
+              ],
+              selected: {_authTrack},
+              onSelectionChanged: (Set<_AuthDocumentTrack> next) {
+                if (next.isEmpty) return;
+                _setAuthTrack(next.first);
+              },
+            ),
+            const SizedBox(height: 8),
+            Text(
+              s.authTrackSegmentSubtitle,
+              textAlign: TextAlign.center,
+              style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280), height: 1.35),
+            ),
             const SizedBox(height: 16),
             Text(
-              s.loginGoogleProfileSection,
+              _authTrack == _AuthDocumentTrack.cnpj ? s.loginGoogleProfileSectionCnpj : s.loginGoogleProfileSectionCpf,
               style: tt.labelMedium?.copyWith(
                 color: const Color(0xFF45464D),
                 fontWeight: FontWeight.w600,
@@ -512,9 +522,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                         ? null
                         : () {
                             setState(() => _googleRole = r.id);
-                            if (r.id == 'institution_admin') {
-                              _ensurePublicInstitutions();
-                            }
                           },
                   );
                 },
@@ -537,36 +544,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                   isDense: true,
                 ),
               ),
-            ],
-            if (_googleRole == 'institution_admin') ...[
-              const SizedBox(height: 14),
-              if (_publicInstitutions.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(
-                    s.institutionLoadingGoogle,
-                    style: const TextStyle(fontSize: 12.5, color: Color(0xFF45464D), height: 1.35),
-                  ),
-                )
-              else
-                DropdownButtonFormField<int>(
-                  decoration: InputDecoration(
-                    labelText: s.institutionPickerLabelGoogle,
-                    isDense: true,
-                  ),
-                  initialValue: _googleInstitutionId,
-                  items: [
-                    for (final i in _publicInstitutions)
-                      DropdownMenuItem(
-                        value: int.tryParse(i['id'].toString()),
-                        child: Text(
-                          i['name']?.toString() ?? '',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                  ],
-                  onChanged: (v) => setState(() => _googleInstitutionId = v),
-                ),
             ],
             const SizedBox(height: 16),
             _primaryButton(
@@ -713,45 +690,84 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               s.registerSubtitle,
               style: tt.bodyMedium?.copyWith(color: const Color(0xFF5C5E66)),
             ),
-            const SizedBox(height: 20),
-            Text(
-              s.registerAccountTypeTitle,
-              style: tt.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _AccountTypeMiniCard(
-                    label: s.googleRoleTrainee,
-                    icon: Icons.school_outlined,
-                    selected: _registerAccountType == 'trainee',
-                    onTap: () => setState(() => _registerAccountType = 'trainee'),
-                  ),
+            const SizedBox(height: 16),
+            SegmentedButton<_AuthDocumentTrack>(
+              segments: [
+                ButtonSegment<_AuthDocumentTrack>(
+                  value: _AuthDocumentTrack.cpf,
+                  label: Text(s.authTrackCpfLabel),
+                  icon: const Icon(Icons.person_outline, size: 18),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _AccountTypeMiniCard(
-                    label: s.googleRoleInstitutionAdmin,
-                    icon: Icons.apartment_outlined,
-                    selected: _registerAccountType == 'institution_admin',
-                    onTap: () {
-                      setState(() => _registerAccountType = 'institution_admin');
-                      _ensurePublicInstitutions();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _AccountTypeMiniCard(
-                    label: s.googleRoleManufacturerAdmin,
-                    icon: Icons.precision_manufacturing_outlined,
-                    selected: _registerAccountType == 'manufacturer_admin',
-                    onTap: () => setState(() => _registerAccountType = 'manufacturer_admin'),
-                  ),
+                ButtonSegment<_AuthDocumentTrack>(
+                  value: _AuthDocumentTrack.cnpj,
+                  label: Text(s.authTrackCnpjLabel),
+                  icon: const Icon(Icons.business_outlined, size: 18),
                 ),
               ],
+              selected: {_authTrack},
+              onSelectionChanged: (Set<_AuthDocumentTrack> next) {
+                if (next.isEmpty) return;
+                _setAuthTrack(next.first);
+              },
             ),
+            const SizedBox(height: 8),
+            Text(
+              s.authTrackSegmentSubtitle,
+              style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280), height: 1.35),
+            ),
+            const SizedBox(height: 16),
+            if (_authTrack == _AuthDocumentTrack.cpf) ...[
+              Text(
+                s.registerAccountTypeTitleCpf,
+                style: tt.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _AccountTypeMiniCard(
+                      label: s.googleRoleTrainee,
+                      icon: Icons.school_outlined,
+                      selected: _registerAccountType == 'trainee',
+                      onTap: () => setState(() => _registerAccountType = 'trainee'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _AccountTypeMiniCard(
+                      label: s.googleRoleInstructor,
+                      icon: Icons.verified_user_outlined,
+                      selected: _registerAccountType == 'instructor',
+                      onTap: () => setState(() => _registerAccountType = 'instructor'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, size: 18, color: Color(0xFF00677D)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      s.registerManagerInviteHint,
+                      style: tt.bodySmall?.copyWith(color: const Color(0xFF5C5E66), height: 1.35),
+                    ),
+                  ),
+                ],
+              ),
+            ] else ...[
+              Text(
+                s.registerAccountTypeTitleCnpj,
+                style: tt.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                s.mfgCompanyLabel,
+                style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280)),
+              ),
+            ],
             const SizedBox(height: 20),
             Form(
               key: _formRegister,
@@ -790,36 +806,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                       return null;
                     },
                   ),
-                  if (_registerAccountType == 'institution_admin') ...[
-                    const SizedBox(height: 10),
-                    if (_publicInstitutions.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          s.registerInstitutionsLoading,
-                          style: const TextStyle(fontSize: 13, color: Color(0xFF45464D)),
-                        ),
-                      )
-                    else
-                      DropdownButtonFormField<int>(
-                        decoration: InputDecoration(
-                          labelText: s.fieldInstitution,
-                          isDense: true,
-                        ),
-                        initialValue: _registerInstitutionId,
-                        items: [
-                          for (final i in _publicInstitutions)
-                            DropdownMenuItem(
-                              value: int.tryParse(i['id'].toString()),
-                              child: Text(
-                                i['name']?.toString() ?? '',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                        ],
-                        onChanged: (v) => setState(() => _registerInstitutionId = v),
-                      ),
-                  ],
                   if (_registerAccountType == 'manufacturer_admin') ...[
                     const SizedBox(height: 10),
                     TextFormField(

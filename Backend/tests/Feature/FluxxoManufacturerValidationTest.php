@@ -137,4 +137,18 @@ class FluxxoManufacturerValidationTest extends TestCase
             ->assertOk()
             ->assertJsonFragment(['id' => $mfg->id]);
     }
+
+    public function test_register_rejects_institution_admin_role(): void
+    {
+        $suffix = Str::lower(Str::random(8));
+
+        $this->postJson('/api/auth/register', [
+            'name' => 'Gestor',
+            'email' => "inst-try-{$suffix}@test.local",
+            'password' => 'password12345',
+            'role' => 'institution_admin',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['role']);
+    }
 }
