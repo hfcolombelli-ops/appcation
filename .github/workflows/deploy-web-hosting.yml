@@ -23,9 +23,11 @@ on:
 permissions:
   contents: read
 
+# Sem cancelar run em andamento: o download do Flutter na 1ª vez demora e um 2º push
+# costumava matar o job no meio ("The operation was canceled"). Novos commits ficam em fila.
 concurrency:
   group: firebase-hosting-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   FIREBASE_PROJECT: appcation
@@ -36,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Flutter SDK (stable)
         uses: flutter-actions/setup-flutter@v4
