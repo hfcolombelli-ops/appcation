@@ -120,8 +120,7 @@ Route::middleware(['auth:sanctum', 'throttle:api-user'])->group(function () {
     Route::delete('/institution/equipment/{id}', [InstitutionEquipmentController::class, 'destroy']);
 
     Route::get('/me/trainee-profile', [TraineeProfileController::class, 'show']);
-    Route::put('/me/trainee-profile', [TraineeProfileController::class, 'update'])
-        ->middleware('trainee.lgpd');
+    Route::put('/me/trainee-profile', [TraineeProfileController::class, 'update']);
     Route::get('/me/institution-park-equipment', [TraineeParkEquipmentController::class, 'index']);
     Route::get('/me/trainee-state', [TraineeStateController::class, 'show']);
 
@@ -132,8 +131,7 @@ Route::middleware(['auth:sanctum', 'throttle:api-user'])->group(function () {
     Route::post('/me/follow-up-assessments/{id}/submit', [FollowUpAssessmentController::class, 'submit'])
         ->middleware('trainee.lgpd');
 
-    Route::post('/enrollments/join', [EnrollmentController::class, 'join'])
-        ->middleware('trainee.lgpd');
+    Route::post('/enrollments/join', [EnrollmentController::class, 'join']);
     Route::get('/enrollments/mine', [EnrollmentController::class, 'mine']);
     Route::get('/enrollments/{enrollment}', [EnrollmentController::class, 'show']);
 

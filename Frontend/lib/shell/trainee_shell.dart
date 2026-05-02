@@ -694,7 +694,7 @@ class _TraineeShellState extends State<TraineeShell> {
                         children: [
                           const Padding(
                             padding: EdgeInsets.fromLTRB(16, 10, 16, 0),
-                            child: FluxoPremiumPanel(dense: true),
+                            child: FluxoPremiumPanel(dense: false),
                           ),
                           Expanded(
                             child: _loading && _step != 2 && _step != 3

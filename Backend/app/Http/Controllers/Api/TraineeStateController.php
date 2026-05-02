@@ -42,7 +42,11 @@ class TraineeStateController extends Controller
                 ->first();
         }
 
-        $needsLgpdConsent = ! UserConsent::hasActive($request->user(), 'lgpd_trainee');
+        // LGPD só antes de responder questionários (sessão ao vivo), não antes de perfil/código/sala de espera.
+        $trainingStatus = $enrollment?->training?->status;
+        $inLiveQuestionnairePhase = $trainingStatus === 'in_progress';
+        $needsLgpdConsent = $inLiveQuestionnairePhase
+            && ! UserConsent::hasActive($request->user(), 'lgpd_trainee');
 
         return response()->json([
             'profile' => $profile,
