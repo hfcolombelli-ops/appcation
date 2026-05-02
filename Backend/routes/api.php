@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EnrollmentController;
+use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\InstitutionController;
 use App\Http\Controllers\Api\InstructorDashboardController;
+use App\Http\Controllers\Api\ManufacturerEquipmentController;
+use App\Http\Controllers\Api\ManufacturerProfileController;
 use App\Http\Controllers\Api\PrivacyController;
 use App\Http\Controllers\Api\QuestionnaireController;
 use App\Http\Controllers\Api\RealtimeController;
@@ -26,6 +29,8 @@ Route::post('/auth/register', [AuthController::class, 'register'])
     ->middleware('throttle:15,60');
 Route::post('/auth/login', [AuthController::class, 'login'])
     ->middleware('throttle:8,15');
+Route::post('/auth/google', [GoogleAuthController::class, 'callback'])
+    ->middleware('throttle:15,60');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
@@ -57,6 +62,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/questionnaire/answers', [QuestionnaireController::class, 'store'])
         ->middleware('trainee.lgpd');
+
+    Route::get('/trainings/{training}/live-state', [TrainingController::class, 'liveState'])
+        ->middleware('trainee.lgpd');
+
+    Route::get('/manufacturer/profile', [ManufacturerProfileController::class, 'show']);
+    Route::put('/manufacturer/profile', [ManufacturerProfileController::class, 'update']);
+    Route::get('/manufacturer/equipment', [ManufacturerEquipmentController::class, 'index']);
+    Route::post('/manufacturer/equipment', [ManufacturerEquipmentController::class, 'store']);
+    Route::put('/manufacturer/equipment/{id}', [ManufacturerEquipmentController::class, 'update']);
+    Route::delete('/manufacturer/equipment/{id}', [ManufacturerEquipmentController::class, 'destroy']);
 
     Route::apiResource('trainings', TrainingController::class);
 

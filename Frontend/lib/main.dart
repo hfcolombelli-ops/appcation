@@ -6,6 +6,7 @@ import 'firebase_bootstrap.dart';
 import 'services/api_client.dart';
 import 'services/auth_session.dart';
 import 'shell/instructor_shell.dart';
+import 'shell/manufacturer_shell.dart';
 import 'shell/trainee_shell.dart';
 import 'widgets/version_badge.dart';
 
@@ -125,9 +126,10 @@ class RoleHome extends StatelessWidget {
     switch (appAuth.role) {
       case 'trainee':
         return const TraineeShell();
+      case 'manufacturer_admin':
+        return const ManufacturerShell();
       case 'instructor':
       case 'institution_admin':
-      case 'manufacturer_admin':
         return const InstructorShell();
       default:
         return const LoginUniversalScreen();
@@ -177,11 +179,20 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   final _nameRegister = TextEditingController();
   final _emailRegister = TextEditingController();
   final _passwordRegister = TextEditingController();
+  final _mfgNameRegister = TextEditingController();
+  final _mfgCnpjRegister = TextEditingController();
+
+  final _mfgNameGoogle = TextEditingController();
+  final _mfgCnpjGoogle = TextEditingController();
 
   bool _loadingLogin = false;
   bool _loadingRegister = false;
+  bool _loadingRegisterManufacturer = false;
+  bool _loadingGoogle = false;
   String? _errorLogin;
   String? _errorRegister;
+  String? _errorRegisterManufacturer;
+  String _googleRole = 'trainee';
 
   @override
   void dispose() {
@@ -190,6 +201,10 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     _nameRegister.dispose();
     _emailRegister.dispose();
     _passwordRegister.dispose();
+    _mfgNameRegister.dispose();
+    _mfgCnpjRegister.dispose();
+    _mfgNameGoogle.dispose();
+    _mfgCnpjGoogle.dispose();
     super.dispose();
   }
 
@@ -231,6 +246,70 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       setState(() => _errorRegister = 'Falha de conexão com a API.');
     } finally {
       if (mounted) setState(() => _loadingRegister = false);
+    }
+  }
+
+  Future<void> _submitRegisterManufacturer() async {
+    setState(() {
+      _errorLogin = null;
+      _errorRegister = null;
+      _errorRegisterManufacturer = null;
+    });
+    if (!(_formRegister.currentState?.validate() ?? false)) return;
+    if (_mfgNameRegister.text.trim().isEmpty) {
+      setState(() => _errorRegisterManufacturer = 'Informe o nome do fabricante.');
+      return;
+    }
+    setState(() => _loadingRegisterManufacturer = true);
+    try {
+      await appAuth.register(
+        name: _nameRegister.text,
+        email: _emailRegister.text,
+        password: _passwordRegister.text,
+        role: 'manufacturer_admin',
+        manufacturerName: _mfgNameRegister.text.trim(),
+        manufacturerCnpj: _mfgCnpjRegister.text.trim().isEmpty ? null : _mfgCnpjRegister.text.trim(),
+      );
+    } on ApiException catch (e) {
+      setState(() => _errorRegisterManufacturer = e.message);
+    } catch (_) {
+      setState(() => _errorRegisterManufacturer = 'Falha de conexão com a API.');
+    } finally {
+      if (mounted) setState(() => _loadingRegisterManufacturer = false);
+    }
+  }
+
+  Future<void> _submitGoogle() async {
+    setState(() {
+      _errorLogin = null;
+      _errorRegister = null;
+      _errorRegisterManufacturer = null;
+    });
+    if (AppConfig.googleWebClientId.trim().isEmpty) {
+      _snack(
+        'Configure GOOGLE_WEB_CLIENT_ID ao executar o Flutter (mesmo ID que GOOGLE_CLIENT_ID no servidor).',
+      );
+      return;
+    }
+    if (_googleRole == 'manufacturer_admin' && _mfgNameGoogle.text.trim().isEmpty) {
+      _snack('Informe o nome do fabricante antes de continuar com Google.');
+      return;
+    }
+    setState(() => _loadingGoogle = true);
+    try {
+      await appAuth.loginWithGoogle(
+        role: _googleRole,
+        manufacturerName: _mfgNameGoogle.text.trim().isEmpty ? null : _mfgNameGoogle.text.trim(),
+        manufacturerCnpj: _mfgCnpjGoogle.text.trim().isEmpty ? null : _mfgCnpjGoogle.text.trim(),
+      );
+    } on ApiException catch (e) {
+      setState(() => _errorLogin = e.message);
+    } on StateError catch (e) {
+      _snack(e.message);
+    } catch (_) {
+      setState(() => _errorLogin = 'Falha de conexão com a API.');
+    } finally {
+      if (mounted) setState(() => _loadingGoogle = false);
     }
   }
 
@@ -281,11 +360,51 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                     const SizedBox(height: 4),
                     Text('Seu treinamento, sua evolução', style: Theme.of(context).textTheme.bodyLarge),
                     const SizedBox(height: 24),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Perfil para novo cadastro Google',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFF45464D),
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: _googleRole,
+                      items: const [
+                        DropdownMenuItem(value: 'trainee', child: Text('Treinando')),
+                        DropdownMenuItem(value: 'instructor', child: Text('Instrutor')),
+                        DropdownMenuItem(value: 'institution_admin', child: Text('Gestor institucional')),
+                        DropdownMenuItem(value: 'manufacturer_admin', child: Text('Fabricante')),
+                      ],
+                      onChanged: _loadingGoogle
+                          ? null
+                          : (v) {
+                              if (v == null) return;
+                              setState(() => _googleRole = v);
+                            },
+                    ),
+                    if (_googleRole == 'manufacturer_admin') ...[
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _mfgNameGoogle,
+                        decoration: const InputDecoration(labelText: 'Nome do fabricante'),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _mfgCnpjGoogle,
+                        decoration: const InputDecoration(labelText: 'CNPJ (opcional)'),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
                     _primaryButton(
                       context,
-                      label: 'Continuar com Google',
+                      label: _loadingGoogle ? 'Abrindo Google…' : 'Continuar com Google',
                       icon: Icons.login,
-                      onPressed: () => _snack('Login Google será habilitado na próxima entrega.'),
+                      onPressed: _loadingGoogle ? null : _submitGoogle,
                     ),
                     const SizedBox(height: 18),
                     Row(
@@ -461,6 +580,55 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                                   )
                                 : const Text('Cadastrar e continuar'),
                           ),
+                          const SizedBox(height: 28),
+                          Row(
+                            children: [
+                              const Expanded(child: Divider(color: Color(0xFFC6C6CD))),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  'fabricante (e-mail e senha)',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        fontSize: 13,
+                                        color: const Color(0xFF76777D),
+                                      ),
+                                ),
+                              ),
+                              const Expanded(child: Divider(color: Color(0xFFC6C6CD))),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _mfgNameRegister,
+                            decoration: const InputDecoration(labelText: 'Nome da empresa fabricante'),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _mfgCnpjRegister,
+                            decoration: const InputDecoration(labelText: 'CNPJ (opcional)'),
+                          ),
+                          if (_errorRegisterManufacturer != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              _errorRegisterManufacturer!,
+                              style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          OutlinedButton(
+                            onPressed: _loadingRegisterManufacturer ? null : _submitRegisterManufacturer,
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              side: const BorderSide(color: Color(0xFF131B2E), width: 1.2),
+                            ),
+                            child: _loadingRegisterManufacturer
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Text('Criar conta fabricante'),
+                          ),
                         ],
                       ),
                     ),
@@ -484,7 +652,7 @@ Widget _primaryButton(
   BuildContext context, {
   required String label,
   required IconData icon,
-  required VoidCallback onPressed,
+  required VoidCallback? onPressed,
 }) {
   return SizedBox(
     width: 360,

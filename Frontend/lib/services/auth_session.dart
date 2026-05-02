@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
+import 'google_sign_in_helper.dart';
 
 /// Estado global de autenticação (Sanctum token + usuário).
 class AuthSession extends ChangeNotifier {
@@ -92,6 +93,8 @@ class AuthSession extends ChangeNotifier {
     required String password,
     required String role,
     String? phone,
+    String? manufacturerName,
+    String? manufacturerCnpj,
   }) async {
     final data = await _api.postJson('/api/auth/register', {
       'name': name.trim(),
@@ -99,11 +102,49 @@ class AuthSession extends ChangeNotifier {
       'password': password,
       'role': role,
       if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
+      if (role == 'manufacturer_admin') ...{
+        'manufacturer_name': (manufacturerName ?? '').trim(),
+        if (manufacturerCnpj != null && manufacturerCnpj.trim().isNotEmpty)
+          'manufacturer_cnpj': manufacturerCnpj.trim(),
+      },
     });
     final t = data['token'] as String?;
     final u = data['user'];
     if (t == null || u is! Map<String, dynamic>) {
       throw ApiException('Resposta de cadastro inválida.', 500);
+    }
+    _token = t;
+    _user = u;
+    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> loginWithGoogle({
+    String role = 'trainee',
+    String? manufacturerName,
+    String? manufacturerCnpj,
+    bool forceAccountPicker = true,
+  }) async {
+    final idToken = await obtainGoogleIdToken(forceAccountPicker: forceAccountPicker);
+    if (idToken == null) {
+      throw ApiException('Login Google cancelado.', 400);
+    }
+
+    final body = <String, dynamic>{
+      'id_token': idToken,
+      if (role != 'trainee') 'role': role,
+      if (role == 'manufacturer_admin') ...{
+        'manufacturer_name': (manufacturerName ?? '').trim(),
+        if (manufacturerCnpj != null && manufacturerCnpj.trim().isNotEmpty)
+          'manufacturer_cnpj': manufacturerCnpj.trim(),
+      },
+    };
+
+    final data = await _api.postJson('/api/auth/google', body);
+    final t = data['token'] as String?;
+    final u = data['user'];
+    if (t == null || u is! Map<String, dynamic>) {
+      throw ApiException('Resposta de login Google inválida.', 500);
     }
     _token = t;
     _user = u;

@@ -6,5 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Manufacturer extends Model
 {
-    //
+    protected $fillable = [
+        'name',
+        'slug',
+        'cnpj',
+        'support_email',
+        'status',
+    ];
 }

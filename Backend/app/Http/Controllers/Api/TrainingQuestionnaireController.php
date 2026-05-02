@@ -44,7 +44,7 @@ class TrainingQuestionnaireController extends Controller
                     'training_id' => $training->id,
                     'title' => $blockPayload['title'],
                     'sort_order' => $blockPayload['sort_order'],
-                    'is_released' => true,
+                    'is_released' => false,
                 ]);
 
                 foreach ($blockPayload['questions'] as $qPayload) {

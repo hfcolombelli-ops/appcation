@@ -19,6 +19,9 @@ class Training extends Model
         'scheduled_at',
         'join_hash',
         'metadata',
+        'command_seq',
+        'last_command',
+        'last_command_payload',
     ];
 
     protected function casts(): array
@@ -26,6 +29,7 @@ class Training extends Model
         return [
             'scheduled_at' => 'datetime',
             'metadata' => 'array',
+            'last_command_payload' => 'array',
         ];
     }
 

@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../app_state.dart';
 import '../services/api_client.dart';
 import '../services/production_api.dart';
+import '../services/google_sign_in_helper.dart';
 import '../widgets/version_badge.dart';
 
 /// Shell treinando: cabeçalho fixo; conteúdo troca por etapa real da API.
@@ -40,6 +41,8 @@ class _TraineeShellState extends State<TraineeShell> {
   int? _pickedOptionId;
 
   Timer? _waitPoll;
+  Timer? _livePoll;
+  int? _liveCommandSeq;
   Timer? _healthTimer;
   bool _apiOnline = true;
 
@@ -64,6 +67,7 @@ class _TraineeShellState extends State<TraineeShell> {
   @override
   void dispose() {
     _waitPoll?.cancel();
+    _livePoll?.cancel();
     _healthTimer?.cancel();
     _sector.dispose();
     _equipment.dispose();
@@ -111,6 +115,7 @@ class _TraineeShellState extends State<TraineeShell> {
     final needsConsent = s['needs_lgpd_consent'] == true;
     if (needsConsent) {
       _waitPoll?.cancel();
+      _livePoll?.cancel();
       setState(() {
         _needsLgpdConsent = true;
         _lgpdCheckbox = false;
@@ -158,6 +163,11 @@ class _TraineeShellState extends State<TraineeShell> {
       _loading = false;
       _error = null;
     });
+
+    if (step != 3) {
+      _livePoll?.cancel();
+      _liveCommandSeq = null;
+    }
 
     if (step == 2) {
       _waitPoll = Timer.periodic(const Duration(seconds: 3), (_) => _pollWaiting());
@@ -230,33 +240,82 @@ class _TraineeShellState extends State<TraineeShell> {
     }
   }
 
-  Future<void> _loadQuestionnaire() async {
+  Future<void> _loadQuestionnaire({bool quiet = false}) async {
     final t = appAuth.token;
     final e = _enrollment;
     if (t == null || e == null) return;
     final tr = e['training'] as Map<String, dynamic>?;
     final tid = _parseInt(tr?['id']);
     if (tid == null) return;
-    setState(() => _loading = true);
+    if (!quiet && mounted) setState(() => _loading = true);
     try {
       final list = await _api.questionnaire(t, tid);
+      Map<String, dynamic> live;
+      try {
+        live = await _api.trainingLiveState(t, tid);
+      } catch (_) {
+        live = {};
+      }
+      final seqRaw = live['command_seq'];
+      final seq = seqRaw is int ? seqRaw : int.tryParse(seqRaw.toString());
       if (mounted) {
         setState(() {
           _questions = list;
-          _questionPos = 0;
-          _pickedOptionId = null;
+          if (!quiet) {
+            _questionPos = 0;
+            _pickedOptionId = null;
+          } else if (_questionPos >= _questions.length) {
+            _questionPos = _questions.isEmpty ? 0 : _questions.length - 1;
+            _pickedOptionId = null;
+          }
+          _liveCommandSeq = seq ?? _liveCommandSeq;
           _loading = false;
         });
       }
+      _ensureLivePolling(t, tid);
     } on ApiException catch (e) {
       if (mounted) {
         setState(() {
           _loading = false;
           _step = 2;
         });
+        _livePoll?.cancel();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
       }
     }
+  }
+
+  void _ensureLivePolling(String token, int trainingId) {
+    _livePoll?.cancel();
+    if (_step != 3) {
+      return;
+    }
+    _livePoll = Timer.periodic(const Duration(seconds: 2), (_) {
+      _pollTrainingLive(token, trainingId);
+    });
+  }
+
+  Future<void> _pollTrainingLive(String token, int trainingId) async {
+    if (_step != 3 || !mounted) {
+      return;
+    }
+    try {
+      final live = await _api.trainingLiveState(token, trainingId);
+      final status = live['status']?.toString();
+      if (status == 'finished') {
+        _livePoll?.cancel();
+        await _bootstrap();
+        return;
+      }
+      final seqRaw = live['command_seq'];
+      final seq = seqRaw is int ? seqRaw : int.tryParse(seqRaw.toString());
+      if (seq != null && _liveCommandSeq != null && seq != _liveCommandSeq) {
+        _liveCommandSeq = seq;
+        await _loadQuestionnaire(quiet: true);
+      } else if (seq != null) {
+        _liveCommandSeq = seq;
+      }
+    } catch (_) {}
   }
 
   Future<void> _submitAnswer() async {
@@ -349,6 +408,7 @@ class _TraineeShellState extends State<TraineeShell> {
   Future<void> _confirmDeleteAccount() async {
     final t = appAuth.token;
     if (t == null) return;
+    final googleLinked = appAuth.user?['google_sub'] != null;
     final pwd = TextEditingController();
     final confirm = TextEditingController();
     try {
@@ -361,12 +421,17 @@ class _TraineeShellState extends State<TraineeShell> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Esta ação anonimiza a sua conta de forma irreversível (Art. 18 LGPD). '
-                  'Digite EXCLUIR em maiúsculas e a sua senha.',
+                Text(
+                  googleLinked
+                      ? 'Esta ação anonimiza a sua conta de forma irreversível (Art. 18 LGPD). '
+                          'Confirme com EXCLUIR e autentique novamente com Google.'
+                      : 'Esta ação anonimiza a sua conta de forma irreversível (Art. 18 LGPD). '
+                          'Digite EXCLUIR em maiúsculas e a sua senha.',
                 ),
-                const SizedBox(height: 12),
-                TextField(controller: pwd, obscureText: true, decoration: const InputDecoration(labelText: 'Senha')),
+                if (!googleLinked) ...[
+                  const SizedBox(height: 12),
+                  TextField(controller: pwd, obscureText: true, decoration: const InputDecoration(labelText: 'Senha')),
+                ],
                 const SizedBox(height: 8),
                 TextField(controller: confirm, decoration: const InputDecoration(labelText: 'Confirmar (digite EXCLUIR)')),
               ],
@@ -382,9 +447,22 @@ class _TraineeShellState extends State<TraineeShell> {
         ),
       );
       if (ok != true || !mounted) return;
-      await _api.requestAccountDeletion(t, password: pwd.text, confirmText: confirm.text.trim());
+      if (googleLinked) {
+        final idToken = await obtainGoogleIdToken(forceAccountPicker: true);
+        if (idToken == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cancelado.')));
+          }
+          return;
+        }
+        await _api.requestAccountDeletion(t, idToken: idToken, confirmText: confirm.text.trim());
+      } else {
+        await _api.requestAccountDeletion(t, password: pwd.text, confirmText: confirm.text.trim());
+      }
       await appAuth.logout();
     } on ApiException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } on StateError catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     } finally {
       pwd.dispose();

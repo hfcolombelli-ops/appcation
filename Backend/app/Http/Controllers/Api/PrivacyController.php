@@ -10,6 +10,7 @@ use App\Models\UserConsent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class PrivacyController extends Controller
@@ -112,14 +113,35 @@ class PrivacyController extends Controller
      */
     public function requestAccountDeletion(Request $request)
     {
-        $data = $request->validate([
-            'password' => ['required', 'string'],
-            'confirm_text' => ['required', 'string', 'in:EXCLUIR'],
-        ]);
-
         $user = $request->user();
 
-        if (! Hash::check($data['password'], $user->password)) {
+        $rules = [
+            'confirm_text' => ['required', 'string', 'in:EXCLUIR'],
+        ];
+
+        if ($user->google_sub !== null) {
+            $rules['id_token'] = ['required', 'string'];
+        } else {
+            $rules['password'] = ['required', 'string'];
+        }
+
+        $data = $request->validate($rules);
+
+        if ($user->google_sub !== null) {
+            $tokenResponse = Http::timeout(10)->get('https://oauth2.googleapis.com/tokeninfo', [
+                'id_token' => $data['id_token'],
+            ]);
+            if (! $tokenResponse->successful()) {
+                return response()->json(['message' => 'Token Google inválido.'], 401);
+            }
+            $payload = $tokenResponse->json();
+            if (($payload['sub'] ?? null) !== $user->google_sub) {
+                return response()->json(['message' => 'Token Google não corresponde a esta conta.'], 403);
+            }
+            if (($payload['aud'] ?? null) !== config('services.google.client_id')) {
+                return response()->json(['message' => 'Audiência do token inválida.'], 401);
+            }
+        } elseif (! Hash::check($data['password'], $user->password)) {
             return response()->json(['message' => 'Senha incorreta.'], 422);
         }
 
@@ -138,6 +160,7 @@ class PrivacyController extends Controller
                 'password' => Hash::make(Str::password(32)),
                 'phone' => null,
                 'avatar_url' => null,
+                'google_sub' => null,
             ])->save();
         });
 

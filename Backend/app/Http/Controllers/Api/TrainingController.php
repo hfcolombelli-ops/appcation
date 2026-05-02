@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Enrollment;
 use App\Models\Training;
-use App\Models\TrainingBlock;
+use App\Support\TrainingSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -84,19 +84,35 @@ class TrainingController extends Controller
         ]);
 
         if (($data['status'] ?? null) === 'in_progress') {
-            Enrollment::query()
-                ->where('training_id', $training->id)
-                ->where('status', 'waiting')
-                ->update(['status' => 'active']);
-
-            TrainingBlock::query()
-                ->where('training_id', $training->id)
-                ->update(['is_released' => true]);
+            TrainingSession::markInProgress($training);
+            unset($data['status']);
         }
 
-        $training->update($data);
+        if ($data !== []) {
+            $training->update($data);
+        }
 
         return response()->json($training->fresh()->load('institution:id,name'));
+    }
+
+    /**
+     * Estado realtime (sequência + último comando) — polling no Flutter Web; WebSocket quando Reverb activo.
+     */
+    public function liveState(Request $request, string $id)
+    {
+        $training = Training::query()->findOrFail($id);
+
+        if (! $this->userCanAccessTraining($request, $training)) {
+            return response()->json(['message' => 'Acesso negado.'], 403);
+        }
+
+        return response()->json([
+            'training_id' => $training->id,
+            'status' => $training->status,
+            'command_seq' => (int) $training->command_seq,
+            'last_command' => $training->last_command,
+            'last_command_payload' => $training->last_command_payload ?? [],
+        ]);
     }
 
     public function destroy(Request $request, string $id)

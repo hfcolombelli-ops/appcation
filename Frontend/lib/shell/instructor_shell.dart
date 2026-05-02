@@ -762,6 +762,26 @@ class _ComandoPageState extends State<_ComandoPage> {
     }
   }
 
+  Future<void> _releaseNextBlock() async {
+    final t = appAuth.token;
+    final id = _selectedId;
+    if (t == null || id == null) return;
+    setState(() => _loading = true);
+    try {
+      await widget.api.realtimeTrainingCommand(t, id, action: 'release_block');
+      await _loadMonitor();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Próximo bloco liberado (ou já não há blocos pendentes).')),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   Future<void> _setTrainingStatus(String status) async {
     final t = appAuth.token;
     final id = _selectedId;
@@ -864,6 +884,10 @@ class _ComandoPageState extends State<_ComandoPage> {
                         FilledButton(
                           onPressed: _loading ? null : () => _setTrainingStatus('in_progress'),
                           child: const Text('Iniciar'),
+                        ),
+                        FilledButton.tonal(
+                          onPressed: _loading ? null : _releaseNextBlock,
+                          child: const Text('Liberar próximo bloco'),
                         ),
                         FilledButton.tonal(
                           onPressed: _loading ? null : () => _setTrainingStatus('scheduled'),
