@@ -122,6 +122,84 @@ abstract class AppLocalizations {
   /// **'Treino clínico com ritmo e clareza'**
   String get loginTagline;
 
+  /// No description provided for @loginAccessHeroTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Acesse o App²cation'**
+  String get loginAccessHeroTitle;
+
+  /// No description provided for @loginAccessHeroSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'O seu treino, a sua evolução'**
+  String get loginAccessHeroSubtitle;
+
+  /// No description provided for @loginNavQuestions.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dúvidas?'**
+  String get loginNavQuestions;
+
+  /// No description provided for @loginNavStartNow.
+  ///
+  /// In pt, this message translates to:
+  /// **'Começar agora'**
+  String get loginNavStartNow;
+
+  /// No description provided for @loginNavHaveAccount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Já tenho conta'**
+  String get loginNavHaveAccount;
+
+  /// No description provided for @loginFooterTerms.
+  ///
+  /// In pt, this message translates to:
+  /// **'Termos de uso'**
+  String get loginFooterTerms;
+
+  /// No description provided for @loginFooterPrivacy.
+  ///
+  /// In pt, this message translates to:
+  /// **'Política de privacidade'**
+  String get loginFooterPrivacy;
+
+  /// No description provided for @loginFooterCookies.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cookies'**
+  String get loginFooterCookies;
+
+  /// No description provided for @loginFooterHelp.
+  ///
+  /// In pt, this message translates to:
+  /// **'Centro de ajuda'**
+  String get loginFooterHelp;
+
+  /// No description provided for @loginFooterSystemsOk.
+  ///
+  /// In pt, this message translates to:
+  /// **'Todos os sistemas operacionais'**
+  String get loginFooterSystemsOk;
+
+  /// No description provided for @loginFooterSupportPrefix.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não consegue aceder?'**
+  String get loginFooterSupportPrefix;
+
+  /// No description provided for @loginFooterSupportLink.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fale com o suporte técnico'**
+  String get loginFooterSupportLink;
+
+  /// No description provided for @loginFooterSoon.
+  ///
+  /// In pt, this message translates to:
+  /// **'Disponível em breve.'**
+  String get loginFooterSoon;
+
   /// No description provided for @authTrackCpfLabel.
   ///
   /// In pt, this message translates to:
@@ -263,7 +341,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginOrgHint.
   ///
   /// In pt, this message translates to:
-  /// **'Instrutor e gestor institucional: use o e-mail e senha fornecidos pela sua organização.'**
+  /// **'Gestor de hospital ou clínica: use o e-mail e senha que a instituição criou para si no painel interno.'**
   String get loginOrgHint;
 
   /// No description provided for @actionCreateAccount.
@@ -2746,6 +2824,66 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Assim que o instrutor iniciar, o questionário abre automaticamente.'**
   String get trnWaitingRoomBody;
+
+  /// No description provided for @trnWaitingHeroTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aguardando início do treinamento'**
+  String get trnWaitingHeroTitle;
+
+  /// No description provided for @trnWaitingHeroBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'O instrutor iniciará a sessão em breve. Mantenha esta janela aberta para entrar automaticamente na sala virtual.'**
+  String get trnWaitingHeroBody;
+
+  /// No description provided for @trnWaitingStatusChip.
+  ///
+  /// In pt, this message translates to:
+  /// **'Status: sala de espera ativa'**
+  String get trnWaitingStatusChip;
+
+  /// No description provided for @trnWaitingTestConnection.
+  ///
+  /// In pt, this message translates to:
+  /// **'Testar conexão e periféricos'**
+  String get trnWaitingTestConnection;
+
+  /// No description provided for @trnWaitingPingOk.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ligação ao servidor OK.'**
+  String get trnWaitingPingOk;
+
+  /// No description provided for @trnWaitingPingFail.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível contactar o servidor.'**
+  String get trnWaitingPingFail;
+
+  /// No description provided for @trnWaitingPrivacyNote.
+  ///
+  /// In pt, this message translates to:
+  /// **'Câmara e microfone permanecem desativados por defeito nesta versão.'**
+  String get trnWaitingPrivacyNote;
+
+  /// No description provided for @trnHeaderWaitingInstructor.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aguardando instrutor'**
+  String get trnHeaderWaitingInstructor;
+
+  /// No description provided for @trnHeaderRealtimeActive.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tempo real: ativo'**
+  String get trnHeaderRealtimeActive;
+
+  /// No description provided for @trnQuestionSidebarNavTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Navegação'**
+  String get trnQuestionSidebarNavTitle;
 
   /// No description provided for @trnEmptyRecoverySync.
   ///

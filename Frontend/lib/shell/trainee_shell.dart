@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ import '../services/api_client.dart';
 import '../services/production_api.dart';
 import '../services/training_reverb_listener.dart';
 import '../services/google_sign_in_helper.dart';
+import '../theme/clinical_precision_tokens.dart';
 import '../widgets/fluxo_premium_panel.dart';
 import '../widgets/version_badge.dart';
 
@@ -674,6 +676,7 @@ class _TraineeShellState extends State<TraineeShell> {
             children: [
               _TraineeHeader(
                 apiOnline: _apiOnline,
+                flowStep: _needsLgpdConsent ? null : _step,
                 userName: name,
                 showPrivacyMenu: !_needsLgpdConsent,
                 onLogout: () => appAuth.logout(),
@@ -737,8 +740,18 @@ class _TraineeShellState extends State<TraineeShell> {
       case 1:
         return _JoinPanel(joinHash: _joinHash, loading: _loading, onJoin: _doJoin);
       case 2:
-        return _WaitingPanel(enrollment: _enrollment);
+        return _WaitingPanel(
+          enrollment: _enrollment,
+          apiOnline: _apiOnline,
+          onPing: () {
+            final l = AppLocalizations.of(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(_apiOnline ? l.trnWaitingPingOk : l.trnWaitingPingFail)),
+            );
+          },
+        );
       case 3:
+        final tr = _enrollment?['training'] as Map<String, dynamic>?;
         return _QuestionnairePanel(
           questions: _questions,
           position: _questionPos,
@@ -749,6 +762,8 @@ class _TraineeShellState extends State<TraineeShell> {
           inRecovery: _enrollment?['in_recovery'] == true,
           sessionPaused: _sessionPaused,
           scorePolicyHint: _scorePolicyHint,
+          trainingTitle: tr?['title']?.toString(),
+          equipmentSubtitle: _profile?['equipment_label']?.toString(),
         );
       case 4:
         return _ResultPanel(enrollment: _enrollment, onAgain: _goJoinAnother);
@@ -772,6 +787,7 @@ class _TraineeShellState extends State<TraineeShell> {
 class _TraineeHeader extends StatelessWidget {
   const _TraineeHeader({
     required this.apiOnline,
+    this.flowStep,
     required this.userName,
     required this.showPrivacyMenu,
     required this.onLogout,
@@ -781,6 +797,8 @@ class _TraineeHeader extends StatelessWidget {
   });
 
   final bool apiOnline;
+  /// 0–4 mapa do fluxo treinando; null durante LGPD ou loading inicial.
+  final int? flowStep;
   final String userName;
   final bool showPrivacyMenu;
   final VoidCallback onLogout;
@@ -838,7 +856,41 @@ class _TraineeHeader extends StatelessWidget {
                 const SizedBox(width: 10),
                 TrainingRealtimeLinkChip(phase: realtimeLinkPhase!),
               ],
-              const Spacer(),
+              Expanded(
+                child: Center(
+                  child: flowStep == 2
+                      ? Text(
+                          l.trnHeaderWaitingInstructor.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            letterSpacing: 2.4,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF64748B),
+                          ),
+                        )
+                      : flowStep == 3
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: ClinicalPrecisionColors.secondaryContainer.withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: ClinicalPrecisionColors.secondary.withValues(alpha: 0.35)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.bolt_rounded, size: 18, color: ClinicalPrecisionColors.secondary),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    l.trnHeaderRealtimeActive,
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: ClinicalPrecisionColors.secondary),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                ),
+              ),
               if (userName.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -1509,43 +1561,219 @@ class _JoinPanel extends StatelessWidget {
   }
 }
 
-class _WaitingPanel extends StatelessWidget {
-  const _WaitingPanel({required this.enrollment});
+class _WaitingPanel extends StatefulWidget {
+  const _WaitingPanel({
+    required this.enrollment,
+    required this.apiOnline,
+    required this.onPing,
+  });
 
   final Map<String, dynamic>? enrollment;
+  final bool apiOnline;
+  final VoidCallback onPing;
+
+  @override
+  State<_WaitingPanel> createState() => _WaitingPanelState();
+}
+
+class _WaitingPanelState extends State<_WaitingPanel> with SingleTickerProviderStateMixin {
+  late AnimationController _ringCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ringCtrl = AnimationController(vsync: this, duration: const Duration(seconds: 22))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ringCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final tr = enrollment?['training'] as Map<String, dynamic>?;
+    final tr = widget.enrollment?['training'] as Map<String, dynamic>?;
     final title = tr?['title']?.toString() ?? l.trnTrainingDefaultTitle;
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.schedule_rounded, size: 64, color: Color(0xFF00677D)),
-                const SizedBox(height: 20),
-                Text(l.trnWaitingRoomTitle, style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 8),
-                Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
-                const SizedBox(height: 12),
-                Text(
-                  l.trnWaitingRoomBody,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFF45464D), height: 1.5),
-                ),
-                const SizedBox(height: 20),
-                const SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 3)),
-              ],
+    return Stack(
+      children: [
+        Positioned(
+          top: -80,
+          left: -60,
+          child: IgnorePointer(
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: ClinicalPrecisionColors.secondaryFixedDim.withValues(alpha: 0.12),
+              ),
             ),
           ),
         ),
+        Positioned(
+          bottom: -40,
+          right: -40,
+          child: IgnorePointer(
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: ClinicalPrecisionColors.secondary.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+        ),
+        SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 220,
+                    width: 220,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        RotationTransition(
+                          turns: _ringCtrl,
+                          child: Container(
+                            width: 210,
+                            height: 210,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: ClinicalPrecisionColors.secondary.withValues(alpha: 0.22), width: 2),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: 148,
+                          height: 148,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: ClinicalPrecisionColors.surfaceContainerLowest,
+                            border: Border.all(color: ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.45)),
+                            boxShadow: ClinicalPrecisionShadows.ambientCard,
+                          ),
+                          child: const Icon(Icons.schedule_rounded, size: 72, color: ClinicalPrecisionColors.secondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 36),
+                  Text(
+                    l.trnWaitingHeroTitle,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                          color: ClinicalPrecisionColors.onSurface,
+                          fontSize: 26,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l.trnWaitingHeroBody,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 16, height: 1.55, color: ClinicalPrecisionColors.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: ClinicalPrecisionColors.secondary),
+                  ),
+                  const SizedBox(height: 28),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+                    decoration: BoxDecoration(
+                      color: ClinicalPrecisionColors.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.5)),
+                      boxShadow: ClinicalPrecisionShadows.ambientCard,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _PulseDot(active: widget.apiOnline),
+                        const SizedBox(width: 14),
+                        Flexible(
+                          child: Text(
+                            l.trnWaitingStatusChip,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: 1.1),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: widget.onPing,
+                          icon: const Icon(Icons.network_ping_rounded),
+                          label: Text(l.trnWaitingTestConnection),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: ClinicalPrecisionColors.onSurface,
+                            foregroundColor: ClinicalPrecisionColors.surfaceContainerLowest,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.lock_outline_rounded, size: 18, color: ClinicalPrecisionColors.onSurfaceVariant),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          l.trnWaitingPrivacyNote,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 12.5, color: ClinicalPrecisionColors.onSurfaceVariant),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PulseDot extends StatelessWidget {
+  const _PulseDot({required this.active});
+
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = active ? ClinicalPrecisionColors.secondary : const Color(0xFFB91C1C);
+    return SizedBox(
+      width: 14,
+      height: 14,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(width: 14, height: 14, decoration: BoxDecoration(color: c.withValues(alpha: 0.35), shape: BoxShape.circle)),
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: c, shape: BoxShape.circle)),
+        ],
       ),
     );
   }
@@ -1562,6 +1790,8 @@ class _QuestionnairePanel extends StatelessWidget {
     this.inRecovery = false,
     this.sessionPaused = false,
     this.scorePolicyHint,
+    this.trainingTitle,
+    this.equipmentSubtitle,
   });
 
   final List<Map<String, dynamic>> questions;
@@ -1573,6 +1803,8 @@ class _QuestionnairePanel extends StatelessWidget {
   final bool inRecovery;
   final bool sessionPaused;
   final String? scorePolicyHint;
+  final String? trainingTitle;
+  final String? equipmentSubtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -1603,6 +1835,7 @@ class _QuestionnairePanel extends StatelessWidget {
     final prompt = q['prompt']?.toString() ?? '';
     final options = (q['options'] as List<dynamic>?) ?? [];
     final total = questions.length;
+    final sessionTitle = trainingTitle ?? l.trnTrainingDefaultTitle;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1666,88 +1899,343 @@ class _QuestionnairePanel extends StatelessWidget {
             ),
           ),
         Expanded(
-          child: Row(
-            children: [
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 920;
+              final sidebar = _TraineeQuestionSidebar(
+                l: l,
+                sessionTitle: sessionTitle,
+                equipmentLine: equipmentSubtitle,
+                position: position,
+                total: total,
+              );
+              final mainCard = _TraineeQuestionMainCard(
+                l: l,
+                questionIndex: position + 1,
+                prompt: prompt,
+                options: options,
+                pickedOptionId: pickedOptionId,
+                sessionPaused: sessionPaused,
+                loading: loading,
+                onPick: onPick,
+                onConfirm: onConfirm,
+              );
+              if (wide) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      width: 300,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+                        child: sidebar,
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 16, 24, 16),
+                        child: mainCard,
+                      ),
+                    ),
+                  ],
+                );
+              }
+              final mh = constraints.maxHeight.isFinite ? constraints.maxHeight : 640.0;
+              final cardH = math.min(680.0, math.max(400.0, mh - 260));
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    sidebar,
+                    const SizedBox(height: 16),
+                    SizedBox(height: cardH, child: mainCard),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TraineeQuestionSidebar extends StatelessWidget {
+  const _TraineeQuestionSidebar({
+    required this.l,
+    required this.sessionTitle,
+    required this.equipmentLine,
+    required this.position,
+    required this.total,
+  });
+
+  final AppLocalizations l;
+  final String sessionTitle;
+  final String? equipmentLine;
+  final int position;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = total <= 0 ? 0 : (((position + 1) / total) * 100).round();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         Container(
-          width: 300,
-          margin: const EdgeInsets.all(20),
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE0E3E5)),
-            boxShadow: const [BoxShadow(color: Color(0x080F172A), blurRadius: 18, offset: Offset(0, 8))],
+            color: ClinicalPrecisionColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(ClinicalPrecisionRadii.cardInner),
+            border: Border.all(color: ClinicalPrecisionColors.onSurface, width: 2),
+            boxShadow: ClinicalPrecisionShadows.ambientCard,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l.trnProgressLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF00677D), letterSpacing: 1.2)),
-              const SizedBox(height: 10),
+              Text(
+                sessionTitle,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  height: 1.25,
+                  color: ClinicalPrecisionColors.onSurface,
+                ),
+              ),
+              if (equipmentLine != null && equipmentLine!.trim().isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  equipmentLine!.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.1,
+                    color: ClinicalPrecisionColors.secondary,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l.trnProgressLabel,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: ClinicalPrecisionColors.secondary,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  Text(
+                    '$pct%',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: ClinicalPrecisionColors.secondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(99),
                 child: LinearProgressIndicator(
                   value: (position + 1) / total,
                   minHeight: 10,
-                  backgroundColor: const Color(0xFFE0E3E5),
-                  color: const Color(0xFF50D9FE),
+                  backgroundColor: const Color(0xFFE2E8F0),
+                  color: ClinicalPrecisionColors.secondary,
                 ),
               ),
               const SizedBox(height: 10),
-              Text(l.trnQuestionProgress(position + 1, total), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              Text(
+                l.trnQuestionProgress(position + 1, total),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: ClinicalPrecisionColors.onSurfaceVariant),
+              ),
             ],
           ),
         ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 24, 28, 24),
-            child: Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Color(0xFF191C1E), width: 1.2)),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(prompt, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, height: 1.35)),
-                    const SizedBox(height: 18),
-                    Expanded(
-                      child: ListView(
-                        children: [
-                          ...options.map((raw) {
-                            final o = Map<String, dynamic>.from(raw as Map);
-                            final oid = _parseInt(o['id']);
-                            if (oid == null) return const SizedBox.shrink();
-                            return _OptionTile(
-                              id: oid,
-                              label: o['label']?.toString() ?? '',
-                              selected: pickedOptionId == oid,
-                              enabled: !sessionPaused,
-                              onTap: () => onPick(oid),
-                            );
-                          }),
-                        ],
-                      ),
-                    ),
-                    FilledButton(
-                      onPressed: loading || sessionPaused ? null : onConfirm,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF131B2E),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: loading
-                          ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : Text(l.trnBtnConfirmAnswer),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: ClinicalPrecisionColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(ClinicalPrecisionRadii.cardInner),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: ClinicalPrecisionShadows.ambientCard,
           ),
-        ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l.trnQuestionSidebarNavTitle,
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (var i = 0; i < total; i++)
+                    _QuestionNavChip(
+                      label: '${i + 1}'.padLeft(2, '0'),
+                      state: i < position
+                          ? _NavChipState.done
+                          : i == position
+                              ? _NavChipState.current
+                              : _NavChipState.upcoming,
+                    ),
+                ],
+              ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+enum _NavChipState { done, current, upcoming }
+
+class _QuestionNavChip extends StatelessWidget {
+  const _QuestionNavChip({required this.label, required this.state});
+
+  final String label;
+  final _NavChipState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final (Color bg, Color fg, Color border) = switch (state) {
+      _NavChipState.done => (
+          const Color(0xFF10B981),
+          Colors.white,
+          const Color(0xFF059669),
+        ),
+      _NavChipState.current => (
+          ClinicalPrecisionColors.onSurface,
+          Colors.white,
+          ClinicalPrecisionColors.onSurface,
+        ),
+      _NavChipState.upcoming => (
+          const Color(0xFFF1F5F9),
+          const Color(0xFF94A3B8),
+          const Color(0xFFE2E8F0),
+        ),
+    };
+    return Container(
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: border, width: 2),
+        boxShadow: state == _NavChipState.current
+            ? [BoxShadow(color: ClinicalPrecisionColors.secondary.withValues(alpha: 0.35), blurRadius: 0, spreadRadius: 3)]
+            : null,
+      ),
+      child: Text(label, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: fg)),
+    );
+  }
+}
+
+class _TraineeQuestionMainCard extends StatelessWidget {
+  const _TraineeQuestionMainCard({
+    required this.l,
+    required this.questionIndex,
+    required this.prompt,
+    required this.options,
+    required this.pickedOptionId,
+    required this.sessionPaused,
+    required this.loading,
+    required this.onPick,
+    required this.onConfirm,
+  });
+
+  final AppLocalizations l;
+  final int questionIndex;
+  final String prompt;
+  final List<dynamic> options;
+  final int? pickedOptionId;
+  final bool sessionPaused;
+  final bool loading;
+  final ValueChanged<int> onPick;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 6,
+      shadowColor: const Color(0x120F172A),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ClinicalPrecisionRadii.cardInner),
+        side: const BorderSide(color: ClinicalPrecisionColors.onSurface, width: 2),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: ClinicalPrecisionColors.onSurface,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$questionIndex'.padLeft(2, '0'),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    prompt,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      height: 1.35,
+                      color: ClinicalPrecisionColors.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Expanded(
+              child: ListView(
+                children: [
+                  ...options.map((raw) {
+                    final o = Map<String, dynamic>.from(raw as Map);
+                    final oid = _parseInt(o['id']);
+                    if (oid == null) return const SizedBox.shrink();
+                    return _OptionTile(
+                      id: oid,
+                      label: o['label']?.toString() ?? '',
+                      selected: pickedOptionId == oid,
+                      enabled: !sessionPaused,
+                      onTap: () => onPick(oid),
+                    );
+                  }),
+                ],
+              ),
+            ),
+            FilledButton(
+              onPressed: loading || sessionPaused ? null : onConfirm,
+              style: FilledButton.styleFrom(
+                backgroundColor: ClinicalPrecisionColors.primaryContainer,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: loading
+                  ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Text(l.trnBtnConfirmAnswer),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

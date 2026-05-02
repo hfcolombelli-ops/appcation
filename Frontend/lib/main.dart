@@ -6,7 +6,9 @@ import 'l10n/app_localizations.dart';
 import 'l10n/google_sign_in_localizations.dart';
 import 'services/google_sign_in_errors.dart';
 import 'app_state.dart';
+import 'app_version.dart';
 import 'config.dart';
+import 'theme/clinical_precision_tokens.dart';
 import 'firebase_bootstrap.dart';
 import 'services/api_client.dart';
 import 'services/auth_session.dart';
@@ -382,6 +384,146 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  static const _loginLogoUrl =
+      'https://lh3.googleusercontent.com/aida/ADBb0uiBfLRiTNXO08j1P2IZWvshAg7Z9Cov-vEofM75n72DNP2GySWtw6G4jCFgDxrk5P41_SrvHlHfRfnovqLb-MHUJek6pEbWNdhDTeFq1SRfs8CEhqWds7APs33Meva5ib0gL8d5XtzADnwgs_bNsz2_fuLC1XlMqg9jWCaREZBjWGWMDmFajYRN3L4QAeEcmGKaWH1438zk9Q2hfrdT4lEzD7poZuProyJ_AJgjV1loVF22d9PH2WVm';
+
+  Widget _buildLoginTopBar(AppLocalizations s) {
+    return Material(
+      color: ClinicalPrecisionColors.surfaceContainerLowest,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1440),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      _loginLogoUrl,
+                      height: 40,
+                      errorBuilder: (_, _, _) => const Icon(Icons.medical_services_rounded, size: 36, color: ClinicalPrecisionColors.secondary),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    s.loginBrandTitle,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 20,
+                      letterSpacing: -0.6,
+                      color: ClinicalPrecisionColors.onSurface,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_phase == _AuthPhase.entry) ...[
+                    TextButton(
+                      onPressed: () => _snack(s.loginFooterSoon),
+                      child: Text(s.loginNavQuestions, style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant)),
+                    ),
+                    const SizedBox(width: 6),
+                    FilledButton(
+                      onPressed: _openRegisterCard,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: ClinicalPrecisionColors.secondary,
+                        foregroundColor: ClinicalPrecisionColors.onSecondary,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ClinicalPrecisionRadii.button)),
+                      ),
+                      child: Text(s.loginNavStartNow),
+                    ),
+                  ] else
+                    TextButton(
+                      onPressed: _backToEntry,
+                      child: Text(s.loginNavHaveAccount, style: const TextStyle(color: ClinicalPrecisionColors.secondary, fontWeight: FontWeight.w600)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginFooter(AppLocalizations s) {
+    void stub(String _) => _snack(s.loginFooterSoon);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
+      decoration: BoxDecoration(
+        color: ClinicalPrecisionColors.surface,
+        border: Border(top: BorderSide(color: ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.35))),
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1440),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 4,
+                children: [
+                  Text(s.loginFooterSupportPrefix, style: const TextStyle(fontSize: 13, color: ClinicalPrecisionColors.onSurfaceVariant)),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      foregroundColor: ClinicalPrecisionColors.secondary,
+                    ),
+                    onPressed: () => _snack(s.loginFooterSoon),
+                    child: Text(s.loginFooterSupportLink, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  TextButton(onPressed: () => stub('terms'), child: Text(s.loginFooterTerms)),
+                  TextButton(onPressed: () => stub('privacy'), child: Text(s.loginFooterPrivacy)),
+                  TextButton(onPressed: () => stub('cookies'), child: Text(s.loginFooterCookies)),
+                  TextButton(onPressed: () => stub('help'), child: Text(s.loginFooterHelp)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: ClinicalPrecisionColors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.35)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${AppVersion.current} · ${s.loginFooterSystemsOk}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ClinicalPrecisionColors.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   List<({String id, String label, IconData icon})> _googleRoles(AppLocalizations s) {
     if (_authTrack == _AuthDocumentTrack.cnpj) {
       return [
@@ -403,73 +545,78 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       key: const ValueKey('login-universal'),
       title: s.loginShellTitle,
       showAppBar: false,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFF0F4F8), Color(0xFFE8EEF3), Color(0xFFF7F9FB)],
-          ),
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 320),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeInCubic,
-              transitionBuilder: (child, anim) => FadeTransition(
-                opacity: anim,
-                child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0.04, 0), end: Offset.zero).animate(anim),
-                  child: child,
+      child: ColoredBox(
+        color: ClinicalPrecisionColors.surface,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildLoginTopBar(s),
+            Expanded(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 320),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, anim) => FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(
+                        position: Tween<Offset>(begin: const Offset(0.04, 0), end: Offset.zero).animate(anim),
+                        child: child,
+                      ),
+                    ),
+                    child: _phase == _AuthPhase.entry
+                        ? _buildEntryCard(context, tt, s, key: const ValueKey('card-entry'))
+                        : _buildRegisterCard(context, tt, s, key: const ValueKey('card-register')),
+                  ),
                 ),
               ),
-              child: _phase == _AuthPhase.entry
-                  ? _buildEntryCard(context, tt, s, key: const ValueKey('card-entry'))
-                  : _buildRegisterCard(context, tt, s, key: const ValueKey('card-register')),
             ),
-          ),
+            _buildLoginFooter(s),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildEntryCard(BuildContext context, TextTheme tt, AppLocalizations s, {Key? key}) {
-    return Card(
+    final heroTitleStyle = tt.headlineMedium?.copyWith(
+      fontSize: 30,
+      fontWeight: FontWeight.w800,
+      letterSpacing: -0.6,
+      height: 1.15,
+      color: ClinicalPrecisionColors.primaryContainer,
+    );
+    final heroSubStyle = tt.bodyLarge?.copyWith(
+      fontSize: 17,
+      height: 1.45,
+      color: ClinicalPrecisionColors.onPrimaryContainer,
+    );
+
+    return Column(
       key: key,
-      elevation: 1.5,
-      shadowColor: const Color(0xFF0F172A).withValues(alpha: 0.08),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(22),
-        side: BorderSide(color: const Color(0xFF0F172A).withValues(alpha: 0.06)),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  'https://lh3.googleusercontent.com/aida/ADBb0uiBfLRiTNXO08j1P2IZWvshAg7Z9Cov-vEofM75n72DNP2GySWtw6G4jCFgDxrk5P41_SrvHlHfRfnovqLb-MHUJek6pEbWNdhDTeFq1SRfs8CEhqWds7APs33Meva5ib0gL8d5XtzADnwgs_bNsz2_fuLC1XlMqg9jWCaREZBjWGWMDmFajYRN3L4QAeEcmGKaWH1438zk9Q2hfrdT4lEzD7poZuProyJ_AJgjV1loVF22d9PH2WVm',
-                  height: 48,
-                  errorBuilder: (_, _, _) => const Icon(Icons.medical_services, size: 44, color: Color(0xFF00677D)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(s.loginBrandTitle, textAlign: TextAlign.center, style: tt.headlineMedium?.copyWith(fontSize: 26, letterSpacing: -0.5)),
-            const SizedBox(height: 4),
-            Text(
-              s.loginTagline,
-              textAlign: TextAlign.center,
-              style: tt.bodyMedium?.copyWith(color: const Color(0xFF5C5E66), height: 1.35),
-            ),
-            const SizedBox(height: 14),
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(s.loginAccessHeroTitle, textAlign: TextAlign.center, style: heroTitleStyle),
+        const SizedBox(height: 10),
+        Text(s.loginAccessHeroSubtitle, textAlign: TextAlign.center, style: heroSubStyle),
+        const SizedBox(height: 28),
+        Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 520),
+          decoration: BoxDecoration(
+            color: ClinicalPrecisionColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(ClinicalPrecisionRadii.cardHero),
+            border: Border.all(color: ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.35)),
+            boxShadow: ClinicalPrecisionShadows.loginCard,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
             SegmentedButton<_AuthDocumentTrack>(
               segments: [
                 ButtonSegment<_AuthDocumentTrack>(
@@ -648,26 +795,46 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
               ),
             ],
-          ],
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
   Widget _buildRegisterCard(BuildContext context, TextTheme tt, AppLocalizations s, {Key? key}) {
-    return Card(
+    final heroTitleStyle = tt.headlineSmall?.copyWith(
+      fontWeight: FontWeight.w800,
+      letterSpacing: -0.5,
+      color: ClinicalPrecisionColors.primaryContainer,
+    );
+    return Column(
       key: key,
-      elevation: 1.5,
-      shadowColor: const Color(0xFF0F172A).withValues(alpha: 0.08),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(22),
-        side: BorderSide(color: const Color(0xFF0F172A).withValues(alpha: 0.06)),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(s.actionCreateAccount, textAlign: TextAlign.center, style: heroTitleStyle),
+        const SizedBox(height: 8),
+        Text(
+          s.registerSubtitle,
+          textAlign: TextAlign.center,
+          style: tt.bodyMedium?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.35),
+        ),
+        const SizedBox(height: 22),
+        Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 560),
+          decoration: BoxDecoration(
+            color: ClinicalPrecisionColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(ClinicalPrecisionRadii.cardHero),
+            border: Border.all(color: ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.35)),
+            boxShadow: ClinicalPrecisionShadows.loginCard,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
             Row(
               children: [
                 IconButton(
@@ -680,17 +847,12 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 Expanded(
                   child: Text(
                     s.actionCreateAccount,
-                    style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                    style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: ClinicalPrecisionColors.onSurface),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              s.registerSubtitle,
-              style: tt.bodyMedium?.copyWith(color: const Color(0xFF5C5E66)),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             SegmentedButton<_AuthDocumentTrack>(
               segments: [
                 ButtonSegment<_AuthDocumentTrack>(
@@ -857,9 +1019,11 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 ],
               ),
             ),
-          ],
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

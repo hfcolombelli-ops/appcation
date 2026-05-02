@@ -21,6 +21,45 @@ class AppLocalizationsPt extends AppLocalizations {
   String get loginTagline => 'Treino clínico com ritmo e clareza';
 
   @override
+  String get loginAccessHeroTitle => 'Acesse o App²cation';
+
+  @override
+  String get loginAccessHeroSubtitle => 'O seu treino, a sua evolução';
+
+  @override
+  String get loginNavQuestions => 'Dúvidas?';
+
+  @override
+  String get loginNavStartNow => 'Começar agora';
+
+  @override
+  String get loginNavHaveAccount => 'Já tenho conta';
+
+  @override
+  String get loginFooterTerms => 'Termos de uso';
+
+  @override
+  String get loginFooterPrivacy => 'Política de privacidade';
+
+  @override
+  String get loginFooterCookies => 'Cookies';
+
+  @override
+  String get loginFooterHelp => 'Centro de ajuda';
+
+  @override
+  String get loginFooterSystemsOk => 'Todos os sistemas operacionais';
+
+  @override
+  String get loginFooterSupportPrefix => 'Não consegue aceder?';
+
+  @override
+  String get loginFooterSupportLink => 'Fale com o suporte técnico';
+
+  @override
+  String get loginFooterSoon => 'Disponível em breve.';
+
+  @override
   String get authTrackCpfLabel => 'CPF';
 
   @override
@@ -95,7 +134,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get loginOrgHint =>
-      'Instrutor e gestor institucional: use o e-mail e senha fornecidos pela sua organização.';
+      'Gestor de hospital ou clínica: use o e-mail e senha que a instituição criou para si no painel interno.';
 
   @override
   String get actionCreateAccount => 'Criar conta';
@@ -1483,6 +1522,38 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get trnWaitingRoomBody =>
       'Assim que o instrutor iniciar, o questionário abre automaticamente.';
+
+  @override
+  String get trnWaitingHeroTitle => 'Aguardando início do treinamento';
+
+  @override
+  String get trnWaitingHeroBody =>
+      'O instrutor iniciará a sessão em breve. Mantenha esta janela aberta para entrar automaticamente na sala virtual.';
+
+  @override
+  String get trnWaitingStatusChip => 'Status: sala de espera ativa';
+
+  @override
+  String get trnWaitingTestConnection => 'Testar conexão e periféricos';
+
+  @override
+  String get trnWaitingPingOk => 'Ligação ao servidor OK.';
+
+  @override
+  String get trnWaitingPingFail => 'Não foi possível contactar o servidor.';
+
+  @override
+  String get trnWaitingPrivacyNote =>
+      'Câmara e microfone permanecem desativados por defeito nesta versão.';
+
+  @override
+  String get trnHeaderWaitingInstructor => 'Aguardando instrutor';
+
+  @override
+  String get trnHeaderRealtimeActive => 'Tempo real: ativo';
+
+  @override
+  String get trnQuestionSidebarNavTitle => 'Navegação';
 
   @override
   String get trnEmptyRecoverySync =>
