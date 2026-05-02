@@ -52,6 +52,14 @@ jobs:
         working-directory: Frontend
         run: flutter pub get
 
+      - name: Analyze (Dart)
+        working-directory: Frontend
+        run: dart analyze
+
+      - name: Test (Flutter)
+        working-directory: Frontend
+        run: flutter test
+
       # URL via ficheiro (--dart-define-from-file): evita que caracteres no secret
       # (aspas, newline, espaços) partam as aspas do bash e o Flutter trate
       # "--dart-define=..." como ficheiro alvo ("Target file ... not found").
