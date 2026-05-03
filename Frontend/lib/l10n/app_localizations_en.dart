@@ -28,6 +28,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Training management platform for hospital equipment';
 
   @override
+  String get loginCardSignInHeadline => 'Sign in to your account';
+
+  @override
+  String get loginCardSignInLead =>
+      'Use Google or your institutional email and password.';
+
+  @override
   String get loginNavQuestions => 'Questions?';
 
   @override

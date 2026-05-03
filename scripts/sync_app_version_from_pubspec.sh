@@ -3,8 +3,8 @@
 # Uso: ./scripts/sync_app_version_from_pubspec.sh [caminho-para-pubspec]
 # Por defeito: Frontend/pubspec.yaml
 #
-# Política de texto visível (badge): «V 1.0», «V 1.1», … «V 1.99» — só MAJOR.MINOR.
-# O pubspec continua com PATCH e +BUILD (rastreio / lojas); não aparecem no badge.
+# Badge visível: «V 1.46» = só MAJOR.MINOR (versão de produto). Não mostrar PATCH nem +BUILD
+# (evita confusão com algo tipo «1.45.46»; o +BUILD é contador interno no pubspec).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PUB="${1:-$ROOT/Frontend/pubspec.yaml}"
@@ -25,7 +25,7 @@ fi
 
 cat >"$OUT" <<EOF
 // Gerado por scripts/sync_app_version_from_pubspec.sh — não editar; fonte: Frontend/pubspec.yaml
-// Badge: só produto MAJOR.MINOR (1.0…). Técnico completo: $full
+// Badge visível: V $display (só MAJOR.MINOR). Pubspec completo: $full
 class AppVersion {
   static const String current = 'V $display';
 }

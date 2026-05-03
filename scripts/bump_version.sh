@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# Política App²cation (produto visível no badge = só «1.x», sem terceiro dígito nem +build):
-#   - Baseline: 1.0.0+1 no pubspec → badge «V 1.0» (gerado por sync_app_version_from_pubspec.sh).
-#   - Cada entrega: MINOR +1 (leitura 1.0 → 1.1 → … → 1.99); PATCH fica 0; BUILD (+n) +1.
+# Política App²cation — versão «de produto» = MAJOR.MINOR (ex.: 1.46), nunca concatenação tipo 1.45.46:
+#   - Badge na app: «V 1.46» (só estes dois números; ver scripts/sync_app_version_from_pubspec.sh).
+#   - Pubspec: MAJOR.MINOR.PATCH+BUILD (Flutter); PATCH fica 0; BUILD (+n) sobe a cada entrega.
+#   - Cada ./scripts/bump_version.sh: MINOR +1, PATCH 0, BUILD +1 (ex.: 1.45.0+46 → 1.46.0+47).
 #   - MINOR > 99: MAJOR +1, MINOR 0.
-#
-# Pubspec mantém MAJOR.MINOR.0+BUILD (exigência Flutter); o utilizador vê só V MAJOR.MINOR.
 #
 # Ex.: 1.0.0+1 → 1.1.0+2 → … → 1.99.0+100 → 2.0.0+101
 #

@@ -134,6 +134,18 @@ abstract class AppLocalizations {
   /// **'Plataforma de gestão de treinamentos para equipamentos hospitalares'**
   String get loginAccessHeroSubtitle;
 
+  /// No description provided for @loginCardSignInHeadline.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entre na sua conta'**
+  String get loginCardSignInHeadline;
+
+  /// No description provided for @loginCardSignInLead.
+  ///
+  /// In pt, this message translates to:
+  /// **'Use o Google ou o e-mail e senha da sua instituição.'**
+  String get loginCardSignInLead;
+
   /// No description provided for @loginNavQuestions.
   ///
   /// In pt, this message translates to:

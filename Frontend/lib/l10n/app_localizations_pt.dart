@@ -28,6 +28,13 @@ class AppLocalizationsPt extends AppLocalizations {
       'Plataforma de gestão de treinamentos para equipamentos hospitalares';
 
   @override
+  String get loginCardSignInHeadline => 'Entre na sua conta';
+
+  @override
+  String get loginCardSignInLead =>
+      'Use o Google ou o e-mail e senha da sua instituição.';
+
+  @override
   String get loginNavQuestions => 'Dúvidas?';
 
   @override
