@@ -57,7 +57,7 @@ Objetivo: TRE-ACC-01 → TRE-RES-01 fiéis ao catálogo (copy, passos, feedback 
 
 Objetivo: APP-DASH-01, APP-TRE-01, APP-SAL-01 estáveis; **APP-SAL-02** (pós-encerramento: tabela de resultados, repescagem explícita &lt; 7.0, encerramento definitivo / certificados) como fatia dedicada.
 
-- Sala de comando (**APP-SAL-01**) e **Resultados** (**APP-SAL-02**): filtro local de participantes (nome/e-mail, debounce); APP-SAL-02 permanece rota dedicada `/instructor/resultados`.
+- Sala de comando (**APP-SAL-01**) e **Resultados** (**APP-SAL-02**): filtro local de participantes (nome/e-mail, debounce); APP-SAL-02 permanece rota dedicada `/instructor/resultados`. **APP-SAL-01:** *health* periódico + estado API na barra do shell; faixa offline + bloqueio de comandos de sessão / repescagem quando a API falha (`comandoOfflineHint`). **APP-SAL-02 / APP-DASH-01 / APP-TRE-01:** mesma origem `_InstructorApiReachability`; faixa + `instrOfflineHint` onde aplicável; desactivar export / encerrar / gravar treino / certificados em PDF offline.
 - **DoD:** Fluxo Mermaid GA7→GA10 coberto sem dead-ends; API testada com treino `finished` ou estado equivalente.
 
 ### Fase 3 — Fluxo Instituição (2)
@@ -113,4 +113,4 @@ _Registar aqui ou remover quando fechadas._
 
 ---
 
-**Próximo passo imediato sugerido:** **Fase 2 — Application** (APP-DASH / APP-TRE / APP-SAL) ou outra dívida de produto que priorizes. **TRE-RES-01** (rede no resultado), **TRE-QUES-01**, **TRE-ACC/TRE-SAL**, **TRE-CON-01** (MVP+), **FAB-HOM-01/02**, **APP-SAL-01/02**, MVP+ fabricante no mapa e gate «Sem perfil» estão fechados (MVP+).
+**Próximo passo imediato sugerido:** **Fase 2** (credenciamento `/instructor/credenciamento`, rotas instituição, ou refinamentos UX) ou **Fase 3** conforme prioridade. **APP-SAL-01/02**, **APP-DASH-01**, **APP-TRE-01** (rede via `_InstructorApiReachability`), **TRE-RES-01**, **TRE-QUES-01**, **TRE-ACC/TRE-SAL**, **TRE-CON-01** (MVP+), **FAB-HOM-01/02**, MVP+ fabricante no mapa e gate «Sem perfil» estão fechados (MVP+).

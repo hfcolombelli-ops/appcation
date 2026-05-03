@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
@@ -18,6 +17,20 @@ import '../theme/instructor_page_chrome.dart';
 import '../widgets/fluxo_premium_panel.dart';
 import '../widgets/version_badge.dart';
 import 'fluxxo_manufacturer_review_page.dart';
+
+class _InstructorApiReachability extends InheritedWidget {
+  const _InstructorApiReachability({required this.apiOnline, required super.child});
+
+  final bool apiOnline;
+
+  static bool apiOnlineOf(BuildContext context) {
+    final w = context.dependOnInheritedWidgetOfExactType<_InstructorApiReachability>();
+    return w?.apiOnline ?? true;
+  }
+
+  @override
+  bool updateShouldNotify(covariant _InstructorApiReachability oldWidget) => oldWidget.apiOnline != apiOnline;
+}
 
 bool _gestorNeedsInstitutionLink() {
   if (appAuth.role != 'institution_admin') {
@@ -46,6 +59,28 @@ class _InstructorShellState extends State<InstructorShell> {
   final _api = ProductionApi(ApiClient());
 
   static const _bg = Color(0xFFF7F9FB);
+
+  Timer? _healthTimer;
+  bool _apiOnline = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _healthTimer = Timer.periodic(const Duration(seconds: 20), (_) async {
+      try {
+        await _api.health();
+        if (mounted) setState(() => _apiOnline = true);
+      } catch (_) {
+        if (mounted) setState(() => _apiOnline = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _healthTimer?.cancel();
+    super.dispose();
+  }
 
   void _go(String route) {
     setState(() => _route = route);
@@ -136,16 +171,19 @@ class _InstructorShellState extends State<InstructorShell> {
                         Expanded(
                           child: Column(
                             children: [
-                              _TopBar(title: _title(context, _route)),
+                              _TopBar(title: _title(context, _route), apiOnline: _apiOnline),
                               const Padding(
                                 padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
                                 child: FluxoPremiumPanel(dense: true),
                               ),
                               Expanded(
-                                child: Navigator(
-                                  key: _navKey,
-                                  initialRoute: '/instructor/dashboard',
-                                  onGenerateRoute: _onGenerateRoute,
+                                child: _InstructorApiReachability(
+                                  apiOnline: _apiOnline,
+                                  child: Navigator(
+                                    key: _navKey,
+                                    initialRoute: '/instructor/dashboard',
+                                    onGenerateRoute: _onGenerateRoute,
+                                  ),
                                 ),
                               ),
                             ],
@@ -357,9 +395,10 @@ class _Sidebar extends StatelessWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.title});
+  const _TopBar({required this.title, required this.apiOnline});
 
   final String title;
+  final bool apiOnline;
 
   @override
   Widget build(BuildContext context) {
@@ -381,6 +420,33 @@ class _TopBar extends StatelessWidget {
           children: [
             Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
             const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: apiOnline ? const Color(0xFFECFDF5) : const Color(0xFFFEE2E2),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    apiOnline ? Icons.cloud_done_outlined : Icons.cloud_off_outlined,
+                    size: 16,
+                    color: apiOnline ? const Color(0xFF047857) : const Color(0xFFB91C1C),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    apiOnline ? l.trnApiOk : l.trnApiOffline,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: apiOnline ? const Color(0xFF047857) : const Color(0xFF991B1B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
             IconButton(
               tooltip: l.actionSignOut,
               onPressed: () => appAuth.logout(),
@@ -482,15 +548,6 @@ class _DashboardPageState extends State<_DashboardPage> {
   Future<void> _exportInstitutionDashboardCsv(BuildContext context) async {
     final t = appAuth.token;
     if (t == null) return;
-    if (!downloadBytesSupported) {
-      if (context.mounted) {
-        final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.dashExportCsvWebOnly)),
-        );
-      }
-      return;
-    }
     try {
       final bytes = await widget.api.institutionDashboardExportCsv(t);
       if (!context.mounted) return;
@@ -507,15 +564,6 @@ class _DashboardPageState extends State<_DashboardPage> {
   Future<void> _exportInstitutionDashboardPdf(BuildContext context) async {
     final t = appAuth.token;
     if (t == null) return;
-    if (!downloadBytesSupported) {
-      if (context.mounted) {
-        final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.dashExportPdfWebOnly)),
-        );
-      }
-      return;
-    }
     try {
       final bytes = await widget.api.institutionDashboardExportPdf(t);
       if (!context.mounted) return;
@@ -569,9 +617,11 @@ class _DashboardPageState extends State<_DashboardPage> {
       if (_institutionDashboard == null) {
         return instructorShellScaffold(child: const Center(child: CircularProgressIndicator()));
       }
+      final online = _InstructorApiReachability.apiOnlineOf(context);
       return _InstitutionDashboardView(
         data: _institutionDashboard!,
         onRefresh: _load,
+        apiOnline: online,
         onExportCsv: () => _exportInstitutionDashboardCsv(context),
         onExportPdf: () => _exportInstitutionDashboardPdf(context),
       );
@@ -581,6 +631,7 @@ class _DashboardPageState extends State<_DashboardPage> {
     }
 
     final l = AppLocalizations.of(context);
+    final online = _InstructorApiReachability.apiOnlineOf(context);
     final trainingCount = _summary!['training_count']?.toString() ?? '0';
     final finishedCount = _summary!['finished_trainings_count']?.toString() ?? '0';
     final participantCount = _summary!['participant_count']?.toString() ?? '0';
@@ -596,6 +647,32 @@ class _DashboardPageState extends State<_DashboardPage> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
+            if (!online) ...[
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF1F2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFECACA)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.wifi_off_rounded, color: Color(0xFFB91C1C), size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l.instrOfflineHint,
+                          style: const TextStyle(fontSize: 13.5, height: 1.4, color: Color(0xFF7F1D1D)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             Wrap(
               spacing: 14,
               runSpacing: 14,
@@ -693,12 +770,14 @@ class _InstitutionDashboardView extends StatelessWidget {
   const _InstitutionDashboardView({
     required this.data,
     required this.onRefresh,
+    required this.apiOnline,
     this.onExportCsv,
     this.onExportPdf,
   });
 
   final Map<String, dynamic> data;
   final Future<void> Function() onRefresh;
+  final bool apiOnline;
   final Future<void> Function()? onExportCsv;
   final Future<void> Function()? onExportPdf;
 
@@ -722,6 +801,8 @@ class _InstitutionDashboardView extends StatelessWidget {
     final bySector = (data['aggregated_by_sector'] as List<dynamic>?) ?? [];
     final byEq = (data['aggregated_by_equipment'] as List<dynamic>?) ?? [];
 
+    Widget exportWrap(Widget child) => apiOnline ? child : Tooltip(message: l.instrOfflineHint, child: child);
+
     return instructorShellScaffold(
       child: RefreshIndicator(
         onRefresh: onRefresh,
@@ -734,6 +815,32 @@ class _InstitutionDashboardView extends StatelessWidget {
             l.dashInstitutionLgpdNote,
             style: const TextStyle(color: Color(0xFF45464D), fontSize: 12),
           ),
+          if (!apiOnline) ...[
+            const SizedBox(height: 12),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF1F2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.wifi_off_rounded, color: Color(0xFFB91C1C), size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        l.instrOfflineHint,
+                        style: const TextStyle(fontSize: 13.5, height: 1.4, color: Color(0xFF7F1D1D)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           if (onExportCsv != null || onExportPdf != null) ...[
             const SizedBox(height: 10),
             Wrap(
@@ -741,16 +848,20 @@ class _InstitutionDashboardView extends StatelessWidget {
               runSpacing: 8,
               children: [
                 if (onExportCsv != null)
-                  OutlinedButton.icon(
-                    onPressed: () => onExportCsv!(),
-                    icon: const Icon(Icons.table_chart_outlined, size: 20),
-                    label: Text(l.dashExportCsv),
+                  exportWrap(
+                    OutlinedButton.icon(
+                      onPressed: apiOnline ? () => onExportCsv!() : null,
+                      icon: const Icon(Icons.table_chart_outlined, size: 20),
+                      label: Text(l.dashExportCsv),
+                    ),
                   ),
                 if (onExportPdf != null)
-                  OutlinedButton.icon(
-                    onPressed: () => onExportPdf!(),
-                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 20),
-                    label: Text(l.dashExportPdf),
+                  exportWrap(
+                    OutlinedButton.icon(
+                      onPressed: apiOnline ? () => onExportPdf!() : null,
+                      icon: const Icon(Icons.picture_as_pdf_outlined, size: 20),
+                      label: Text(l.dashExportPdf),
+                    ),
                   ),
               ],
             ),
@@ -813,8 +924,12 @@ class _InstitutionDashboardView extends StatelessWidget {
                           title: Text(row['sector']?.toString() ?? l.trainReqDashNone),
                           subtitle: Text(
                             l.dashSectorSubtitle(
-                              row['completions'] ?? l.trainReqDashNone,
-                              row['avg_score'] ?? l.trainReqDashNone,
+                              (row['total_enrollments'] as num?)?.toInt() ?? 0,
+                              (row['completed_count'] as num?)?.toInt() ?? 0,
+                              (row['completions'] as num?)?.toInt() ?? 0,
+                              row['avg_score'] != null
+                                  ? row['avg_score'].toString()
+                                  : l.trainReqDashNone,
                             ),
                           ),
                         );
@@ -900,6 +1015,26 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
   final Set<int> _repescageIds = {};
   List<Map<String, dynamic>> _trainingBlocks = [];
   int? _repescageBlockId;
+  final TextEditingController _postResultsParticipantSearchCtrl = TextEditingController();
+  Timer? _postResultsParticipantSearchDebounce;
+  String _postResultsParticipantSearchApplied = '';
+
+  @override
+  void dispose() {
+    _postResultsParticipantSearchDebounce?.cancel();
+    _postResultsParticipantSearchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _schedulePostResultsParticipantSearch() {
+    _postResultsParticipantSearchDebounce?.cancel();
+    _postResultsParticipantSearchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      var t = _postResultsParticipantSearchCtrl.text.trim();
+      if (t.length > 120) t = t.substring(0, 120);
+      setState(() => _postResultsParticipantSearchApplied = t);
+    });
+  }
 
   bool _canFinishTrainingFromMonitor() {
     final st = _monitor?['training']?['status']?.toString();
@@ -954,16 +1089,7 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
       if (!mounted) return;
       final safe = code.replaceAll(RegExp(r'[^A-Za-z0-9_.-]'), '-');
       final filename = l.trnCertDownloadFilename(safe);
-      if (downloadBytesSupported) {
-        downloadBytesAsFile(bytes, '$filename.pdf');
-      } else {
-        await FileSaver.instance.saveFile(
-          name: filename,
-          fileExtension: 'pdf',
-          bytes: bytes,
-          mimeType: MimeType.pdf,
-        );
-      }
+      downloadBytesAsFile(bytes, '$filename.pdf');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.trnSnackCertPdfDownloaded)));
       }
@@ -1008,12 +1134,6 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
     final t = appAuth.token;
     final tid = _selectedId;
     if (t == null || tid == null) return;
-    if (!downloadBytesSupported) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.dashExportCsvWebOnly)));
-      }
-      return;
-    }
     setState(() => _exportCsvLoading = true);
     try {
       final bytes = await widget.api.downloadTrainingCertificatesReportCsv(t, tid);
@@ -1035,12 +1155,6 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
     final t = appAuth.token;
     final tid = _selectedId;
     if (t == null || tid == null) return;
-    if (!downloadBytesSupported) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.dashExportPdfWebOnly)));
-      }
-      return;
-    }
     setState(() => _exportPdfLoading = true);
     try {
       final bytes = await widget.api.downloadTrainingCertificatesReportPdf(t, tid);
@@ -1135,7 +1249,18 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final online = _InstructorApiReachability.apiOnlineOf(context);
     final participants = (_monitor?['participants'] as List<dynamic>?) ?? [];
+    final searchQ = _postResultsParticipantSearchApplied.toLowerCase();
+    final filteredParticipants = searchQ.isEmpty
+        ? participants
+        : participants.where((raw) {
+            final row = Map<String, dynamic>.from(raw as Map);
+            final u = row['user'] as Map<String, dynamic>?;
+            final name = u?['name']?.toString().toLowerCase() ?? '';
+            final email = u?['email']?.toString().toLowerCase() ?? '';
+            return name.contains(searchQ) || email.contains(searchQ);
+          }).toList();
 
     final body = _selectedId == null
         ? Center(child: Text(l.postTrainingPickTraining, style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant)))
@@ -1155,18 +1280,40 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
                     children: [
                       Text(l.comandoParticipantsTitle, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                       const SizedBox(height: 12),
+                      TextField(
+                        controller: _postResultsParticipantSearchCtrl,
+                        onChanged: (_) => _schedulePostResultsParticipantSearch(),
+                        decoration: InputDecoration(
+                          hintText: l.comandoParticipantsSearchHint,
+                          prefixIcon: const Icon(Icons.search_rounded, size: 22),
+                          isDense: true,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: ClinicalPrecisionColors.surfaceContainerLowest,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       Expanded(
                         child: participants.isEmpty
                             ? Center(child: Text(l.comandoNoParticipants))
+                            : filteredParticipants.isEmpty
+                                ? Center(
+                                    child: Text(
+                                      l.comandoParticipantsNoMatch,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant),
+                                    ),
+                                  )
                             : ListView.separated(
-                                itemCount: participants.length,
+                                itemCount: filteredParticipants.length,
                                 separatorBuilder: (_, _) => const SizedBox(height: 10),
                                 itemBuilder: (context, index) {
-                                  final raw = participants[index];
+                                  final raw = filteredParticipants[index];
                                   final row = Map<String, dynamic>.from(raw as Map);
                                   final eid = _parseInt(row['enrollment']?['id']);
                                   return _ParticipantTile(
                                     row,
+                                    apiOnline: online,
                                     selected: eid != null && _repescageIds.contains(eid),
                                     onToggle: (enrollmentId) {
                                       setState(() {
@@ -1192,6 +1339,16 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
                   ),
                 ),
               );
+              final postRepescageActionButton = OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.amber.shade200,
+                  side: BorderSide(color: Colors.amber.withValues(alpha: 0.65)),
+                ),
+                onPressed: _loading || _repescageIds.isEmpty || !online ? null : _runRepescage,
+                child: Text(l.comandoRepescageCount(_repescageIds.length)),
+              );
+              final postRepescageAction =
+                  online ? postRepescageActionButton : Tooltip(message: l.instrOfflineHint, child: postRepescageActionButton);
               final repescPane = instructorShellCard(
                 color: ClinicalPrecisionColors.primaryContainer,
                 child: Padding(
@@ -1234,14 +1391,7 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
                             onChanged: (v) => setState(() => _repescageBlockId = v),
                           ),
                         const SizedBox(height: 16),
-                        OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.amber.shade200,
-                            side: BorderSide(color: Colors.amber.withValues(alpha: 0.65)),
-                          ),
-                          onPressed: _loading || _repescageIds.isEmpty ? null : _runRepescage,
-                          child: Text(l.comandoRepescageCount(_repescageIds.length)),
-                        ),
+                        postRepescageAction,
                         const SizedBox(height: 20),
                         Text(
                           l.comandoHelpFooter,
@@ -1286,6 +1436,32 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
             const SizedBox(height: 8),
             Text(l.postTrainingIntro, style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.4)),
             const SizedBox(height: 20),
+            if (!online) ...[
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF1F2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFECACA)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.wifi_off_rounded, color: Color(0xFFB91C1C), size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l.instrOfflineHint,
+                          style: const TextStyle(fontSize: 13.5, height: 1.4, color: Color(0xFF7F1D1D)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1311,6 +1487,9 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
                         _selectedId = v;
                         _repescageIds.clear();
                         _repescageBlockId = null;
+                        _postResultsParticipantSearchDebounce?.cancel();
+                        _postResultsParticipantSearchCtrl.clear();
+                        _postResultsParticipantSearchApplied = '';
                       });
                       _loadMonitor();
                     },
@@ -1320,40 +1499,52 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
                 if (_selectedId != null)
                   Padding(
                     padding: const EdgeInsets.only(left: 2, top: 6),
-                    child: IconButton(
-                      tooltip: l.postTrainingExportCertificatesCsvTooltip,
-                      onPressed: (_exportCsvLoading || _exportPdfLoading) ? null : _exportTrainingCertificatesCsv,
-                      icon: _exportCsvLoading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.table_chart_outlined),
+                    child: Tooltip(
+                      message: online ? l.postTrainingExportCertificatesCsvTooltip : l.instrOfflineHint,
+                      child: IconButton(
+                        onPressed: (_exportCsvLoading || _exportPdfLoading || !online) ? null : _exportTrainingCertificatesCsv,
+                        icon: _exportCsvLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.table_chart_outlined),
+                      ),
                     ),
                   ),
                 if (_selectedId != null)
                   Padding(
                     padding: const EdgeInsets.only(left: 0, top: 6),
-                    child: IconButton(
-                      tooltip: l.postTrainingExportCertificatesPdfTooltip,
-                      onPressed: (_exportCsvLoading || _exportPdfLoading) ? null : _exportTrainingCertificatesPdf,
-                      icon: _exportPdfLoading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.picture_as_pdf_outlined),
+                    child: Tooltip(
+                      message: online ? l.postTrainingExportCertificatesPdfTooltip : l.instrOfflineHint,
+                      child: IconButton(
+                        onPressed: (_exportCsvLoading || _exportPdfLoading || !online) ? null : _exportTrainingCertificatesPdf,
+                        icon: _exportPdfLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.picture_as_pdf_outlined),
+                      ),
                     ),
                   ),
                 if (_selectedId != null && _canFinishTrainingFromMonitor())
                   Padding(
                     padding: const EdgeInsets.only(left: 4, top: 6),
-                    child: FilledButton.tonal(
-                      onPressed: _closingTraining ? null : _confirmFinishTraining,
-                      child: Text(l.postTrainingFinishTraining),
-                    ),
+                    child: online
+                        ? FilledButton.tonal(
+                            onPressed: _closingTraining ? null : _confirmFinishTraining,
+                            child: Text(l.postTrainingFinishTraining),
+                          )
+                        : Tooltip(
+                            message: l.instrOfflineHint,
+                            child: FilledButton.tonal(
+                              onPressed: null,
+                              child: Text(l.postTrainingFinishTraining),
+                            ),
+                          ),
                   ),
               ],
             ),
@@ -1642,7 +1833,9 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
   @override
   Widget build(BuildContext context) {
     final s = AppLocalizations.of(context);
+    final online = _InstructorApiReachability.apiOnlineOf(context);
     final tr = _createdTraining;
+    Widget offlineWrap(Widget child) => online ? child : Tooltip(message: s.instrOfflineHint, child: child);
 
     return instructorShellScaffold(
       child: ListView(
@@ -1650,6 +1843,32 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
         children: [
           Text(s.trainingSectionTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
           const SizedBox(height: 14),
+          if (!online) ...[
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF1F2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.wifi_off_rounded, color: Color(0xFFB91C1C), size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        s.instrOfflineHint,
+                        style: const TextStyle(fontSize: 13.5, height: 1.4, color: Color(0xFF7F1D1D)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
           instructorShellCard(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -1692,15 +1911,17 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
                   Text(_error!, style: const TextStyle(color: Color(0xFFB91C1C))),
                 ],
                 const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: _loading ? null : _createTraining,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF131B2E),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                offlineWrap(
+                  FilledButton(
+                    onPressed: _loading || !online ? null : _createTraining,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF131B2E),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: _loading
+                        ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Text(s.trainingCreateButton),
                   ),
-                  child: _loading
-                      ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(s.trainingCreateButton),
                 ),
               ],
             ),
@@ -1735,10 +1956,12 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
                     onChanged: (v) => setState(() => _templatePickId = v),
                   ),
                   const SizedBox(height: 12),
-                  FilledButton(
-                    onPressed: _loading ? null : _instantiateFromOfficialTemplate,
-                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0F766E)),
-                    child: Text(s.trainingUseTemplateButton),
+                  offlineWrap(
+                    FilledButton(
+                      onPressed: _loading || !online ? null : _instantiateFromOfficialTemplate,
+                      style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0F766E)),
+                      child: Text(s.trainingUseTemplateButton),
+                    ),
                   ),
                 ],
               ),
@@ -1790,9 +2013,11 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
                       DropdownMenuItem(value: 'full_average', child: Text(s.trainingPolicyFullAverage)),
                       DropdownMenuItem(value: 'recovery_only', child: Text(s.trainingPolicyRecoveryOnly)),
                     ],
-                    onChanged: (v) {
-                      if (v != null) setState(() => _postRepescageScorePolicy = v);
-                    },
+                    onChanged: !online
+                        ? null
+                        : (v) {
+                            if (v != null) setState(() => _postRepescageScorePolicy = v);
+                          },
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
@@ -1802,12 +2027,14 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
                       style: const TextStyle(fontSize: 12),
                     ),
                     value: _repescageVariantBank,
-                    onChanged: _loading ? null : (v) => setState(() => _repescageVariantBank = v),
+                    onChanged: _loading || !online ? null : (v) => setState(() => _repescageVariantBank = v),
                   ),
                   const SizedBox(height: 12),
-                  FilledButton.tonal(
-                    onPressed: _loading ? null : _saveRepescageScorePolicy,
-                    child: Text(s.trainingSavePolicyButton),
+                  offlineWrap(
+                    FilledButton.tonal(
+                      onPressed: _loading || !online ? null : _saveRepescageScorePolicy,
+                      child: Text(s.trainingSavePolicyButton),
+                    ),
                   ),
                 ],
               ),
@@ -1818,10 +2045,12 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
             children: [
               Text(s.trainingQuestionnaireTitle, style: Theme.of(context).textTheme.titleLarge),
               const Spacer(),
-              TextButton.icon(
-                onPressed: () => setState(() => _questions.add(_QuestionDraft())),
-                icon: const Icon(Icons.add_rounded),
-                label: Text(s.trainingAddQuestion),
+              offlineWrap(
+                TextButton.icon(
+                  onPressed: !online ? null : () => setState(() => _questions.add(_QuestionDraft())),
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(s.trainingAddQuestion),
+                ),
               ),
             ],
           ),
@@ -1839,10 +2068,12 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
                   : null,
             ),
           const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _loading ? null : _saveQuestionnaire,
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF00677D), padding: const EdgeInsets.symmetric(vertical: 16)),
-            child: Text(s.trainingSaveQuestionnaireApi),
+          offlineWrap(
+            FilledButton(
+              onPressed: _loading || !online ? null : _saveQuestionnaire,
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF00677D), padding: const EdgeInsets.symmetric(vertical: 16)),
+              child: Text(s.trainingSaveQuestionnaireApi),
+            ),
           ),
         ],
         ],
@@ -1898,6 +2129,14 @@ Widget _postTrainingOutcomeChip(BuildContext context, Map<String, dynamic>? enro
   final st = enrollment?['status']?.toString();
   final scoreVal = _parseScoreDouble(enrollment?['score']);
 
+  if (st == 'waiting') {
+    return _PostTrainingOutcomePill(
+      label: l.postTrainingOutcomeWaitingRoom,
+      background: const Color(0xFFFFF7ED),
+      foreground: const Color(0xFFB45309),
+      border: const Color(0xFFFDBA74),
+    );
+  }
   if (inRecovery) {
     return _PostTrainingOutcomePill(
       label: l.postTrainingOutcomeRecovery,
@@ -1991,6 +2230,8 @@ Color _credentialStatusColor(String? s) {
       return const Color(0xFFFFF7ED);
     case 'rejected':
       return const Color(0xFFFFF1F2);
+    case 'suspended':
+      return const Color(0xFFF1F5FF);
     default:
       return const Color(0xFFF4F6F8);
   }
@@ -3094,7 +3335,7 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
         {
           'status': 'scheduled',
           'assigned_instructor_id': pickedInstructor,
-          if (pickedTraining != null) 'fulfilled_training_id': pickedTraining,
+          ...?pickedTraining != null ? {'fulfilled_training_id': pickedTraining} : null,
         },
         quiet: true,
       );
@@ -3485,6 +3726,9 @@ class _ComandoPageState extends State<_ComandoPage> {
   int? _reverbTrainingId;
   int? _lastSignalSeq;
   TrainingRealtimeLinkPhase _rtPhase = TrainingRealtimeLinkPhase.httpOnly;
+  final TextEditingController _participantSearchCtrl = TextEditingController();
+  Timer? _participantSearchDebounce;
+  String _participantSearchApplied = '';
 
   @override
   void initState() {
@@ -3495,8 +3739,20 @@ class _ComandoPageState extends State<_ComandoPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _participantSearchDebounce?.cancel();
+    _participantSearchCtrl.dispose();
     unawaited(_disconnectTrainingReverb());
     super.dispose();
+  }
+
+  void _scheduleParticipantSearchApplied() {
+    _participantSearchDebounce?.cancel();
+    _participantSearchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      var t = _participantSearchCtrl.text.trim();
+      if (t.length > 120) t = t.substring(0, 120);
+      setState(() => _participantSearchApplied = t);
+    });
   }
 
   Future<void> _disconnectTrainingReverb() async {
@@ -3786,6 +4042,7 @@ class _ComandoPageState extends State<_ComandoPage> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final online = _InstructorApiReachability.apiOnlineOf(context);
     final participants = (_monitor?['participants'] as List<dynamic>?) ?? [];
     final training = _monitor?['training'] as Map<String, dynamic>?;
     final sessionPaused = training != null && training['session_paused'] == true;
@@ -3793,6 +4050,16 @@ class _ComandoPageState extends State<_ComandoPage> {
     final counts = _participantCounts(participants);
     final activeCt = counts.$1;
     final waitingCt = counts.$2;
+    final searchQ = _participantSearchApplied.toLowerCase();
+    final filteredParticipants = searchQ.isEmpty
+        ? participants
+        : participants.where((raw) {
+            final row = Map<String, dynamic>.from(raw as Map);
+            final u = row['user'] as Map<String, dynamic>?;
+            final name = u?['name']?.toString().toLowerCase() ?? '';
+            final email = u?['email']?.toString().toLowerCase() ?? '';
+            return name.contains(searchQ) || email.contains(searchQ);
+          }).toList();
     final sortedBlocks = List<Map<String, dynamic>>.from(_trainingBlocks);
     sortedBlocks.sort((a, b) => (_parseInt(a['sort_order']) ?? 0).compareTo(_parseInt(b['sort_order']) ?? 0));
     final deckBadge = _deckLifecycleBadge(l, training, sessionPaused);
@@ -3855,20 +4122,42 @@ class _ComandoPageState extends State<_ComandoPage> {
                 style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: ClinicalPrecisionColors.onSurface),
               ),
               const SizedBox(height: 12),
+              TextField(
+                controller: _participantSearchCtrl,
+                onChanged: (_) => _scheduleParticipantSearchApplied(),
+                decoration: InputDecoration(
+                  hintText: l.comandoParticipantsSearchHint,
+                  prefixIcon: const Icon(Icons.search_rounded, size: 22),
+                  isDense: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: ClinicalPrecisionColors.surfaceContainerLowest,
+                ),
+              ),
+              const SizedBox(height: 12),
               Expanded(
                 child: participants.isEmpty
                     ? Center(
                         child: Text(l.comandoNoParticipants, style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant)),
                       )
+                    : filteredParticipants.isEmpty
+                        ? Center(
+                            child: Text(
+                              l.comandoParticipantsNoMatch,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant),
+                            ),
+                          )
                     : ListView.separated(
-                        itemCount: participants.length,
+                        itemCount: filteredParticipants.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 10),
                         itemBuilder: (context, index) {
-                          final raw = participants[index];
+                          final raw = filteredParticipants[index];
                           final row = Map<String, dynamic>.from(raw as Map);
                           final eid = _parseInt(row['enrollment']?['id']);
                           return _ParticipantTile(
                             row,
+                            apiOnline: online,
                             selected: eid != null && _repescageIds.contains(eid),
                             onToggle: (enrollmentId) {
                               setState(() {
@@ -3888,6 +4177,8 @@ class _ComandoPageState extends State<_ComandoPage> {
         ),
       );
     }
+
+    Widget offlineHintWrap(Widget child) => online ? child : Tooltip(message: l.comandoOfflineHint, child: child);
 
     Widget controlDeck() {
       return instructorShellCard(
@@ -3928,7 +4219,8 @@ class _ComandoPageState extends State<_ComandoPage> {
                     child: _ComandoDeckTile(
                       icon: Icons.play_arrow_rounded,
                       label: l.comandoBtnStart,
-                      enabled: !_loading,
+                      enabled: !_loading && online,
+                      disabledHint: online ? null : l.comandoOfflineHint,
                       onTap: () => _setTrainingStatus('in_progress'),
                     ),
                   ),
@@ -3937,7 +4229,8 @@ class _ComandoPageState extends State<_ComandoPage> {
                     child: _ComandoDeckTile(
                       icon: Icons.pause_rounded,
                       label: l.comandoBtnPause,
-                      enabled: !_loading && _selectedId != null && !sessionPaused,
+                      enabled: !_loading && _selectedId != null && !sessionPaused && online,
+                      disabledHint: online ? null : l.comandoOfflineHint,
                       onTap: () => _runSessionSignal('pause'),
                     ),
                   ),
@@ -3946,7 +4239,8 @@ class _ComandoPageState extends State<_ComandoPage> {
                     child: _ComandoDeckTile(
                       icon: Icons.stop_rounded,
                       label: l.comandoBtnClose,
-                      enabled: !_loading,
+                      enabled: !_loading && online,
+                      disabledHint: online ? null : l.comandoOfflineHint,
                       onTap: () => _setTrainingStatus('finished'),
                     ),
                   ),
@@ -3954,33 +4248,39 @@ class _ComandoPageState extends State<_ComandoPage> {
               ),
               if (sessionPaused) ...[
                 const SizedBox(height: 10),
-                FilledButton(
-                  onPressed: _loading || _selectedId == null ? null : () => _runSessionSignal('resume'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: ClinicalPrecisionColors.secondary,
-                    foregroundColor: ClinicalPrecisionColors.onSecondary,
+                offlineHintWrap(
+                  FilledButton(
+                    onPressed: _loading || _selectedId == null || !online ? null : () => _runSessionSignal('resume'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: ClinicalPrecisionColors.secondary,
+                      foregroundColor: ClinicalPrecisionColors.onSecondary,
+                    ),
+                    child: Text(l.comandoBtnResume),
                   ),
-                  child: Text(l.comandoBtnResume),
                 ),
               ],
               const SizedBox(height: 10),
-              FilledButton.tonal(
-                style: FilledButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.white.withValues(alpha: 0.14),
+              offlineHintWrap(
+                FilledButton.tonal(
+                  style: FilledButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.white.withValues(alpha: 0.14),
+                  ),
+                  onPressed: _loading || !online ? null : () => _setTrainingStatus('scheduled'),
+                  child: Text(l.comandoBtnReschedule),
                 ),
-                onPressed: _loading ? null : () => _setTrainingStatus('scheduled'),
-                child: Text(l.comandoBtnReschedule),
               ),
               const SizedBox(height: 14),
-              FilledButton(
-                onPressed: _loading ? null : _releaseNextBlock,
-                style: FilledButton.styleFrom(
-                  backgroundColor: ClinicalPrecisionColors.secondary,
-                  foregroundColor: ClinicalPrecisionColors.onSecondary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+              offlineHintWrap(
+                FilledButton(
+                  onPressed: _loading || !online ? null : _releaseNextBlock,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ClinicalPrecisionColors.secondary,
+                    foregroundColor: ClinicalPrecisionColors.onSecondary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: Text(l.comandoBtnReleaseBlock),
                 ),
-                child: Text(l.comandoBtnReleaseBlock),
               ),
               if (_trainingBlocks.isNotEmpty) ...[
                 const SizedBox(height: 14),
@@ -4013,13 +4313,15 @@ class _ComandoPageState extends State<_ComandoPage> {
                 ),
               ],
               const SizedBox(height: 8),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.amber.shade200,
-                  side: BorderSide(color: Colors.amber.withValues(alpha: 0.65)),
+              offlineHintWrap(
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.amber.shade200,
+                    side: BorderSide(color: Colors.amber.withValues(alpha: 0.65)),
+                  ),
+                  onPressed: _loading || _repescageIds.isEmpty || !online ? null : _runRepescage,
+                  child: Text(l.comandoRepescageCount(_repescageIds.length)),
                 ),
-                onPressed: _loading || _repescageIds.isEmpty ? null : _runRepescage,
-                child: Text(l.comandoRepescageCount(_repescageIds.length)),
               ),
               const SizedBox(height: 14),
               Text(
@@ -4161,6 +4463,9 @@ class _ComandoPageState extends State<_ComandoPage> {
                         _selectedId = v;
                         _repescageIds.clear();
                         _repescageBlockId = null;
+                        _participantSearchDebounce?.cancel();
+                        _participantSearchCtrl.clear();
+                        _participantSearchApplied = '';
                       });
                       _restartPollingAndReverb();
                       _loadMonitor();
@@ -4171,6 +4476,32 @@ class _ComandoPageState extends State<_ComandoPage> {
               ],
             ),
             const SizedBox(height: 20),
+            if (!online) ...[
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF1F2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFECACA)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.wifi_off_rounded, color: Color(0xFFB91C1C), size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l.comandoOfflineHint,
+                          style: const TextStyle(fontSize: 13.5, height: 1.4, color: Color(0xFF7F1D1D)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -4201,7 +4532,10 @@ class _ComandoPageState extends State<_ComandoPage> {
                   runSpacing: 10,
                   children: [
                     statPill(l.comandoStatDurationLabel, l.comandoDurationPlaceholder),
-                    statPill(l.comandoStatParticipantsLabel, '${participants.length}'),
+                    statPill(
+                      l.comandoStatParticipantsLabel,
+                      searchQ.isEmpty ? '${participants.length}' : '${filteredParticipants.length}/${participants.length}',
+                    ),
                     statPill(l.comandoStatActiveShort, '$activeCt'),
                     statPill(l.comandoStatWaitingShort, '$waitingCt'),
                   ],
@@ -4269,16 +4603,18 @@ class _ComandoDeckTile extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.enabled = true,
+    this.disabledHint,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final bool enabled;
+  final String? disabledHint;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    final tile = Material(
       color: Colors.white.withValues(alpha: enabled ? 0.08 : 0.04),
       borderRadius: BorderRadius.circular(ClinicalPrecisionRadii.button),
       child: InkWell(
@@ -4308,6 +4644,10 @@ class _ComandoDeckTile extends StatelessWidget {
         ),
       ),
     );
+    if (!enabled && disabledHint != null && disabledHint!.isNotEmpty) {
+      return Tooltip(message: disabledHint!, child: tile);
+    }
+    return tile;
   }
 }
 
@@ -4384,6 +4724,7 @@ class _BlockMetricChip extends StatelessWidget {
 class _ParticipantTile extends StatelessWidget {
   const _ParticipantTile(
     this.row, {
+    this.apiOnline = true,
     required this.selected,
     required this.onToggle,
     this.onCertificatePdf,
@@ -4393,6 +4734,7 @@ class _ParticipantTile extends StatelessWidget {
   });
 
   final Map<String, dynamic> row;
+  final bool apiOnline;
   final bool selected;
   final ValueChanged<int> onToggle;
   final ValueChanged<Map<String, dynamic>>? onCertificatePdf;
@@ -4515,14 +4857,14 @@ class _ParticipantTile extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Tooltip(
-                        message: l.postTrainingIssueCertificateTooltip,
+                        message: apiOnline ? l.postTrainingIssueCertificateTooltip : l.instrOfflineHint,
                         child: TextButton(
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          onPressed: issueCertificateBusy ? null : onIssueManualCertificate,
+                          onPressed: (!apiOnline || issueCertificateBusy) ? null : onIssueManualCertificate,
                           child: issueCertificateBusy
                               ? const SizedBox(
                                   width: 18,
@@ -4540,11 +4882,11 @@ class _ParticipantTile extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Tooltip(
-                        message: l.postTrainingCertificatePdfTooltip,
+                        message: apiOnline ? l.postTrainingCertificatePdfTooltip : l.instrOfflineHint,
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                          onPressed: certificatePdfLoadingForId == certId ? null : () => onCertificatePdf!(cert!),
+                          onPressed: (!apiOnline || certificatePdfLoadingForId == certId) ? null : () => onCertificatePdf!(cert!),
                           icon: certificatePdfLoadingForId == certId
                               ? const SizedBox(
                                   width: 22,
@@ -4877,6 +5219,10 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
                     (((row['endorsed_by_institution'] as Map)['name']?.toString() ?? '').isNotEmpty);
                 final endName =
                     endorsed ? (row['endorsed_by_institution'] as Map)['name']?.toString() ?? '' : null;
+                final canApproveRejectManu = st == 'pending';
+                final canSuspendManu = st == 'approved';
+                final canReactivateManu = st == 'suspended';
+                final rawCreated = row['created_at']?.toString();
                 return instructorShellCard(
                   margin: const EdgeInsets.only(bottom: 10),
                   child: Padding(
@@ -4894,6 +5240,14 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
                                   padding: const EdgeInsets.only(top: 4),
                                   child: Text(em, style: const TextStyle(fontSize: 13, color: Color(0xFF45464D))),
                                 ),
+                              if (rawCreated != null && rawCreated.length >= 10)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    l.mfgHomologRequestedAt(rawCreated.substring(0, 10)),
+                                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                  ),
+                                ),
                               const SizedBox(height: 6),
                               Text(
                                 endorsed ? l.credEndorsementWith(endName ?? '') : l.credEndorsementPending,
@@ -4908,20 +5262,33 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
                             ],
                           ),
                         ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            TextButton(
-                              onPressed: () => _decideManu(row['id'], 'approved'),
-                              child: Text(l.credBtnApprove),
-                            ),
-                            TextButton(
-                              onPressed: () => _decideManu(row['id'], 'rejected'),
-                              child: Text(l.credBtnReject),
-                            ),
-                          ],
-                        ),
+                        if (canApproveRejectManu || canSuspendManu || canReactivateManu)
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              if (canApproveRejectManu) ...[
+                                TextButton(
+                                  onPressed: () => _decideManu(row['id'], 'approved'),
+                                  child: Text(l.credBtnApprove),
+                                ),
+                                TextButton(
+                                  onPressed: () => _decideManu(row['id'], 'rejected'),
+                                  child: Text(l.credBtnReject),
+                                ),
+                              ],
+                              if (canSuspendManu)
+                                TextButton(
+                                  onPressed: () => _decideManu(row['id'], 'suspended'),
+                                  child: Text(l.credBtnSuspend),
+                                ),
+                              if (canReactivateManu)
+                                TextButton(
+                                  onPressed: () => _decideManu(row['id'], 'approved', setFeePaidOnApprove: false),
+                                  child: Text(l.credBtnReactivateHomolog),
+                                ),
+                            ],
+                          ),
                       ],
                     ),
                   ),
@@ -4992,12 +5359,21 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
     }
   }
 
-  Future<void> _decideManu(dynamic rowId, String status) async {
+  Future<void> _decideManu(
+    dynamic rowId,
+    String status, {
+    bool setFeePaidOnApprove = true,
+  }) async {
     final t = appAuth.token;
     final id = _parseInt(rowId);
     if (t == null || id == null) return;
     try {
-      await widget.api.credentialManufacturerDecide(t, id, status: status, feePaid: status == 'approved');
+      await widget.api.credentialManufacturerDecide(
+        t,
+        id,
+        status: status,
+        feePaid: status == 'approved' ? (setFeePaidOnApprove ? true : null) : null,
+      );
       await _reload();
     } on ApiException catch (e) {
       if (mounted) context.showLocalizedApiExceptionSnack(e);

@@ -28,10 +28,10 @@ abstract final class ScreenCatalogMap {
   static const insRel01 = 'INS-REL-01'; // Por setor no dashboard gestor: agregado por treinos da instituição + inscr./concl./com nota/média; CSV/PDF alinhados
 
   // --- Application / Instrutor (InstructorShell) ---
-  static const appDash01 = 'APP-DASH-01'; // Dashboard instrutor (_DashboardPage)
-  static const appTre01 = 'APP-TRE-01'; // Criar treino (/instructor/treinamento — _TreinamentoPage)
-  static const appSal01 = 'APP-SAL-01'; // Sala de comando (/instructor/comando — _ComandoPage): controlo sessão, blocos, repescagem, Reverb; filtro local participantes (nome/e-mail, debounce)
-  static const appSal02 = 'APP-SAL-02'; // /instructor/resultados — lista + filtro local participantes (nome/e-mail) + repescagem + encerrar treino + PDF/CSV + chips (waiting, active, recovery, aprovado, insuficiente, concluído sem nota)
+  static const appDash01 = 'APP-DASH-01'; // Dashboard instrutor (`_DashboardPage`): KPIs + recentes; refresh; faixa `instrOfflineHint` quando API offline. Instituição: `_InstitutionDashboardView` + exports CSV/PDF desactivados offline + `Tooltip`
+  static const appTre01 = 'APP-TRE-01'; // Criar treino (/instructor/treinamento — `_TreinamentoPage`): faixa `instrOfflineHint`; criar / modelo oficial / política / questionário / «Adicionar pergunta» desactivados offline (`Tooltip`)
+  static const appSal01 = 'APP-SAL-01'; // Sala de comando (/instructor/comando — _ComandoPage): controlo sessão, blocos, repescagem, Reverb; filtro local participantes (nome/e-mail, debounce); health 20 s no shell + chip API na barra; `_InstructorApiReachability`; faixa `comandoOfflineHint` + comandos sessão desactivados offline + `Tooltip`/`_ComandoDeckTile.disabledHint`
+  static const appSal02 = 'APP-SAL-02'; // /instructor/resultados — `_PostTrainingResultsPage`: lista + filtro + repescagem + encerrar + PDF/CSV + chips; faixa `instrOfflineHint`; exports/finish/repescagem/certificado em tile desactivados offline; `_ParticipantTile.apiOnline`
 
   // --- Treinando (TraineeShell, steps internos) ---
   static const treAcc01 = 'TRE-ACC-01'; // Convite / entrada (_JoinPanel): join hash + copy + validação visual (64, filtro chars, contador, helper, ícone) + POST normalizado; aviso + botão desactivado se API offline (`_apiOnline`)

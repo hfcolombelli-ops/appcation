@@ -1441,6 +1441,18 @@ abstract class AppLocalizations {
   /// **'Iniciar libera o questionário para treinandos conectados. Repescagem remove respostas erradas; por bloco, só as desse bloco (etiquetas quando o acerto no bloco está abaixo de 50%).'**
   String get comandoHelpFooter;
 
+  /// No description provided for @comandoOfflineHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem ligação ao servidor. Os comandos da sessão ficam indisponíveis até a API voltar; pode actualizar a lista de treinos quando estiver online.'**
+  String get comandoOfflineHint;
+
+  /// No description provided for @instrOfflineHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem ligação ao servidor. Actualize quando a rede voltar; operações que gravam ou exportam ficam indisponíveis até a API responder.'**
+  String get instrOfflineHint;
+
   /// No description provided for @comandoParticipantAnswers.
   ///
   /// In pt, this message translates to:

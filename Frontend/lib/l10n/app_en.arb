@@ -307,6 +307,8 @@
     }
   },
   "comandoHelpFooter": "Start releases the questionnaire to connected trainees. Recovery clears wrong answers; by block, only those in that block (tags when block accuracy is below 50%).",
+  "comandoOfflineHint": "Cannot reach the server. Session commands stay unavailable until the API is back; you can refresh the training list when online.",
+  "instrOfflineHint": "Cannot reach the server. Refresh when back online; save and export actions stay disabled until the API responds.",
   "comandoParticipantAnswers": "Answers {answered} / {total} · {status}",
   "@comandoParticipantAnswers": {
     "placeholders": {

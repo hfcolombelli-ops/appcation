@@ -754,6 +754,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Start releases the questionnaire to connected trainees. Recovery clears wrong answers; by block, only those in that block (tags when block accuracy is below 50%).';
 
   @override
+  String get comandoOfflineHint =>
+      'Cannot reach the server. Session commands stay unavailable until the API is back; you can refresh the training list when online.';
+
+  @override
+  String get instrOfflineHint =>
+      'Cannot reach the server. Refresh when back online; save and export actions stay disabled until the API responds.';
+
+  @override
   String comandoParticipantAnswers(
     Object answered,
     Object total,

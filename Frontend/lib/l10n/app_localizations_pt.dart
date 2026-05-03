@@ -761,6 +761,14 @@ class AppLocalizationsPt extends AppLocalizations {
       'Iniciar libera o questionário para treinandos conectados. Repescagem remove respostas erradas; por bloco, só as desse bloco (etiquetas quando o acerto no bloco está abaixo de 50%).';
 
   @override
+  String get comandoOfflineHint =>
+      'Sem ligação ao servidor. Os comandos da sessão ficam indisponíveis até a API voltar; pode actualizar a lista de treinos quando estiver online.';
+
+  @override
+  String get instrOfflineHint =>
+      'Sem ligação ao servidor. Actualize quando a rede voltar; operações que gravam ou exportam ficam indisponíveis até a API responder.';
+
+  @override
   String comandoParticipantAnswers(
     Object answered,
     Object total,
