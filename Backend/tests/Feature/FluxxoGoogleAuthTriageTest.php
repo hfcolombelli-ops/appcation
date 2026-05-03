@@ -34,10 +34,12 @@ class FluxxoGoogleAuthTriageTest extends TestCase
         ])
             ->assertOk()
             ->assertJsonStructure(['token', 'user'])
-            ->assertJsonPath('user.role', null);
+            ->assertJsonPath('user.role', null)
+            ->assertJsonPath('user.needs_profile_gate', true);
 
         $u = User::query()->where('email', $email)->firstOrFail();
         $this->assertNull($u->role);
         $this->assertSame('google-sub-triage-1', $u->google_sub);
+        $this->assertNull($u->google_triage_completed_at);
     }
 }

@@ -72,6 +72,7 @@ class AuthController extends Controller
 
         $user = User::create(array_merge($data, [
             'manufacturer_id' => $manufacturerId,
+            'google_triage_completed_at' => now(),
         ]));
 
         return response()->json([
@@ -137,7 +138,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        if ($this->roleIsMappedForApp($user->role)) {
+        if (! $user->needsProfileGateForApi() && $this->roleIsMappedForApp($user->role)) {
             return response()->json([
                 'message' => 'O perfil já está definido. Use «Actualizar sessão» ou contacte o suporte para alterações.',
             ], 403);
@@ -189,7 +190,7 @@ class AuthController extends Controller
             }
         }
 
-        $payload = ['role' => $data['role']];
+        $payload = ['role' => $data['role'], 'google_triage_completed_at' => now()];
         if ($data['role'] === 'manufacturer_admin') {
             $payload['manufacturer_id'] = $manufacturerId;
         } else {

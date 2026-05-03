@@ -96,6 +96,7 @@ class GoogleAuthController extends Controller
                 'name' => (string) ($payload['name'] ?? $email),
                 'email' => $email,
                 'google_sub' => $sub,
+                'google_triage_completed_at' => $role !== null ? now() : null,
                 'password' => Hash::make(Str::password(32)),
                 'role' => $role,
                 'institution_id' => null,
@@ -103,9 +104,12 @@ class GoogleAuthController extends Controller
                 'avatar_url' => isset($payload['picture']) ? Str::limit((string) $payload['picture'], 500) : null,
             ]);
 
-            // Alguns motores ainda aplicam DEFAULT «trainee» ao INSERT; força NULL para a triagem na app.
+            // Alguns motores ainda aplicam DEFAULT «trainee» ao INSERT; força NULL e mantém triagem Google pendente.
             if ($role === null) {
-                User::query()->whereKey($user->id)->update(['role' => null]);
+                User::query()->whereKey($user->id)->update([
+                    'role' => null,
+                    'google_triage_completed_at' => null,
+                ]);
                 $user->refresh();
             }
         } else {

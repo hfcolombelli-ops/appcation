@@ -147,6 +147,9 @@ class RoleHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (appAuth.needsProfileGate) {
+      return const ProfileGateScreen();
+    }
     final role = appAuth.role?.trim();
     if (role == null || role.isEmpty) {
       return const ProfileGateScreen();

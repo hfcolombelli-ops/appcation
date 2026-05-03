@@ -34,6 +34,9 @@ class AuthSession extends ChangeNotifier {
     return s.isEmpty ? null : s;
   }
 
+  /// API: `needs_profile_gate` — conta Google (ou perfil inválido) ainda sem escolha em PATCH /api/me/role.
+  bool get needsProfileGate => _user?['needs_profile_gate'] == true;
+
   Future<void> restore() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString(_kToken);

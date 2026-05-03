@@ -31,6 +31,8 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'role' => 'trainee',
+            'google_sub' => null,
+            'google_triage_completed_at' => now(),
         ];
     }
 

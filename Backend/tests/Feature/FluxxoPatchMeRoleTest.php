@@ -41,6 +41,28 @@ class FluxxoPatchMeRoleTest extends TestCase
         $this->assertSame('trainee', $u->fresh()->role);
     }
 
+    public function test_google_trainee_pending_triage_can_claim_instructor(): void
+    {
+        $u = User::factory()->create([
+            'role' => 'trainee',
+            'google_sub' => 'sub-pending-triage',
+            'google_triage_completed_at' => null,
+        ]);
+
+        Sanctum::actingAs($u);
+
+        $this->patchJson('/api/me/role', [
+            'role' => 'instructor',
+        ])
+            ->assertOk()
+            ->assertJsonPath('role', 'instructor')
+            ->assertJsonPath('needs_profile_gate', false);
+
+        $fresh = $u->fresh();
+        $this->assertSame('instructor', $fresh->role);
+        $this->assertNotNull($fresh->google_triage_completed_at);
+    }
+
     public function test_manufacturer_claim_requires_company_name_when_domain_is_new(): void
     {
         $u = User::factory()->create([
