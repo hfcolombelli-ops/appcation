@@ -11,6 +11,7 @@ use App\Models\Question;
 use App\Models\Training;
 use App\Models\TrainingBlock;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class TrainingSession
@@ -130,6 +131,67 @@ class TrainingSession
         });
 
         return true;
+    }
+
+    /**
+     * Emite ou actualiza certificado quando a nota final (0–10) cumpre o limiar do treino.
+     * Usado ao concluir questionário e ao encerrar o treino (GA10).
+     */
+    public static function issueCertificateForPassedEnrollment(Enrollment $enrollment, Training $training, float $scoreTen): void
+    {
+        $passing = (float) ($training->passing_score_percent ?? 70) / 10.0;
+        if ($scoreTen < $passing) {
+            return;
+        }
+
+        $code = Certificate::query()->where('enrollment_id', $enrollment->id)->value('certificate_code');
+        if ($code === null) {
+            do {
+                $code = 'APP²-'.Str::upper(Str::random(10));
+            } while (Certificate::query()->where('certificate_code', $code)->exists());
+        }
+
+        Certificate::updateOrCreate(
+            ['enrollment_id' => $enrollment->id],
+            [
+                'user_id' => $enrollment->user_id,
+                'training_id' => $enrollment->training_id,
+                'score' => $scoreTen,
+                'certificate_code' => $code,
+                'issued_at' => now(),
+                'expires_at' => now()->addMonths((int) config('app.certificate_validity_months', 24)),
+            ]
+        );
+    }
+
+    /**
+     * Ao encerrar o treino: garante certificados para todas as inscrições concluídas com nota ≥ limiar.
+     *
+     * @return int Número de inscrições elegíveis para as quais foi garantido certificado.
+     */
+    public static function issueCertificatesOnTrainingFinished(Training $training): int
+    {
+        $training->refresh();
+
+        $passing = (float) ($training->passing_score_percent ?? 70) / 10.0;
+        $count = 0;
+
+        foreach (
+            Enrollment::query()
+                ->where('training_id', $training->id)
+                ->where('status', 'completed')
+                ->whereNotNull('score')
+                ->cursor() as $enrollment
+        ) {
+            $scoreTen = (float) $enrollment->score;
+            if ($scoreTen < $passing) {
+                continue;
+            }
+            self::issueCertificateForPassedEnrollment($enrollment, $training, $scoreTen);
+            $count++;
+        }
+
+        return $count;
     }
 
     /**

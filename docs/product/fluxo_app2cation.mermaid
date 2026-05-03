@@ -1,0 +1,68 @@
+graph TD
+    subgraph "Ponto de Entrada Único"
+        A[Usuário acessa app.app2cation.com]
+    end
+
+    A --> B{Login com Google OAuth2}
+    B --> C{Identifica Perfil}
+
+    C -->|Sem Perfil| D[Tela: Selecione seu Perfil]
+    D --> E_Fab[Fluxo Fabricante\nVer Fluxograma 1]
+    D --> F_Ins[Fluxo Instituição\nVer Fluxograma 2]
+    D --> G_App[Fluxo Application\nVer Fluxograma 3]
+    D --> H_Tre[Fluxo Treinando\nVer Fluxograma 4]
+
+    C -->|Fabricante| E_Fab
+    C -->|Instituição| F_Ins
+    C -->|Application| G_App
+    C -->|Treinando| H_Tre
+
+    subgraph "Fluxograma 1: Fabricante"
+        direction LR
+        EF1[Cadastro/Login] --> EF2{Documentação\nAprovada?}
+        EF2 -- Não --> EF_Rec[Painel com status\n"Em Análise"]
+        EF2 -- Sim --> EF3[Dashboard Principal]
+        EF3 --> EF4[Gerenciar Equipamentos\nCadastrar/Versionar]
+        EF3 --> EF5[Criar Treinamento Oficial\nQuestionários/Blocos]
+        EF3 --> EF6[Homologar Applications\nAprovar/Recusar/Suspender]
+        EF3 --> EF7[Dashboards Analíticos\nDesempenho/Mapa/Heatmap]
+        EF3 --> EF8[Gerenciar Ranking\nConfigurar Metas e Prêmios]
+    end
+
+    subgraph "Fluxograma 2: Instituição"
+        direction LR
+        FI1[Cadastro/Login] --> FI2{Aprovado?}
+        FI2 -- Sim --> FI3[Dashboard Principal]
+        FI3 --> FI4[Declarar Parque Tecnológico\nManual/Lote]
+        FI3 --> FI5[Gerenciar Applications\nAprovar/Bloquear]
+        FI3 --> FI6[Gerir Solicitações\nKanban: Solicitado -> Agendado]
+        FI3 --> FI7[Dashboard Analítico\nNotas por Setor/Alertas]
+        FI6 --> FI8[Agendar Treinamento em Turma]
+        FI8 --> FI9[Gerar QR Code e Link\nNotificar Participantes]
+    end
+
+    subgraph "Fluxograma 3: Application"
+        direction LR
+        GA1[Cadastro/Login] --> GA2[Solicitar Vínculo\ncom Instituição]
+        GA2 --> GA3[Solicitar Credenciamento\ncom Fabricante]
+        GA3 --> GA4{Duplo Vínculo\nVálido?}
+        GA4 -- Sim --> GA5[Dashboard Principal]
+        GA5 --> GA6[Criar Novo Treinamento\nOficial ou Personalizado]
+        GA6 --> GA7[Sala de Comando\nIniciar/Controlar Blocos]
+        GA7 --> GA8[Monitorar Participantes]
+        GA8 --> GA9[Ativar Repescagem\nPara < 7.0]
+        GA9 --> GA7
+        GA7 --> GA10[Encerrar Treinamento\nGerar Certificados]
+    end
+
+    subgraph "Fluxograma 4: Treinando"
+        direction LR
+        HT1[Recebe Link/QR Code] --> HT2[Tela de Confirmação]
+        HT2 --> HT3[Sala de Espera]
+        HT3 -- Instrutor Inicia --> HT4[Questionário Progressivo]
+        HT4 -- Responde Bloco a Bloco --> HT5[Resultado Final]
+        HT5 -->|Nota >= 7.0| HT6[Aprovado\nDisponibilizar Certificado]
+        HT5 -->|Nota < 7.0| HT7[Em Recuperação\n Aguarda Repescagem]
+        HT7 -- Instrutor Ativa --> HT8[Questionário de Repescagem]
+        HT8 --> HT5
+    end

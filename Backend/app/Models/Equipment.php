@@ -17,8 +17,21 @@ class Equipment extends Model
         'catalog_equipment_id',
         'name',
         'model',
+        'firmware_version',
+        'serial_number',
         'sector',
+        'technical_specs',
         'category',
+        'image_stored_path',
+        'manual_operator_stored_path',
+        'manual_maintenance_stored_path',
+        'datasheet_stored_path',
+        'intro_video_url',
+        'intro_video_stored_path',
+        'default_training_hours',
+        'default_passing_score_percent',
+        'default_certificate_validity_months',
+        'default_reassessment_days',
         'quantity',
         'status',
     ];
@@ -49,8 +62,20 @@ class Equipment extends Model
         return $this->hasMany(self::class, 'parent_equipment_id');
     }
 
+    public function trainings(): HasMany
+    {
+        return $this->hasMany(Training::class, 'equipment_id');
+    }
+
     public function hasChildVersions(): bool
     {
         return $this->childVersions()->exists();
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'technical_specs' => 'array',
+        ];
     }
 }

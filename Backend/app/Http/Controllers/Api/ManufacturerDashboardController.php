@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\RequiresManufacturerApproved;
 use App\Http\Controllers\Controller;
 use App\Models\Manufacturer;
 use App\Models\SecurityAuditLog;
@@ -13,6 +14,8 @@ use Illuminate\Http\Response;
 
 class ManufacturerDashboardController extends Controller
 {
+    use RequiresManufacturerApproved;
+
     public function __construct(
         private readonly ManufacturerDashboardAggregateService $manufacturerDashboard,
     ) {}
@@ -27,6 +30,10 @@ class ManufacturerDashboardController extends Controller
             return response()->json(['message' => 'Disponível apenas para administrador de fabricante.'], 403);
         }
 
+        if ($r = $this->ensureManufacturerApproved($request)) {
+            return $r;
+        }
+
         return response()->json($this->manufacturerDashboard->aggregate((int) $user->manufacturer_id));
     }
 
@@ -38,6 +45,10 @@ class ManufacturerDashboardController extends Controller
         $user = $request->user();
         if ($user->role !== 'manufacturer_admin' || $user->manufacturer_id === null) {
             return response()->json(['message' => 'Disponível apenas para administrador de fabricante.'], 403);
+        }
+
+        if ($r = $this->ensureManufacturerApproved($request)) {
+            return $r;
         }
 
         $mid = (int) $user->manufacturer_id;
@@ -117,6 +128,10 @@ class ManufacturerDashboardController extends Controller
         $user = $request->user();
         if ($user->role !== 'manufacturer_admin' || $user->manufacturer_id === null) {
             return response()->json(['message' => 'Disponível apenas para administrador de fabricante.'], 403);
+        }
+
+        if ($r = $this->ensureManufacturerApproved($request)) {
+            return $r;
         }
 
         $mid = (int) $user->manufacturer_id;

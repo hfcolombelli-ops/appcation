@@ -7,6 +7,7 @@ use App\Models\Institution;
 use App\Models\Manufacturer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -172,6 +173,40 @@ class FluxxoInstitutionEquipmentParkTest extends TestCase
             ->getJson('/api/institution/equipment')
             ->assertOk()
             ->assertJsonCount(2);
+    }
+
+    public function test_gestor_can_filter_park_by_search(): void
+    {
+        [$token, , $catalog] = $this->gestorWithCatalogTemplate();
+
+        $this->withToken($token)->postJson('/api/institution/equipment', [
+            'catalog_equipment_id' => $catalog->id,
+            'sector' => 'Bloco Neuro',
+        ])->assertCreated();
+
+        $this->withToken($token)
+            ->getJson('/api/institution/equipment?search='.urlencode('Ventilador'))
+            ->assertOk()
+            ->assertJsonCount(1);
+
+        $this->withToken($token)
+            ->getJson('/api/institution/equipment?search='.urlencode('inexistente'))
+            ->assertOk()
+            ->assertJsonCount(0);
+    }
+
+    public function test_gestor_downloads_catalog_model_image(): void
+    {
+        [$token, , $catalog] = $this->gestorWithCatalogTemplate();
+
+        Storage::fake(config('filesystems.default', 'local'));
+        $path = 'equipment-files/1/'.$catalog->id.'/thumb.jpg';
+        Storage::disk(config('filesystems.default', 'local'))->put($path, 'fake-image-bytes');
+        $catalog->update(['image_stored_path' => $path]);
+
+        $this->withToken($token)
+            ->get('/api/institution/catalog-equipment/'.$catalog->id.'/image')
+            ->assertOk();
     }
 
     public function test_rejects_non_catalog_equipment_id(): void

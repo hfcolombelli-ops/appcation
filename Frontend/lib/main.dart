@@ -14,6 +14,7 @@ import 'services/api_client.dart';
 import 'services/auth_session.dart';
 import 'shell/instructor_shell.dart';
 import 'shell/manufacturer_shell.dart';
+import 'shell/profile_gate_screen.dart';
 import 'shell/trainee_shell.dart';
 import 'widgets/version_badge.dart';
 
@@ -136,12 +137,17 @@ class MyApp extends StatelessWidget {
 }
 
 /// Destino pós-login conforme perfil IAM da API.
+/// Fluxograma: `docs/product/fluxo_app2cation.mermaid`. IDs de telas: `lib/product/screen_catalog_map.dart`.
 class RoleHome extends StatelessWidget {
   const RoleHome({super.key});
 
   @override
   Widget build(BuildContext context) {
-    switch (appAuth.role) {
+    final role = appAuth.role?.trim();
+    if (role == null || role.isEmpty) {
+      return const ProfileGateScreen();
+    }
+    switch (role) {
       case 'trainee':
         return const TraineeShell();
       case 'manufacturer_admin':
@@ -150,7 +156,7 @@ class RoleHome extends StatelessWidget {
       case 'institution_admin':
         return const InstructorShell();
       default:
-        return const LoginUniversalScreen();
+        return const ProfileGateScreen();
     }
   }
 }
@@ -295,10 +301,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       _errorRegisterManufacturer = null;
     });
     if (!(_formRegister.currentState?.validate() ?? false)) return;
-    if (_registerAccountType == 'manufacturer_admin' && _mfgNameRegister.text.trim().isEmpty) {
-      setState(() => _errorRegisterManufacturer = AppLocalizations.of(context).errMfgNameRequired);
-      return;
-    }
     setState(() => _loadingRegister = true);
     try {
       if (_registerAccountType == 'trainee') {
@@ -321,7 +323,8 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
           email: _emailRegister.text,
           password: _passwordRegister.text,
           role: 'manufacturer_admin',
-          manufacturerName: _mfgNameRegister.text.trim(),
+          manufacturerName:
+              _mfgNameRegister.text.trim().isEmpty ? null : _mfgNameRegister.text.trim(),
           manufacturerCnpj: _mfgCnpjRegister.text.trim().isEmpty ? null : _mfgCnpjRegister.text.trim(),
         );
       }
@@ -353,10 +356,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     });
     if (AppConfig.googleWebClientId.trim().isEmpty) {
       _snack(AppLocalizations.of(context).errGoogleClientId);
-      return;
-    }
-    if (_googleRole == 'manufacturer_admin' && _mfgNameGoogle.text.trim().isEmpty) {
-      _snack(AppLocalizations.of(context).errMfgNameBeforeGoogle);
       return;
     }
     setState(() => _loadingGoogle = true);
@@ -602,7 +601,42 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
         Text(s.loginAccessHeroTitle, textAlign: TextAlign.center, style: heroTitleStyle),
         const SizedBox(height: 10),
         Text(s.loginAccessHeroSubtitle, textAlign: TextAlign.center, style: heroSubStyle),
-        const SizedBox(height: 28),
+        const SizedBox(height: 18),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            TextButton(
+              onPressed: _loadingGoogle
+                  ? null
+                  : () {
+                      setState(() {
+                        _setAuthTrack(_AuthDocumentTrack.cnpj);
+                      });
+                    },
+              child: Text(s.loginIamManufacturer),
+            ),
+            Text('·', style: TextStyle(color: Colors.blueGrey.shade400)),
+            TextButton(
+              onPressed: _loadingGoogle ? null : () => _snack(s.loginInstitutionFootnote),
+              child: Text(s.loginIamInstitution),
+            ),
+            Text('·', style: TextStyle(color: Colors.blueGrey.shade400)),
+            TextButton(
+              onPressed: _loadingGoogle
+                  ? null
+                  : () {
+                      setState(() {
+                        _setAuthTrack(_AuthDocumentTrack.cpf);
+                        _googleRole = 'instructor';
+                      });
+                    },
+              child: Text(s.loginIamInstructorLink),
+            ),
+          ],
+        ),
+        const SizedBox(height: 22),
         Container(
           width: double.infinity,
           constraints: const BoxConstraints(maxWidth: 520),
@@ -674,24 +708,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 },
               ),
             ),
-            if (_googleRole == 'manufacturer_admin') ...[
-              const SizedBox(height: 14),
-              TextField(
-                controller: _mfgNameGoogle,
-                decoration: InputDecoration(
-                  labelText: s.mfgCompanyLabel,
-                  isDense: true,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _mfgCnpjGoogle,
-                decoration: InputDecoration(
-                  labelText: s.mfgCnpjOptionalLabel,
-                  isDense: true,
-                ),
-              ),
-            ],
             const SizedBox(height: 16),
             _primaryButton(
               context,
@@ -974,13 +990,9 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                       controller: _mfgNameRegister,
                       decoration: InputDecoration(
                         labelText: s.fieldCompanyName,
+                        helperText: s.registerMfgCompanyOptionalDomain,
                         isDense: true,
                       ),
-                      validator: (v) {
-                        if (_registerAccountType != 'manufacturer_admin') return null;
-                        if (v == null || v.trim().isEmpty) return s.valCompanyNameRequired;
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 10),
                     TextFormField(

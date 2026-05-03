@@ -24,7 +24,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginAccessHeroTitle => 'Sign in to App²cation';
 
   @override
-  String get loginAccessHeroSubtitle => 'Your training, your progress';
+  String get loginAccessHeroSubtitle =>
+      'Training management platform for hospital equipment';
 
   @override
   String get loginNavQuestions => 'Questions?';
@@ -182,6 +183,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fieldCompanyName => 'Company name';
 
   @override
+  String get registerMfgCompanyOptionalDomain =>
+      'Required only for the first signup on this domain; leave blank to join an existing manufacturer.';
+
+  @override
   String get valCompanyNameRequired => 'Enter the company name.';
 
   @override
@@ -257,6 +262,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellNavCredentialing => 'Credentialing';
 
   @override
+  String get shellNavPostTrainingResults => 'Training results';
+
+  @override
+  String get shellTitlePostTrainingResults => 'Results and recovery';
+
+  @override
+  String get postTrainingIntro =>
+      'After the session, review participants, run recovery for those who need it, and finalize when everyone is assessed. Live control stays in the Command room.';
+
+  @override
+  String get postTrainingPickTraining =>
+      'Pick a training to load enrolled participants.';
+
+  @override
+  String get postTrainingOutcomeApproved => 'Passed (≥ 7.0)';
+
+  @override
+  String get postTrainingOutcomeInsufficient => 'Below threshold (< 7.0)';
+
+  @override
+  String get postTrainingOutcomeRecovery => 'In recovery';
+
+  @override
+  String get postTrainingOutcomeInProgress => 'In progress';
+
+  @override
+  String get postTrainingOutcomeCompletedNoGrade => 'Completed (no score)';
+
+  @override
+  String get postTrainingFinishTraining => 'Close training';
+
+  @override
+  String get postTrainingFinishTrainingConfirmTitle => 'Close this training?';
+
+  @override
+  String get postTrainingFinishTrainingConfirmBody =>
+      'Status becomes finished. Trainees can no longer answer the questionnaire in this session.';
+
+  @override
+  String get postTrainingFinishTrainingDone =>
+      'Training closed. Certificates ensured for everyone at or above the passing score.';
+
+  @override
+  String get postTrainingCertificatePdfTooltip => 'Download certificate (PDF)';
+
+  @override
   String get shellLinkInstitutionTitle => 'Link your institution';
 
   @override
@@ -284,6 +335,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionSignOut => 'Sign out';
+
+  @override
+  String get profileGateTitle => 'Unrecognized profile';
+
+  @override
+  String get profileGateBody =>
+      'You are signed in, but this account has no role mapped to an app area (trainee, instructor, institution manager, or manufacturer). Sign out and sign in again; on first Google sign-in, pick the correct account type.';
+
+  @override
+  String get profileGateDocHint =>
+      'Official product flow: docs/product/fluxo_app2cation.mermaid';
 
   @override
   String get actionRetry => 'Try again';
@@ -618,6 +680,67 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get comandoHeroTitle => 'Live execution';
+
+  @override
+  String get comandoHeroLiveBadge => 'Live';
+
+  @override
+  String get comandoHeroModulePrefix => 'Module:';
+
+  @override
+  String get comandoStatDurationLabel => 'Duration';
+
+  @override
+  String get comandoStatParticipantsLabel => 'Participants';
+
+  @override
+  String get comandoStatActiveShort => 'Active';
+
+  @override
+  String get comandoStatWaitingShort => 'Waiting';
+
+  @override
+  String get comandoDurationPlaceholder => '—';
+
+  @override
+  String get comandoProgressByBlockTitle => 'Progress by block';
+
+  @override
+  String get comandoColBlockTitle => 'Block';
+
+  @override
+  String get comandoColState => 'Status';
+
+  @override
+  String get comandoColCompletion => 'Completion';
+
+  @override
+  String get comandoColAccuracy => 'Accuracy';
+
+  @override
+  String get comandoBlockStateReleased => 'Released';
+
+  @override
+  String get comandoBlockStatePending => 'Pending';
+
+  @override
+  String get comandoDeckSubtitle =>
+      'Start, pause, or end the session in real time.';
+
+  @override
+  String get comandoDeckBadgeRunning => 'Running';
+
+  @override
+  String get comandoDeckBadgePaused => 'Paused';
+
+  @override
+  String get comandoDeckBadgeScheduled => 'Scheduled';
+
+  @override
+  String get comandoDeckBadgeFinished => 'Ended';
+
+  @override
   String get credSnackInstitutionCreated => 'Institution created.';
 
   @override
@@ -740,6 +863,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Approve, assign a credentialed instructor, and link the completed training when available.';
 
   @override
+  String get trainReqKanbanColumnQueue => 'Queue';
+
+  @override
+  String get trainReqKanbanColumnQueueHint => 'Pending · Approved';
+
+  @override
+  String get trainReqKanbanColumnScheduled => 'Scheduled';
+
+  @override
+  String get trainReqKanbanColumnClosed => 'Closed';
+
+  @override
+  String get trainReqKanbanColumnClosedHint => 'Completed · Rejected';
+
+  @override
   String get trainReqEmpty => 'No training requests.';
 
   @override
@@ -815,6 +953,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get parkIntro =>
       'Each unit mirrors a model from the manufacturer\'s catalog. Initial state: pending; active when in approved use.';
+
+  @override
+  String get parkSearchHint =>
+      'Search name, model, sector, or manufacturer (catalog)';
 
   @override
   String get parkFilterByState => 'Filter by status';
@@ -943,6 +1085,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mfgNavOperations => 'Operations';
+
+  @override
+  String get mfgNavHomologations => 'Credentialing';
+
+  @override
+  String get mfgHomologEmpty => 'No credential requests at the moment.';
+
+  @override
+  String get mfgHomologFilterAll => 'All';
+
+  @override
+  String get mfgHomologFilterPending => 'Pending';
+
+  @override
+  String get mfgHomologFilterApproved => 'Approved';
+
+  @override
+  String get mfgHomologFilterRejected => 'Rejected';
+
+  @override
+  String get mfgSnackHomologUpdated => 'Credential request updated.';
 
   @override
   String get mfgNavGroupSummary => 'Summary & profile';
@@ -1239,6 +1402,140 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mfgBtnNewVersion => 'New version';
 
   @override
+  String get mfgDashQuickCatalogTitle => 'Catalog equipment';
+
+  @override
+  String get mfgDashQuickCatalogBody =>
+      'Register model, documentation, and training defaults in a two-step flow.';
+
+  @override
+  String get mfgDashNewEquipment => 'New equipment';
+
+  @override
+  String get mfgEquipWizardTitle => 'New equipment';
+
+  @override
+  String get mfgEquipWizardEditTitle => 'Edit equipment';
+
+  @override
+  String get mfgEquipWizardSaveChanges => 'Save changes';
+
+  @override
+  String get mfgBtnEditEquipment => 'Edit';
+
+  @override
+  String get mfgEquipWizardStep1 => 'Identification & specs';
+
+  @override
+  String get mfgEquipWizardStep2 => 'Training defaults & files';
+
+  @override
+  String get mfgEquipWizardNext => 'Next';
+
+  @override
+  String get mfgEquipWizardBack => 'Back';
+
+  @override
+  String get mfgEquipWizardSubmit => 'Save';
+
+  @override
+  String get mfgEquipFieldFirmware => 'Firmware version';
+
+  @override
+  String get mfgEquipFieldSerial => 'Serial number';
+
+  @override
+  String get mfgEquipCategoryRequired => 'Category *';
+
+  @override
+  String get mfgEquipSnackCategoryRequired =>
+      'Choose a category for the root equipment record.';
+
+  @override
+  String get mfgEquipSpecsTitle => 'Technical attributes (optional)';
+
+  @override
+  String get mfgEquipSpecLabel => 'Label';
+
+  @override
+  String get mfgEquipSpecValue => 'Value';
+
+  @override
+  String get mfgEquipAddSpecRow => 'Add row';
+
+  @override
+  String get mfgEquipFieldIntroVideoUrl => 'Intro video URL (optional)';
+
+  @override
+  String get mfgEquipDefaultsTitle => 'Training defaults (optional)';
+
+  @override
+  String get mfgEquipDefaultTrainingHours => 'Training hours';
+
+  @override
+  String get mfgEquipDefaultPassingScore => 'Passing score (%)';
+
+  @override
+  String get mfgEquipDefaultCertMonths => 'Certificate validity (months)';
+
+  @override
+  String get mfgEquipDefaultReassessmentDays => 'Reassessment (days)';
+
+  @override
+  String get mfgEquipFieldQuantity => 'Quantity';
+
+  @override
+  String get mfgEquipFieldStatus => 'Status';
+
+  @override
+  String get mfgEquipStatusActive => 'Active';
+
+  @override
+  String get mfgEquipStatusInactive => 'Inactive';
+
+  @override
+  String get mfgEquipAttachmentsTitle => 'Files (optional)';
+
+  @override
+  String get mfgEquipAttachImage => 'Equipment image';
+
+  @override
+  String get mfgEquipAttachManualOp => 'Operator manual (PDF)';
+
+  @override
+  String get mfgEquipAttachManualMaint => 'Maintenance manual (PDF)';
+
+  @override
+  String get mfgEquipAttachDatasheet => 'Datasheet (PDF)';
+
+  @override
+  String get mfgEquipAttachIntroVideo => 'Intro video (MP4)';
+
+  @override
+  String get mfgEquipPickFile => 'Choose';
+
+  @override
+  String get mfgEquipClearFile => 'Clear';
+
+  @override
+  String get mfgEquipSearchHint => 'Search name, model, or serial';
+
+  @override
+  String get mfgEquipFilterStatusLabel => 'List status';
+
+  @override
+  String get mfgEquipStatusFilterAll => 'All';
+
+  @override
+  String mfgEquipTemplatesCount(Object count) {
+    return '$count official template(s)';
+  }
+
+  @override
+  String get mfgEquipSnackPartialUpload =>
+      'Equipment saved; some attachments failed.';
+
+  @override
   String get mfgValidationTitle => 'Manufacturer credentialing';
 
   @override
@@ -1273,7 +1570,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mfgValHelpPendingValidation =>
-      'Your request is in the review queue. Official templates can still be edited; visibility in the instructor catalog follows network rules.';
+      'Your request is in the Fluxxo review queue. Estimated turnaround: 24–48 business hours. You will receive an email when approved.';
 
   @override
   String get mfgValHelpActive =>
@@ -1579,6 +1876,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trnBtnConfirmAnswer => 'Confirm answer';
 
   @override
+  String get trnBtnContinueAfterFeedback => 'Continue';
+
+  @override
+  String get trnAnswerFeedbackCorrect => 'Correct.';
+
+  @override
+  String get trnAnswerFeedbackIncorrect => 'Incorrect.';
+
+  @override
+  String trnAnswerCorrectWas(Object label) {
+    return 'Correct answer: $label';
+  }
+
+  @override
   String get trnBtnSubmitResponses => 'Submit responses';
 
   @override
@@ -1589,6 +1900,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trnScoreLabel => 'Score (0–10)';
+
+  @override
+  String get trnResultApprovedBanner => 'Passed — score is 7.0 or higher.';
+
+  @override
+  String get trnResultInsufficientBanner =>
+      'Score below 7.0. If unsure, speak with your instructor.';
+
+  @override
+  String get trnResultRecoveryNote =>
+      'You are in recovery: complete the questions indicated by the instructor.';
 
   @override
   String get trnBtnJoinAnother => 'Join another training';
@@ -1923,4 +2245,156 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get utilDownloadWebOnly =>
       'File download is only available in the web app.';
+
+  @override
+  String get loginIamManufacturer => 'I am a manufacturer';
+
+  @override
+  String get loginIamInstitution => 'I am an institution';
+
+  @override
+  String get loginIamInstructorLink => 'I am an instructor (Application)';
+
+  @override
+  String get loginInstitutionFootnote =>
+      'Managers sign in with credentials issued by the institution or manufacturer. To join as clinical staff, use “Get started” as an instructor and request a hospital link.';
+
+  @override
+  String get mfgOnboardTitle => 'Manufacturer registration';
+
+  @override
+  String mfgOnboardStepCounter(int step, int total) {
+    return 'Step $step of $total';
+  }
+
+  @override
+  String get mfgOnboardCorporateSection => 'Corporate details';
+
+  @override
+  String get mfgFieldLegalName => 'Legal name';
+
+  @override
+  String get mfgFieldTradeName => 'Trade name';
+
+  @override
+  String get mfgFieldStateRegistration => 'State registration (IE)';
+
+  @override
+  String get mfgFieldWebsite => 'Website';
+
+  @override
+  String get mfgFieldCommercialPhone => 'Commercial phone';
+
+  @override
+  String get mfgAddressSection => 'Address';
+
+  @override
+  String get mfgFieldCep => 'Postal code (CEP)';
+
+  @override
+  String get mfgCepLookup => 'Look up CEP';
+
+  @override
+  String get mfgFieldStreet => 'Street';
+
+  @override
+  String get mfgFieldNeighborhood => 'District';
+
+  @override
+  String get mfgFieldCity => 'City';
+
+  @override
+  String get mfgFieldState => 'State (UF)';
+
+  @override
+  String get mfgOnboardLegalRepSection => 'Legal representative';
+
+  @override
+  String get mfgFieldLegalRepName => 'Full name';
+
+  @override
+  String get mfgFieldLegalRepCpf => 'CPF';
+
+  @override
+  String get mfgFieldLegalRepRole => 'Role';
+
+  @override
+  String get mfgFieldLegalRepPhone => 'Direct phone';
+
+  @override
+  String get mfgOnboardDocsSection => 'Documents for validation';
+
+  @override
+  String get mfgDocFormatsHint => 'Accepted: PDF, JPG, PNG (max 10 MB each).';
+
+  @override
+  String get mfgDocCnpjProof => 'CNPJ registration proof';
+
+  @override
+  String get mfgDocArticles => 'Articles of incorporation (or equivalent)';
+
+  @override
+  String get mfgDocAddressProof =>
+      'Proof of address (utility bill, up to 3 months)';
+
+  @override
+  String get mfgDeclarationLabel =>
+      'I declare that all information is truthful and understand that false statements may incur legal liability.';
+
+  @override
+  String get mfgSendForReview => 'Submit for review';
+
+  @override
+  String get mfgPendingTitle => 'Registration under review';
+
+  @override
+  String get mfgPendingBody =>
+      'Your documents were submitted successfully and are being reviewed by our team.';
+
+  @override
+  String get mfgPendingSla => 'Estimated time: 24–48 business hours.';
+
+  @override
+  String get mfgPendingEmailNotice =>
+      'You will receive an email once your registration is approved.';
+
+  @override
+  String get mfgPendingProtocol => 'Protocol number';
+
+  @override
+  String get mfgPendingStatusReview => 'Status: under review';
+
+  @override
+  String get mfgPendingSubmittedAt => 'Submitted at';
+
+  @override
+  String get mfgPendingSupport => 'Help: suporte@app2cation.com';
+
+  @override
+  String get mfgCepInvalid => 'Enter an 8-digit CEP.';
+
+  @override
+  String get mfgCepNotFound => 'CEP not found.';
+
+  @override
+  String get mfgPickDoc => 'Attach file';
+
+  @override
+  String get mfgRemoveDoc => 'Remove';
+
+  @override
+  String get mfgLogout => 'Sign out';
+
+  @override
+  String get mfgOnboardFieldsRequired =>
+      'Fill all required fields (CNPJ 14 digits, CEP 8 digits, state code 2 letters).';
+
+  @override
+  String get mfgAcceptDeclaration =>
+      'Accept the declaration before submitting for review.';
+
+  @override
+  String mfgDocMissingKind(Object title) {
+    return 'Missing document: $title';
+  }
 }

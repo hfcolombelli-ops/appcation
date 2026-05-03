@@ -384,4 +384,138 @@ class FluxxoCertificateAndRepescageTest extends TestCase
             ],
         ])->assertUnprocessable();
     }
+
+    public function test_finish_training_issues_certificates_for_completed_passing_enrollments(): void
+    {
+        Event::fake();
+
+        $inst = Institution::query()->create([
+            'name' => 'Inst Finish GA10',
+            'cnpj' => '77.888.999/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino encerrar cert',
+            'type' => 'official',
+            'status' => 'in_progress',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+            'command_seq' => 1,
+            'passing_score_percent' => 70,
+        ]);
+
+        Enrollment::query()->create([
+            'training_id' => $training->id,
+            'user_id' => $trainee->id,
+            'status' => 'completed',
+            'score' => 8.5,
+            'joined_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $this->assertSame(0, Certificate::query()->where('training_id', $training->id)->count());
+
+        $itoken = $instructor->createToken('ins')->plainTextToken;
+
+        $this->withToken($itoken)->patchJson("/api/trainings/{$training->id}", [
+            'status' => 'finished',
+        ])->assertOk();
+
+        $training->refresh();
+        $this->assertSame('finished', $training->status);
+        $this->assertSame(1, Certificate::query()->where('training_id', $training->id)->count());
+    }
+
+    public function test_finish_training_does_not_issue_certificate_below_passing_score(): void
+    {
+        Event::fake();
+
+        $inst = Institution::query()->create([
+            'name' => 'Inst Fail GA10',
+            'cnpj' => '88.999.000/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino baixa nota',
+            'type' => 'official',
+            'status' => 'in_progress',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+            'command_seq' => 0,
+            'passing_score_percent' => 70,
+        ]);
+
+        Enrollment::query()->create([
+            'training_id' => $training->id,
+            'user_id' => $trainee->id,
+            'status' => 'completed',
+            'score' => 5.0,
+            'joined_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $itoken = $instructor->createToken('ins')->plainTextToken;
+
+        $this->withToken($itoken)->patchJson("/api/trainings/{$training->id}", [
+            'status' => 'finished',
+        ])->assertOk();
+
+        $this->assertSame(0, Certificate::query()->where('training_id', $training->id)->count());
+    }
+
+    public function test_close_realtime_command_issues_certificates(): void
+    {
+        Event::fake();
+
+        $inst = Institution::query()->create([
+            'name' => 'Inst Close RT',
+            'cnpj' => '99.000.111/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino close cmd',
+            'type' => 'official',
+            'status' => 'in_progress',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+            'command_seq' => 2,
+            'passing_score_percent' => 70,
+        ]);
+
+        Enrollment::query()->create([
+            'training_id' => $training->id,
+            'user_id' => $trainee->id,
+            'status' => 'completed',
+            'score' => 9.0,
+            'joined_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $itoken = $instructor->createToken('ins')->plainTextToken;
+
+        $this->withToken($itoken)->postJson("/api/realtime/trainings/{$training->id}/command", [
+            'action' => 'close',
+            'payload' => [],
+        ])->assertOk();
+
+        $this->assertSame(1, Certificate::query()->where('training_id', $training->id)->count());
+    }
 }

@@ -49,7 +49,7 @@ class FluxxoManufacturerDocumentsTest extends TestCase
 
         $create = $this->withToken($token)->post('/api/manufacturer/documents', [
             'file' => $file,
-            'document_kind' => 'manual',
+            'document_kind' => 'other',
             'notes' => 'Nota de teste',
         ]);
 

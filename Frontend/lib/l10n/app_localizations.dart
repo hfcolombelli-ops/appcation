@@ -131,7 +131,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginAccessHeroSubtitle.
   ///
   /// In pt, this message translates to:
-  /// **'O seu treino, a sua evolução'**
+  /// **'Plataforma de gestão de treinamentos para equipamentos hospitalares'**
   String get loginAccessHeroSubtitle;
 
   /// No description provided for @loginNavQuestions.
@@ -428,6 +428,12 @@ abstract class AppLocalizations {
   /// **'Nome da empresa'**
   String get fieldCompanyName;
 
+  /// No description provided for @registerMfgCompanyOptionalDomain.
+  ///
+  /// In pt, this message translates to:
+  /// **'Obrigatório só no primeiro registo deste domínio; deixe em branco para juntar-se a um fabricante já criado.'**
+  String get registerMfgCompanyOptionalDomain;
+
   /// No description provided for @valCompanyNameRequired.
   ///
   /// In pt, this message translates to:
@@ -572,6 +578,90 @@ abstract class AppLocalizations {
   /// **'Credenciamento'**
   String get shellNavCredentialing;
 
+  /// No description provided for @shellNavPostTrainingResults.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resultados do treino'**
+  String get shellNavPostTrainingResults;
+
+  /// No description provided for @shellTitlePostTrainingResults.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resultados e repescagem'**
+  String get shellTitlePostTrainingResults;
+
+  /// No description provided for @postTrainingIntro.
+  ///
+  /// In pt, this message translates to:
+  /// **'Revise participantes após a sessão, aplique repescagem a quem precisar e finalize quando todos estiverem avaliados. O controlo em tempo real permanece na Sala de comando.'**
+  String get postTrainingIntro;
+
+  /// No description provided for @postTrainingPickTraining.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolha um treino para carregar a lista de inscritos.'**
+  String get postTrainingPickTraining;
+
+  /// No description provided for @postTrainingOutcomeApproved.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aprovado (≥ 7,0)'**
+  String get postTrainingOutcomeApproved;
+
+  /// No description provided for @postTrainingOutcomeInsufficient.
+  ///
+  /// In pt, this message translates to:
+  /// **'Insuficiente (< 7,0)'**
+  String get postTrainingOutcomeInsufficient;
+
+  /// No description provided for @postTrainingOutcomeRecovery.
+  ///
+  /// In pt, this message translates to:
+  /// **'Em recuperação'**
+  String get postTrainingOutcomeRecovery;
+
+  /// No description provided for @postTrainingOutcomeInProgress.
+  ///
+  /// In pt, this message translates to:
+  /// **'Em curso'**
+  String get postTrainingOutcomeInProgress;
+
+  /// No description provided for @postTrainingOutcomeCompletedNoGrade.
+  ///
+  /// In pt, this message translates to:
+  /// **'Concluído (sem nota)'**
+  String get postTrainingOutcomeCompletedNoGrade;
+
+  /// No description provided for @postTrainingFinishTraining.
+  ///
+  /// In pt, this message translates to:
+  /// **'Encerrar treino'**
+  String get postTrainingFinishTraining;
+
+  /// No description provided for @postTrainingFinishTrainingConfirmTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Encerrar este treino?'**
+  String get postTrainingFinishTrainingConfirmTitle;
+
+  /// No description provided for @postTrainingFinishTrainingConfirmBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'O estado passa a concluído. Os treinandos deixam de responder ao questionário nesta sessão.'**
+  String get postTrainingFinishTrainingConfirmBody;
+
+  /// No description provided for @postTrainingFinishTrainingDone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Treino concluído. Certificados garantidos para quem tem nota ≥ limiar.'**
+  String get postTrainingFinishTrainingDone;
+
+  /// No description provided for @postTrainingCertificatePdfTooltip.
+  ///
+  /// In pt, this message translates to:
+  /// **'Descarregar certificado (PDF)'**
+  String get postTrainingCertificatePdfTooltip;
+
   /// No description provided for @shellLinkInstitutionTitle.
   ///
   /// In pt, this message translates to:
@@ -625,6 +715,24 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Sair'**
   String get actionSignOut;
+
+  /// No description provided for @profileGateTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Perfil não reconhecido'**
+  String get profileGateTitle;
+
+  /// No description provided for @profileGateBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'A sessão está ativa, mas este utilizador não tem um perfil associado a uma área da aplicação (treinando, instrutor, gestor ou fabricante). Termine a sessão e entre novamente; no primeiro acesso com Google, escolha o tipo de conta correto.'**
+  String get profileGateBody;
+
+  /// No description provided for @profileGateDocHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fluxo oficial do produto: docs/product/fluxo_app2cation.mermaid'**
+  String get profileGateDocHint;
 
   /// No description provided for @actionRetry.
   ///
@@ -1205,6 +1313,126 @@ abstract class AppLocalizations {
     Object status,
   );
 
+  /// No description provided for @comandoHeroTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Execução ao vivo'**
+  String get comandoHeroTitle;
+
+  /// No description provided for @comandoHeroLiveBadge.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ao vivo'**
+  String get comandoHeroLiveBadge;
+
+  /// No description provided for @comandoHeroModulePrefix.
+  ///
+  /// In pt, this message translates to:
+  /// **'Módulo:'**
+  String get comandoHeroModulePrefix;
+
+  /// No description provided for @comandoStatDurationLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Duração'**
+  String get comandoStatDurationLabel;
+
+  /// No description provided for @comandoStatParticipantsLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Participantes'**
+  String get comandoStatParticipantsLabel;
+
+  /// No description provided for @comandoStatActiveShort.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ativos'**
+  String get comandoStatActiveShort;
+
+  /// No description provided for @comandoStatWaitingShort.
+  ///
+  /// In pt, this message translates to:
+  /// **'Em espera'**
+  String get comandoStatWaitingShort;
+
+  /// No description provided for @comandoDurationPlaceholder.
+  ///
+  /// In pt, this message translates to:
+  /// **'—'**
+  String get comandoDurationPlaceholder;
+
+  /// No description provided for @comandoProgressByBlockTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Progresso por bloco'**
+  String get comandoProgressByBlockTitle;
+
+  /// No description provided for @comandoColBlockTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Bloco'**
+  String get comandoColBlockTitle;
+
+  /// No description provided for @comandoColState.
+  ///
+  /// In pt, this message translates to:
+  /// **'Estado'**
+  String get comandoColState;
+
+  /// No description provided for @comandoColCompletion.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conclusão'**
+  String get comandoColCompletion;
+
+  /// No description provided for @comandoColAccuracy.
+  ///
+  /// In pt, this message translates to:
+  /// **'Precisão'**
+  String get comandoColAccuracy;
+
+  /// No description provided for @comandoBlockStateReleased.
+  ///
+  /// In pt, this message translates to:
+  /// **'Liberto'**
+  String get comandoBlockStateReleased;
+
+  /// No description provided for @comandoBlockStatePending.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pendente'**
+  String get comandoBlockStatePending;
+
+  /// No description provided for @comandoDeckSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Inicie, pause ou encerre a sessão em tempo real.'**
+  String get comandoDeckSubtitle;
+
+  /// No description provided for @comandoDeckBadgeRunning.
+  ///
+  /// In pt, this message translates to:
+  /// **'Em curso'**
+  String get comandoDeckBadgeRunning;
+
+  /// No description provided for @comandoDeckBadgePaused.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pausado'**
+  String get comandoDeckBadgePaused;
+
+  /// No description provided for @comandoDeckBadgeScheduled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Agendado'**
+  String get comandoDeckBadgeScheduled;
+
+  /// No description provided for @comandoDeckBadgeFinished.
+  ///
+  /// In pt, this message translates to:
+  /// **'Encerrado'**
+  String get comandoDeckBadgeFinished;
+
   /// No description provided for @credSnackInstitutionCreated.
   ///
   /// In pt, this message translates to:
@@ -1427,6 +1655,36 @@ abstract class AppLocalizations {
   /// **'Aprove, designe um instrutor credenciado e associe ao treino realizado quando existir.'**
   String get trainReqIntro;
 
+  /// No description provided for @trainReqKanbanColumnQueue.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fila'**
+  String get trainReqKanbanColumnQueue;
+
+  /// No description provided for @trainReqKanbanColumnQueueHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pendente · Aprovado'**
+  String get trainReqKanbanColumnQueueHint;
+
+  /// No description provided for @trainReqKanbanColumnScheduled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Agendado'**
+  String get trainReqKanbanColumnScheduled;
+
+  /// No description provided for @trainReqKanbanColumnClosed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Encerrados'**
+  String get trainReqKanbanColumnClosed;
+
+  /// No description provided for @trainReqKanbanColumnClosedHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Concluído · Recusado'**
+  String get trainReqKanbanColumnClosedHint;
+
   /// No description provided for @trainReqEmpty.
   ///
   /// In pt, this message translates to:
@@ -1552,6 +1810,12 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Cada unidade replica um modelo do catálogo do fabricante. Estado inicial: pendente; activo quando em uso homologado.'**
   String get parkIntro;
+
+  /// No description provided for @parkSearchHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pesquisar nome, modelo, setor ou fabricante (no catálogo)'**
+  String get parkSearchHint;
 
   /// No description provided for @parkFilterByState.
   ///
@@ -1780,6 +2044,48 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Operações'**
   String get mfgNavOperations;
+
+  /// No description provided for @mfgNavHomologations.
+  ///
+  /// In pt, this message translates to:
+  /// **'Homologações'**
+  String get mfgNavHomologations;
+
+  /// No description provided for @mfgHomologEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum pedido de credenciamento neste momento.'**
+  String get mfgHomologEmpty;
+
+  /// No description provided for @mfgHomologFilterAll.
+  ///
+  /// In pt, this message translates to:
+  /// **'Todos'**
+  String get mfgHomologFilterAll;
+
+  /// No description provided for @mfgHomologFilterPending.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pendentes'**
+  String get mfgHomologFilterPending;
+
+  /// No description provided for @mfgHomologFilterApproved.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aprovados'**
+  String get mfgHomologFilterApproved;
+
+  /// No description provided for @mfgHomologFilterRejected.
+  ///
+  /// In pt, this message translates to:
+  /// **'Recusados'**
+  String get mfgHomologFilterRejected;
+
+  /// No description provided for @mfgSnackHomologUpdated.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pedido de homologação atualizado.'**
+  String get mfgSnackHomologUpdated;
 
   /// No description provided for @mfgNavGroupSummary.
   ///
@@ -2315,6 +2621,264 @@ abstract class AppLocalizations {
   /// **'Nova versão'**
   String get mfgBtnNewVersion;
 
+  /// No description provided for @mfgDashQuickCatalogTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Equipamentos no catálogo'**
+  String get mfgDashQuickCatalogTitle;
+
+  /// No description provided for @mfgDashQuickCatalogBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Registe modelo, documentação e pré-definições de treino num fluxo em dois passos.'**
+  String get mfgDashQuickCatalogBody;
+
+  /// No description provided for @mfgDashNewEquipment.
+  ///
+  /// In pt, this message translates to:
+  /// **'Novo equipamento'**
+  String get mfgDashNewEquipment;
+
+  /// No description provided for @mfgEquipWizardTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Novo equipamento'**
+  String get mfgEquipWizardTitle;
+
+  /// No description provided for @mfgEquipWizardEditTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar equipamento'**
+  String get mfgEquipWizardEditTitle;
+
+  /// No description provided for @mfgEquipWizardSaveChanges.
+  ///
+  /// In pt, this message translates to:
+  /// **'Guardar alterações'**
+  String get mfgEquipWizardSaveChanges;
+
+  /// No description provided for @mfgBtnEditEquipment.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar'**
+  String get mfgBtnEditEquipment;
+
+  /// No description provided for @mfgEquipWizardStep1.
+  ///
+  /// In pt, this message translates to:
+  /// **'Identificação e ficha'**
+  String get mfgEquipWizardStep1;
+
+  /// No description provided for @mfgEquipWizardStep2.
+  ///
+  /// In pt, this message translates to:
+  /// **'Treino e anexos'**
+  String get mfgEquipWizardStep2;
+
+  /// No description provided for @mfgEquipWizardNext.
+  ///
+  /// In pt, this message translates to:
+  /// **'Seguinte'**
+  String get mfgEquipWizardNext;
+
+  /// No description provided for @mfgEquipWizardBack.
+  ///
+  /// In pt, this message translates to:
+  /// **'Voltar'**
+  String get mfgEquipWizardBack;
+
+  /// No description provided for @mfgEquipWizardSubmit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Guardar'**
+  String get mfgEquipWizardSubmit;
+
+  /// No description provided for @mfgEquipFieldFirmware.
+  ///
+  /// In pt, this message translates to:
+  /// **'Firmware (versão)'**
+  String get mfgEquipFieldFirmware;
+
+  /// No description provided for @mfgEquipFieldSerial.
+  ///
+  /// In pt, this message translates to:
+  /// **'Número de série'**
+  String get mfgEquipFieldSerial;
+
+  /// No description provided for @mfgEquipCategoryRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Categoria *'**
+  String get mfgEquipCategoryRequired;
+
+  /// No description provided for @mfgEquipSnackCategoryRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolha uma categoria para o equipamento raiz.'**
+  String get mfgEquipSnackCategoryRequired;
+
+  /// No description provided for @mfgEquipSpecsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atributos técnicos (opcional)'**
+  String get mfgEquipSpecsTitle;
+
+  /// No description provided for @mfgEquipSpecLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome'**
+  String get mfgEquipSpecLabel;
+
+  /// No description provided for @mfgEquipSpecValue.
+  ///
+  /// In pt, this message translates to:
+  /// **'Valor'**
+  String get mfgEquipSpecValue;
+
+  /// No description provided for @mfgEquipAddSpecRow.
+  ///
+  /// In pt, this message translates to:
+  /// **'Adicionar linha'**
+  String get mfgEquipAddSpecRow;
+
+  /// No description provided for @mfgEquipFieldIntroVideoUrl.
+  ///
+  /// In pt, this message translates to:
+  /// **'URL vídeo de introdução (opcional)'**
+  String get mfgEquipFieldIntroVideoUrl;
+
+  /// No description provided for @mfgEquipDefaultsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pré-definições de treino (opcional)'**
+  String get mfgEquipDefaultsTitle;
+
+  /// No description provided for @mfgEquipDefaultTrainingHours.
+  ///
+  /// In pt, this message translates to:
+  /// **'Horas de treino'**
+  String get mfgEquipDefaultTrainingHours;
+
+  /// No description provided for @mfgEquipDefaultPassingScore.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nota mínima (%)'**
+  String get mfgEquipDefaultPassingScore;
+
+  /// No description provided for @mfgEquipDefaultCertMonths.
+  ///
+  /// In pt, this message translates to:
+  /// **'Validade certificado (meses)'**
+  String get mfgEquipDefaultCertMonths;
+
+  /// No description provided for @mfgEquipDefaultReassessmentDays.
+  ///
+  /// In pt, this message translates to:
+  /// **'Reavaliação (dias)'**
+  String get mfgEquipDefaultReassessmentDays;
+
+  /// No description provided for @mfgEquipFieldQuantity.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quantidade'**
+  String get mfgEquipFieldQuantity;
+
+  /// No description provided for @mfgEquipFieldStatus.
+  ///
+  /// In pt, this message translates to:
+  /// **'Estado'**
+  String get mfgEquipFieldStatus;
+
+  /// No description provided for @mfgEquipStatusActive.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ativo'**
+  String get mfgEquipStatusActive;
+
+  /// No description provided for @mfgEquipStatusInactive.
+  ///
+  /// In pt, this message translates to:
+  /// **'Inativo'**
+  String get mfgEquipStatusInactive;
+
+  /// No description provided for @mfgEquipAttachmentsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ficheiros (opcional)'**
+  String get mfgEquipAttachmentsTitle;
+
+  /// No description provided for @mfgEquipAttachImage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Imagem do equipamento'**
+  String get mfgEquipAttachImage;
+
+  /// No description provided for @mfgEquipAttachManualOp.
+  ///
+  /// In pt, this message translates to:
+  /// **'Manual do operador (PDF)'**
+  String get mfgEquipAttachManualOp;
+
+  /// No description provided for @mfgEquipAttachManualMaint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Manual de manutenção (PDF)'**
+  String get mfgEquipAttachManualMaint;
+
+  /// No description provided for @mfgEquipAttachDatasheet.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ficha técnica (PDF)'**
+  String get mfgEquipAttachDatasheet;
+
+  /// No description provided for @mfgEquipAttachIntroVideo.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vídeo de introdução (MP4)'**
+  String get mfgEquipAttachIntroVideo;
+
+  /// No description provided for @mfgEquipPickFile.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolher'**
+  String get mfgEquipPickFile;
+
+  /// No description provided for @mfgEquipClearFile.
+  ///
+  /// In pt, this message translates to:
+  /// **'Limpar'**
+  String get mfgEquipClearFile;
+
+  /// No description provided for @mfgEquipSearchHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pesquisar nome, modelo ou série'**
+  String get mfgEquipSearchHint;
+
+  /// No description provided for @mfgEquipFilterStatusLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Estado na lista'**
+  String get mfgEquipFilterStatusLabel;
+
+  /// No description provided for @mfgEquipStatusFilterAll.
+  ///
+  /// In pt, this message translates to:
+  /// **'Todos'**
+  String get mfgEquipStatusFilterAll;
+
+  /// No description provided for @mfgEquipTemplatesCount.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count} template(s) oficial(is)'**
+  String mfgEquipTemplatesCount(Object count);
+
+  /// No description provided for @mfgEquipSnackPartialUpload.
+  ///
+  /// In pt, this message translates to:
+  /// **'Equipamento criado; alguns anexos falharam.'**
+  String get mfgEquipSnackPartialUpload;
+
   /// No description provided for @mfgValidationTitle.
   ///
   /// In pt, this message translates to:
@@ -2378,7 +2942,7 @@ abstract class AppLocalizations {
   /// No description provided for @mfgValHelpPendingValidation.
   ///
   /// In pt, this message translates to:
-  /// **'O seu pedido está na fila de análise. Até lá, os templates oficiais podem ser editados; a divulgação no catálogo para instrutores segue as regras da rede.'**
+  /// **'O seu pedido está na fila de análise Fluxxo. Prazo estimado: 24 a 48 horas úteis. Receberá um e-mail quando for aprovado.'**
   String get mfgValHelpPendingValidation;
 
   /// No description provided for @mfgValHelpActive.
@@ -2927,6 +3491,30 @@ abstract class AppLocalizations {
   /// **'Confirmar resposta'**
   String get trnBtnConfirmAnswer;
 
+  /// No description provided for @trnBtnContinueAfterFeedback.
+  ///
+  /// In pt, this message translates to:
+  /// **'Continuar'**
+  String get trnBtnContinueAfterFeedback;
+
+  /// No description provided for @trnAnswerFeedbackCorrect.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resposta correta.'**
+  String get trnAnswerFeedbackCorrect;
+
+  /// No description provided for @trnAnswerFeedbackIncorrect.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resposta incorreta.'**
+  String get trnAnswerFeedbackIncorrect;
+
+  /// No description provided for @trnAnswerCorrectWas.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resposta certa: {label}'**
+  String trnAnswerCorrectWas(Object label);
+
   /// No description provided for @trnBtnSubmitResponses.
   ///
   /// In pt, this message translates to:
@@ -2950,6 +3538,24 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Nota (0–10)'**
   String get trnScoreLabel;
+
+  /// No description provided for @trnResultApprovedBanner.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aprovado — nota igual ou superior a 7,0.'**
+  String get trnResultApprovedBanner;
+
+  /// No description provided for @trnResultInsufficientBanner.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nota abaixo de 7,0. Em caso de dúvida, fale com o instrutor.'**
+  String get trnResultInsufficientBanner;
+
+  /// No description provided for @trnResultRecoveryNote.
+  ///
+  /// In pt, this message translates to:
+  /// **'Está em recuperação: conclua as questões indicadas pelo instrutor.'**
+  String get trnResultRecoveryNote;
 
   /// No description provided for @trnBtnJoinAnother.
   ///
@@ -3490,6 +4096,288 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'O download de ficheiros só está disponível na versão Web.'**
   String get utilDownloadWebOnly;
+
+  /// No description provided for @loginIamManufacturer.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sou fabricante'**
+  String get loginIamManufacturer;
+
+  /// No description provided for @loginIamInstitution.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sou instituição'**
+  String get loginIamInstitution;
+
+  /// No description provided for @loginIamInstructorLink.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sou instrutor (Application)'**
+  String get loginIamInstructorLink;
+
+  /// No description provided for @loginInstitutionFootnote.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gestores acedem com credenciais criadas pela instituição ou fabricante. Para novo registo como equipa clínica, utilize «Começar agora» como instrutor e peça vínculo ao hospital.'**
+  String get loginInstitutionFootnote;
+
+  /// No description provided for @mfgOnboardTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cadastro de fabricante'**
+  String get mfgOnboardTitle;
+
+  /// No description provided for @mfgOnboardStepCounter.
+  ///
+  /// In pt, this message translates to:
+  /// **'Passo {step} de {total}'**
+  String mfgOnboardStepCounter(int step, int total);
+
+  /// No description provided for @mfgOnboardCorporateSection.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dados corporativos'**
+  String get mfgOnboardCorporateSection;
+
+  /// No description provided for @mfgFieldLegalName.
+  ///
+  /// In pt, this message translates to:
+  /// **'Razão social'**
+  String get mfgFieldLegalName;
+
+  /// No description provided for @mfgFieldTradeName.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome fantasia'**
+  String get mfgFieldTradeName;
+
+  /// No description provided for @mfgFieldStateRegistration.
+  ///
+  /// In pt, this message translates to:
+  /// **'Inscrição estadual'**
+  String get mfgFieldStateRegistration;
+
+  /// No description provided for @mfgFieldWebsite.
+  ///
+  /// In pt, this message translates to:
+  /// **'Site institucional'**
+  String get mfgFieldWebsite;
+
+  /// No description provided for @mfgFieldCommercialPhone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Telefone comercial'**
+  String get mfgFieldCommercialPhone;
+
+  /// No description provided for @mfgAddressSection.
+  ///
+  /// In pt, this message translates to:
+  /// **'Endereço'**
+  String get mfgAddressSection;
+
+  /// No description provided for @mfgFieldCep.
+  ///
+  /// In pt, this message translates to:
+  /// **'CEP'**
+  String get mfgFieldCep;
+
+  /// No description provided for @mfgCepLookup.
+  ///
+  /// In pt, this message translates to:
+  /// **'Buscar CEP'**
+  String get mfgCepLookup;
+
+  /// No description provided for @mfgFieldStreet.
+  ///
+  /// In pt, this message translates to:
+  /// **'Logradouro'**
+  String get mfgFieldStreet;
+
+  /// No description provided for @mfgFieldNeighborhood.
+  ///
+  /// In pt, this message translates to:
+  /// **'Bairro'**
+  String get mfgFieldNeighborhood;
+
+  /// No description provided for @mfgFieldCity.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cidade'**
+  String get mfgFieldCity;
+
+  /// No description provided for @mfgFieldState.
+  ///
+  /// In pt, this message translates to:
+  /// **'UF'**
+  String get mfgFieldState;
+
+  /// No description provided for @mfgOnboardLegalRepSection.
+  ///
+  /// In pt, this message translates to:
+  /// **'Representante legal'**
+  String get mfgOnboardLegalRepSection;
+
+  /// No description provided for @mfgFieldLegalRepName.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome completo'**
+  String get mfgFieldLegalRepName;
+
+  /// No description provided for @mfgFieldLegalRepCpf.
+  ///
+  /// In pt, this message translates to:
+  /// **'CPF'**
+  String get mfgFieldLegalRepCpf;
+
+  /// No description provided for @mfgFieldLegalRepRole.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cargo'**
+  String get mfgFieldLegalRepRole;
+
+  /// No description provided for @mfgFieldLegalRepPhone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Telefone direto'**
+  String get mfgFieldLegalRepPhone;
+
+  /// No description provided for @mfgOnboardDocsSection.
+  ///
+  /// In pt, this message translates to:
+  /// **'Documentos para validação'**
+  String get mfgOnboardDocsSection;
+
+  /// No description provided for @mfgDocFormatsHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Formatos aceites: PDF, JPG, PNG (máx. 10 MB cada).'**
+  String get mfgDocFormatsHint;
+
+  /// No description provided for @mfgDocCnpjProof.
+  ///
+  /// In pt, this message translates to:
+  /// **'Comprovante de inscrição no CNPJ'**
+  String get mfgDocCnpjProof;
+
+  /// No description provided for @mfgDocArticles.
+  ///
+  /// In pt, this message translates to:
+  /// **'Contrato social (ou equivalente)'**
+  String get mfgDocArticles;
+
+  /// No description provided for @mfgDocAddressProof.
+  ///
+  /// In pt, this message translates to:
+  /// **'Comprovante de endereço (água/luz, até 3 meses)'**
+  String get mfgDocAddressProof;
+
+  /// No description provided for @mfgDeclarationLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Declaro que todas as informações são verdadeiras e que a falsidade implica responsabilização legal.'**
+  String get mfgDeclarationLabel;
+
+  /// No description provided for @mfgSendForReview.
+  ///
+  /// In pt, this message translates to:
+  /// **'Enviar para análise'**
+  String get mfgSendForReview;
+
+  /// No description provided for @mfgPendingTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cadastro em análise'**
+  String get mfgPendingTitle;
+
+  /// No description provided for @mfgPendingBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Os seus documentos foram enviados com sucesso e estão a ser analisados pela nossa equipa.'**
+  String get mfgPendingBody;
+
+  /// No description provided for @mfgPendingSla.
+  ///
+  /// In pt, this message translates to:
+  /// **'Prazo estimado: 24 a 48 horas úteis.'**
+  String get mfgPendingSla;
+
+  /// No description provided for @mfgPendingEmailNotice.
+  ///
+  /// In pt, this message translates to:
+  /// **'Receberá um e-mail assim que o cadastro for aprovado.'**
+  String get mfgPendingEmailNotice;
+
+  /// No description provided for @mfgPendingProtocol.
+  ///
+  /// In pt, this message translates to:
+  /// **'N.º do protocolo'**
+  String get mfgPendingProtocol;
+
+  /// No description provided for @mfgPendingStatusReview.
+  ///
+  /// In pt, this message translates to:
+  /// **'Estado: em análise'**
+  String get mfgPendingStatusReview;
+
+  /// No description provided for @mfgPendingSubmittedAt.
+  ///
+  /// In pt, this message translates to:
+  /// **'Enviado em'**
+  String get mfgPendingSubmittedAt;
+
+  /// No description provided for @mfgPendingSupport.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ajuda: suporte@app2cation.com'**
+  String get mfgPendingSupport;
+
+  /// No description provided for @mfgCepInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'Informe um CEP com 8 dígitos.'**
+  String get mfgCepInvalid;
+
+  /// No description provided for @mfgCepNotFound.
+  ///
+  /// In pt, this message translates to:
+  /// **'CEP não encontrado.'**
+  String get mfgCepNotFound;
+
+  /// No description provided for @mfgPickDoc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Anexar ficheiro'**
+  String get mfgPickDoc;
+
+  /// No description provided for @mfgRemoveDoc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Remover'**
+  String get mfgRemoveDoc;
+
+  /// No description provided for @mfgLogout.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sair'**
+  String get mfgLogout;
+
+  /// No description provided for @mfgOnboardFieldsRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Preencha todos os campos obrigatórios (CNPJ com 14 dígitos, CEP com 8, UF com 2 letras).'**
+  String get mfgOnboardFieldsRequired;
+
+  /// No description provided for @mfgAcceptDeclaration.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aceite a declaração para enviar o cadastro para análise.'**
+  String get mfgAcceptDeclaration;
+
+  /// No description provided for @mfgDocMissingKind.
+  ///
+  /// In pt, this message translates to:
+  /// **'Documento em falta: {title}'**
+  String mfgDocMissingKind(Object title);
 }
 
 class _AppLocalizationsDelegate

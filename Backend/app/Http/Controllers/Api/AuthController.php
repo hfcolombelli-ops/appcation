@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Manufacturer;
 use App\Models\User;
 use App\Services\ManufacturerReviewerNotifier;
+use App\Support\ManufacturerRegistrationSupport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -21,23 +22,47 @@ class AuthController extends Controller
             'password' => ['required', Password::min(8)],
             'role' => ['required', 'in:trainee,instructor,manufacturer_admin'],
             'phone' => ['nullable', 'string', 'max:25'],
-            'manufacturer_name' => ['required_if:role,manufacturer_admin', 'string', 'max:180'],
+            'manufacturer_name' => ['nullable', 'string', 'max:180'],
             'manufacturer_cnpj' => ['nullable', 'string', 'max:20'],
         ]);
 
         $manufacturerId = null;
 
         if ($data['role'] === 'manufacturer_admin') {
-            $manufacturer = Manufacturer::create([
-                'name' => $data['manufacturer_name'],
-                'slug' => Str::slug($data['manufacturer_name']).'-'.Str::lower(Str::random(8)),
-                'cnpj' => $data['manufacturer_cnpj'] ?? null,
-                'support_email' => $data['email'],
-                'status' => 'active',
-                'validation_status' => 'pending_info',
-            ]);
-            $manufacturerId = $manufacturer->id;
-            ManufacturerReviewerNotifier::notifyNewRegistrationIfConfigured($manufacturer);
+            $domain = ManufacturerRegistrationSupport::domainFromEmail($data['email']);
+            if ($domain === null) {
+                return response()->json(['message' => 'E-mail inválido para registo de fabricante.'], 422);
+            }
+
+            $existingByDomain = Manufacturer::query()->where('registration_email_domain', $domain)->first();
+            if ($existingByDomain !== null) {
+                $manufacturerId = $existingByDomain->id;
+            } else {
+                $mfgName = trim((string) ($data['manufacturer_name'] ?? ''));
+                if ($mfgName === '') {
+                    return response()->json([
+                        'message' => 'Informe o nome da empresa para o primeiro registo deste domínio.',
+                        'errors' => ['manufacturer_name' => ['O campo nome da empresa é obrigatório quando ainda não existe fabricante para este domínio.']],
+                    ], 422);
+                }
+
+                $cnpjRaw = $data['manufacturer_cnpj'] ?? null;
+                $cnpjDigits = is_string($cnpjRaw) && $cnpjRaw !== ''
+                    ? preg_replace('/\D+/', '', $cnpjRaw)
+                    : null;
+
+                $manufacturer = Manufacturer::create([
+                    'name' => $mfgName,
+                    'slug' => Str::slug($mfgName).'-'.Str::lower(Str::random(8)),
+                    'cnpj' => ($cnpjDigits !== null && $cnpjDigits !== '') ? $cnpjDigits : null,
+                    'support_email' => $data['email'],
+                    'registration_email_domain' => $domain,
+                    'status' => 'active',
+                    'validation_status' => 'pending_info',
+                ]);
+                $manufacturerId = $manufacturer->id;
+                ManufacturerReviewerNotifier::notifyNewRegistrationIfConfigured($manufacturer);
+            }
         }
 
         unset($data['manufacturer_name'], $data['manufacturer_cnpj']);

@@ -2,17 +2,24 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\RequiresManufacturerApproved;
 use App\Http\Controllers\Controller;
 use App\Models\ManufacturerPrize;
 use Illuminate\Http\Request;
 
 class ManufacturerPrizeController extends Controller
 {
+    use RequiresManufacturerApproved;
+
     public function index(Request $request)
     {
         $user = $request->user();
         if ($user->role !== 'manufacturer_admin' || $user->manufacturer_id === null) {
             return response()->json(['message' => 'Disponível apenas para administrador de fabricante.'], 403);
+        }
+
+        if ($r = $this->ensureManufacturerApproved($request)) {
+            return $r;
         }
 
         $rows = ManufacturerPrize::query()
@@ -30,6 +37,10 @@ class ManufacturerPrizeController extends Controller
         $user = $request->user();
         if ($user->role !== 'manufacturer_admin' || $user->manufacturer_id === null) {
             return response()->json(['message' => 'Sem permissão.'], 403);
+        }
+
+        if ($r = $this->ensureManufacturerApproved($request)) {
+            return $r;
         }
 
         $data = $request->validate([
@@ -55,6 +66,10 @@ class ManufacturerPrizeController extends Controller
             return response()->json(['message' => 'Sem permissão.'], 403);
         }
 
+        if ($r = $this->ensureManufacturerApproved($request)) {
+            return $r;
+        }
+
         $row = ManufacturerPrize::query()
             ->whereKey($id)
             ->where('manufacturer_id', $user->manufacturer_id)
@@ -76,6 +91,10 @@ class ManufacturerPrizeController extends Controller
         $user = $request->user();
         if ($user->role !== 'manufacturer_admin' || $user->manufacturer_id === null) {
             return response()->json(['message' => 'Sem permissão.'], 403);
+        }
+
+        if ($r = $this->ensureManufacturerApproved($request)) {
+            return $r;
         }
 
         $row = ManufacturerPrize::query()

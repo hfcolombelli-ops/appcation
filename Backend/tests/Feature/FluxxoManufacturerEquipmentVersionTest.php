@@ -40,6 +40,7 @@ class FluxxoManufacturerEquipmentVersionTest extends TestCase
         $v1 = $this->withToken($token)->postJson('/api/manufacturer/equipment', [
             'name' => 'Ventilador X',
             'model' => 'VX-100',
+            'category' => 'ventilacao_pulmonar',
         ]);
         $v1->assertCreated();
         $id1 = $v1->json('id');
@@ -66,6 +67,7 @@ class FluxxoManufacturerEquipmentVersionTest extends TestCase
         $v1 = $this->withToken($token)->postJson('/api/manufacturer/equipment', [
             'name' => 'Bomba Y',
             'model' => 'BY-1',
+            'category' => 'bomba_infusao',
         ]);
         $id1 = $v1->json('id');
 
@@ -87,6 +89,7 @@ class FluxxoManufacturerEquipmentVersionTest extends TestCase
         $v1 = $this->withToken($token)->postJson('/api/manufacturer/equipment', [
             'name' => 'Monitor Z',
             'model' => 'MZ-1',
+            'category' => 'monitorizacao',
         ]);
         $id1 = $v1->json('id');
 
@@ -112,6 +115,7 @@ class FluxxoManufacturerEquipmentVersionTest extends TestCase
             'institution_id' => null,
             'name' => 'Equip A',
             'model' => 'A-1',
+            'category' => 'outro',
             'quantity' => 1,
             'status' => 'active',
         ]);

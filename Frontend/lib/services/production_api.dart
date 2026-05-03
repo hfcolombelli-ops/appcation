@@ -122,7 +122,7 @@ class ProductionApi {
         '/api/credentials/manufacturer/$id',
         {
           'status': status,
-          'fee_paid': ?feePaid,
+          if (feePaid != null) 'fee_paid': feePaid,
         },
         token: token,
       );
@@ -160,7 +160,7 @@ class ProductionApi {
         {
           'institution_id': institutionId,
           'reason_code': reasonCode,
-          'equipment_id': ?equipmentId,
+          if (equipmentId != null) 'equipment_id': equipmentId,
           if (priority != null && priority.isNotEmpty) 'priority': priority,
           if (desiredDate != null && desiredDate.isNotEmpty) 'desired_date': desiredDate,
           if (latestAcceptableDate != null && latestAcceptableDate.isNotEmpty)
@@ -201,10 +201,14 @@ class ProductionApi {
   Future<List<Map<String, dynamic>>> institutionEquipmentTemplates(
     String token, {
     String? category,
+    String? search,
   }) async {
     final parts = <String>[];
     if (category != null && category.isNotEmpty) {
       parts.add('category=${Uri.encodeQueryComponent(category)}');
+    }
+    if (search != null && search.trim().isNotEmpty) {
+      parts.add('search=${Uri.encodeQueryComponent(search.trim())}');
     }
     final q = parts.isEmpty ? '' : '?${parts.join('&')}';
     final r = await _http.getJsonList('/api/institution/equipment-templates$q', token: token);
@@ -215,6 +219,7 @@ class ProductionApi {
     String token, {
     String? status,
     String? category,
+    String? search,
   }) async {
     final parts = <String>[];
     if (status != null && status.isNotEmpty) {
@@ -223,10 +228,17 @@ class ProductionApi {
     if (category != null && category.isNotEmpty) {
       parts.add('category=${Uri.encodeQueryComponent(category)}');
     }
+    if (search != null && search.trim().isNotEmpty) {
+      parts.add('search=${Uri.encodeQueryComponent(search.trim())}');
+    }
     final q = parts.isEmpty ? '' : '?${parts.join('&')}';
     final r = await _http.getJsonList('/api/institution/equipment$q', token: token);
     return r.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
+
+  /// Imagem do modelo de catálogo (mesmo ficheiro enviado pelo fabricante).
+  Future<Uint8List> downloadInstitutionCatalogEquipmentImage(String token, int catalogEquipmentId) =>
+      _http.getBytes('/api/institution/catalog-equipment/$catalogEquipmentId/image', token: token);
 
   Future<Map<String, dynamic>> createInstitutionParkEquipment(
     String token, {
@@ -240,7 +252,7 @@ class ProductionApi {
         {
           'catalog_equipment_id': catalogEquipmentId,
           if (sector != null && sector.isNotEmpty) 'sector': sector,
-          'quantity': ?quantity,
+          if (quantity != null) 'quantity': quantity,
           if (status != null && status.isNotEmpty) 'status': status,
         },
         token: token,
@@ -263,6 +275,10 @@ class ProductionApi {
 
   Future<Uint8List> downloadMyCertificatePdf(String token, int id) =>
       _http.getBytes('/api/me/certificates/$id/pdf', token: token);
+
+  /// PDF do certificado de um participante (instrutor dono do treino).
+  Future<Uint8List> downloadTrainingParticipantCertificatePdf(String token, int trainingId, int certificateId) =>
+      _http.getBytes('/api/trainings/$trainingId/certificates/$certificateId/pdf', token: token);
 
   Future<List<Map<String, dynamic>>> myFollowUpAssessments(String token) async {
     final r = await _http.getJsonList('/api/me/follow-up-assessments', token: token);
@@ -390,7 +406,7 @@ class ProductionApi {
           'name': name,
           'starts_at': startsAt,
           'ends_at': endsAt,
-          'target_trainings': ?targetTrainings,
+          if (targetTrainings != null) 'target_trainings': targetTrainings,
           if (notes != null && notes.isNotEmpty) 'notes': notes,
         },
         token: token,
@@ -421,7 +437,7 @@ class ProductionApi {
         {
           'title': title,
           if (description != null && description.isNotEmpty) 'description': description,
-          'sort_order': ?sortOrder,
+          if (sortOrder != null) 'sort_order': sortOrder,
         },
         token: token,
       );
@@ -472,10 +488,20 @@ class ProductionApi {
   Future<List<Map<String, dynamic>>> manufacturerEquipmentList(
     String token, {
     String? category,
+    String? search,
+    String? status,
   }) async {
-    final q = (category != null && category.isNotEmpty)
-        ? '?category=${Uri.encodeQueryComponent(category)}'
-        : '';
+    final parts = <String>[];
+    if (category != null && category.isNotEmpty) {
+      parts.add('category=${Uri.encodeQueryComponent(category)}');
+    }
+    if (search != null && search.trim().isNotEmpty) {
+      parts.add('search=${Uri.encodeQueryComponent(search.trim())}');
+    }
+    if (status != null && status.isNotEmpty) {
+      parts.add('status=${Uri.encodeQueryComponent(status)}');
+    }
+    final q = parts.isEmpty ? '' : '?${parts.join('&')}';
     final r = await _http.getJsonList('/api/manufacturer/equipment$q', token: token);
     return r.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
@@ -489,6 +515,14 @@ class ProductionApi {
     int? quantity,
     String? status,
     int? parentEquipmentId,
+    String? firmwareVersion,
+    String? serialNumber,
+    List<Map<String, String>>? technicalSpecs,
+    String? introVideoUrl,
+    int? defaultTrainingHours,
+    int? defaultPassingScorePercent,
+    int? defaultCertificateValidityMonths,
+    int? defaultReassessmentDays,
   }) =>
       _http.postJson(
         '/api/manufacturer/equipment',
@@ -497,10 +531,53 @@ class ProductionApi {
           'model': model,
           if (sector?.isNotEmpty ?? false) 'sector': sector,
           if (category != null && category.isNotEmpty) 'category': category,
-          'quantity': ?quantity,
+          if (quantity != null) 'quantity': quantity,
           if (status?.isNotEmpty ?? false) 'status': status,
-          'parent_equipment_id': ?parentEquipmentId,
+          if (parentEquipmentId != null) 'parent_equipment_id': parentEquipmentId,
+          if (firmwareVersion?.isNotEmpty ?? false) 'firmware_version': firmwareVersion,
+          if (serialNumber?.isNotEmpty ?? false) 'serial_number': serialNumber,
+          if (technicalSpecs != null && technicalSpecs.isNotEmpty) 'technical_specs': technicalSpecs,
+          if (introVideoUrl?.isNotEmpty ?? false) 'intro_video_url': introVideoUrl,
+          if (defaultTrainingHours != null) 'default_training_hours': defaultTrainingHours,
+          if (defaultPassingScorePercent != null) 'default_passing_score_percent': defaultPassingScorePercent,
+          if (defaultCertificateValidityMonths != null)
+            'default_certificate_validity_months': defaultCertificateValidityMonths,
+          if (defaultReassessmentDays != null) 'default_reassessment_days': defaultReassessmentDays,
         },
+        token: token,
+      );
+
+  /// Anexo do equipamento: `attachment_type` = image | operator_manual | maintenance_manual | datasheet | intro_video
+  Future<Map<String, dynamic>> uploadManufacturerEquipmentAttachment(
+    String token,
+    int equipmentId, {
+    required String attachmentType,
+    required String filename,
+    List<int>? fileBytes,
+    String? filePath,
+  }) async {
+    if (fileBytes == null && filePath == null) {
+      throw ApiException('', 0, reason: LocalizedApiReason.uploadMissingFileSource);
+    }
+    final http.MultipartFile file = fileBytes != null
+        ? http.MultipartFile.fromBytes('file', fileBytes, filename: filename)
+        : await http.MultipartFile.fromPath('file', filePath!, filename: filename);
+    return _http.postMultipart(
+      '/api/manufacturer/equipment/$equipmentId/attachments',
+      [file],
+      {'attachment_type': attachmentType},
+      token: token,
+    );
+  }
+
+  /// Descarrega anexo (ex.: `image`, `operator_manual`, …) — autenticado.
+  Future<Uint8List> downloadManufacturerEquipmentAttachment(
+    String token,
+    int equipmentId,
+    String attachmentType,
+  ) =>
+      _http.getBytes(
+        '/api/manufacturer/equipment/$equipmentId/attachments/$attachmentType/download',
         token: token,
       );
 

@@ -9,6 +9,7 @@ use App\Models\Training;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class FluxxoCertificatePdfVerifyTest extends TestCase
@@ -172,5 +173,55 @@ class FluxxoCertificatePdfVerifyTest extends TestCase
         $res->assertOk();
         $this->assertStringStartsWith('%PDF', $res->getContent());
         $this->assertStringContainsString('application/pdf', (string) $res->headers->get('content-type'));
+    }
+
+    public function test_instructor_can_download_participant_certificate_pdf(): void
+    {
+        $inst = Institution::query()->create([
+            'name' => 'Inst Ins PDF',
+            'cnpj' => '55.666.777/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $otherInstructor = User::factory()->create(['role' => 'instructor']);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino instrutor PDF',
+            'type' => 'official',
+            'status' => 'finished',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+        ]);
+
+        $enrollment = Enrollment::query()->create([
+            'training_id' => $training->id,
+            'user_id' => $trainee->id,
+            'status' => 'completed',
+            'score' => 85.0,
+            'joined_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $cert = Certificate::query()->create([
+            'user_id' => $trainee->id,
+            'enrollment_id' => $enrollment->id,
+            'training_id' => $training->id,
+            'score' => 8.5,
+            'certificate_code' => 'APP-INS-'.Str::upper(Str::random(8)),
+            'issued_at' => now(),
+            'expires_at' => now()->addYear(),
+        ]);
+
+        $token = $instructor->createToken('t')->plainTextToken;
+        $res = $this->withToken($token)->get("/api/trainings/{$training->id}/certificates/{$cert->id}/pdf");
+        $res->assertOk();
+        $this->assertStringStartsWith('%PDF', $res->getContent());
+
+        Sanctum::actingAs($otherInstructor);
+        $this->get("/api/trainings/{$training->id}/certificates/{$cert->id}/pdf")->assertForbidden();
     }
 }

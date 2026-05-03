@@ -181,6 +181,7 @@ class RealtimeController extends Controller
     protected function handleClose(Training $training, array $payload): void
     {
         $training->update(['status' => 'finished']);
-        $this->handleSignalOnly($training, 'close', $payload);
+        TrainingSession::issueCertificatesOnTrainingFinished($training->fresh());
+        $this->handleSignalOnly($training->fresh(), 'close', $payload);
     }
 }

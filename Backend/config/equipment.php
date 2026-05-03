@@ -4,15 +4,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Categorias de equipamento (Fluxxo / homologação)
+    | Categorias de equipamento (lista fechada — fabricante / catálogo).
     |--------------------------------------------------------------------------
     |
-    | Lista fechada para filtros e classificação. IDs em minúsculas (slug).
+    | IDs em minúsculas (slug). Alinhado ao fluxo operacional hospitalar.
     |
     */
     'categories' => [
+        ['id' => 'ventilacao_pulmonar', 'label' => 'Ventilação pulmonar'],
+        ['id' => 'monitorizacao', 'label' => 'Monitorização'],
+        ['id' => 'cme', 'label' => 'CME / Central de materiais de esterilização'],
         ['id' => 'radiologia', 'label' => 'Radiologia'],
-        ['id' => 'cme', 'label' => 'CME / Central de materiais'],
+        ['id' => 'bomba_infusao', 'label' => 'Bomba de infusão'],
+        ['id' => 'desfibrilador', 'label' => 'Desfibrilador'],
         ['id' => 'uti', 'label' => 'UTI'],
         ['id' => 'emergencia', 'label' => 'Emergência'],
         ['id' => 'cardiologia', 'label' => 'Cardiologia / hemodinâmica'],

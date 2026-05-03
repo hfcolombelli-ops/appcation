@@ -103,7 +103,8 @@ class AuthSession extends ChangeNotifier {
       'role': role,
       if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
       if (role == 'manufacturer_admin') ...{
-        'manufacturer_name': (manufacturerName ?? '').trim(),
+        if (manufacturerName != null && manufacturerName.trim().isNotEmpty)
+          'manufacturer_name': manufacturerName.trim(),
         if (manufacturerCnpj != null && manufacturerCnpj.trim().isNotEmpty)
           'manufacturer_cnpj': manufacturerCnpj.trim(),
       },
@@ -134,7 +135,8 @@ class AuthSession extends ChangeNotifier {
       'id_token': idToken,
       if (role != 'trainee') 'role': role,
       if (role == 'manufacturer_admin') ...{
-        'manufacturer_name': (manufacturerName ?? '').trim(),
+        if (manufacturerName != null && manufacturerName.trim().isNotEmpty)
+          'manufacturer_name': manufacturerName.trim(),
         if (manufacturerCnpj != null && manufacturerCnpj.trim().isNotEmpty)
           'manufacturer_cnpj': manufacturerCnpj.trim(),
       },

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\RequiresManufacturerApproved;
 use App\Http\Controllers\Controller;
 use App\Models\Enrollment;
 use App\Models\Training;
@@ -12,6 +13,8 @@ use Illuminate\Validation\Rule;
 
 class TrainingController extends Controller
 {
+    use RequiresManufacturerApproved;
+
     /**
      * Catálogo de treinamentos oficiais (templates) publicados por fabricantes.
      */
@@ -33,6 +36,10 @@ class TrainingController extends Controller
         $user = $request->user();
 
         if ($user->role === 'manufacturer_admin' && $request->boolean('templates_only')) {
+            if ($r = $this->ensureManufacturerApproved($request)) {
+                return $r;
+            }
+
             return Training::query()
                 ->where('manufacturer_id', $user->manufacturer_id)
                 ->where('is_official_template', true)
@@ -88,6 +95,9 @@ class TrainingController extends Controller
             if ($request->user()->role !== 'manufacturer_admin' || $request->user()->manufacturer_id === null) {
                 return response()->json(['message' => 'Apenas o fabricante cria templates oficiais.'], 403);
             }
+            if ($r = $this->ensureManufacturerApproved($request)) {
+                return $r;
+            }
             $data['institution_id'] = null;
             $data['manufacturer_id'] = $request->user()->manufacturer_id;
             $data['is_official_template'] = true;
@@ -119,6 +129,16 @@ class TrainingController extends Controller
     {
         $training = Training::findOrFail($id);
 
+        $user = $request->user();
+        if ($user->role === 'manufacturer_admin'
+            && $training->is_official_template
+            && $training->manufacturer_id !== null
+            && (int) $training->manufacturer_id === (int) $user->manufacturer_id) {
+            if ($r = $this->ensureManufacturerApproved($request)) {
+                return $r;
+            }
+        }
+
         if (! $this->userCanEditTraining($request, $training)) {
             return response()->json(['message' => 'Sem permissão para alterar este treinamento.'], 403);
         }
@@ -132,6 +152,8 @@ class TrainingController extends Controller
             'metadata.post_repescage_score_policy' => ['sometimes', 'nullable', 'in:full_average,recovery_only'],
             'metadata.repescage_variant_bank' => ['sometimes', 'boolean'],
         ]);
+
+        $becomingFinished = ($data['status'] ?? null) === 'finished' && $training->status !== 'finished';
 
         if (($data['status'] ?? null) === 'in_progress') {
             TrainingSession::markInProgress($training);
@@ -148,6 +170,10 @@ class TrainingController extends Controller
 
         if ($data !== []) {
             $training->update($data);
+        }
+
+        if ($becomingFinished) {
+            TrainingSession::issueCertificatesOnTrainingFinished($training->fresh());
         }
 
         return response()->json($training->fresh()->load('institution:id,name'));
@@ -185,6 +211,16 @@ class TrainingController extends Controller
     public function destroy(Request $request, string $id)
     {
         $training = Training::findOrFail($id);
+
+        $user = $request->user();
+        if ($user->role === 'manufacturer_admin'
+            && $training->is_official_template
+            && $training->manufacturer_id !== null
+            && (int) $training->manufacturer_id === (int) $user->manufacturer_id) {
+            if ($r = $this->ensureManufacturerApproved($request)) {
+                return $r;
+            }
+        }
 
         if (! $this->userCanEditTraining($request, $training)) {
             return response()->json(['message' => 'Sem permissão para excluir este treinamento.'], 403);

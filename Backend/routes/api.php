@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\InstructorDashboardController;
 use App\Http\Controllers\Api\InstructorSeasonRankController;
 use App\Http\Controllers\Api\ManufacturerDashboardController;
 use App\Http\Controllers\Api\ManufacturerDocumentController;
+use App\Http\Controllers\Api\ManufacturerEquipmentAttachmentController;
 use App\Http\Controllers\Api\ManufacturerEquipmentController;
 use App\Http\Controllers\Api\ManufacturerPrizeCatalogController;
 use App\Http\Controllers\Api\ManufacturerPrizeController;
@@ -114,6 +115,7 @@ Route::middleware(['auth:sanctum', 'throttle:api-user'])->group(function () {
     Route::get('/institution/approved-instructors', [InstitutionController::class, 'approvedInstructors']);
 
     Route::get('/institution/equipment-templates', [InstitutionEquipmentController::class, 'templates']);
+    Route::get('/institution/catalog-equipment/{catalogId}/image', [InstitutionEquipmentController::class, 'downloadCatalogImage']);
     Route::get('/institution/equipment', [InstitutionEquipmentController::class, 'index']);
     Route::post('/institution/equipment', [InstitutionEquipmentController::class, 'store']);
     Route::put('/institution/equipment/{id}', [InstitutionEquipmentController::class, 'update']);
@@ -141,6 +143,7 @@ Route::middleware(['auth:sanctum', 'throttle:api-user'])->group(function () {
     Route::post('/trainings/from-template/{template}', [TrainingTemplateController::class, 'instantiate']);
 
     Route::get('/trainings/{training}/enrollments', [EnrollmentController::class, 'forTraining']);
+    Route::get('/trainings/{training}/certificates/{certificate}/pdf', [CertificateController::class, 'instructorDownloadPdf']);
     Route::get('/trainings/{training}/questionnaire', [QuestionnaireController::class, 'show'])
         ->middleware('trainee.lgpd');
     Route::post('/trainings/{training}/questionnaire', [TrainingQuestionnaireController::class, 'sync']);
@@ -183,6 +186,8 @@ Route::middleware(['auth:sanctum', 'throttle:api-user'])->group(function () {
     Route::post('/manufacturer/equipment', [ManufacturerEquipmentController::class, 'store']);
     Route::put('/manufacturer/equipment/{id}', [ManufacturerEquipmentController::class, 'update']);
     Route::delete('/manufacturer/equipment/{id}', [ManufacturerEquipmentController::class, 'destroy']);
+    Route::post('/manufacturer/equipment/{id}/attachments', [ManufacturerEquipmentAttachmentController::class, 'store']);
+    Route::get('/manufacturer/equipment/{id}/attachments/{attachmentType}/download', [ManufacturerEquipmentAttachmentController::class, 'download']);
 
     Route::apiResource('trainings', TrainingController::class);
 

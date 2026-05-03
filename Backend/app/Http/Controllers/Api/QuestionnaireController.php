@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Answer;
-use App\Models\Certificate;
 use App\Models\Enrollment;
 use App\Models\Question;
 use App\Models\QuestionOption;
 use App\Models\Training;
 use App\Support\FollowUpScheduler;
+use App\Support\TrainingSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -216,25 +216,8 @@ class QuestionnaireController extends Controller
         FollowUpScheduler::schedule($enrollment);
 
         $training->load('institution:id,name');
-        $passing = (float) ($training->passing_score_percent ?? 70) / 10.0;
-        if ($scoreTen !== null && (float) $scoreTen >= $passing) {
-            $code = Certificate::query()->where('enrollment_id', $enrollment->id)->value('certificate_code');
-            if ($code === null) {
-                do {
-                    $code = 'APP²-'.Str::upper(Str::random(10));
-                } while (Certificate::query()->where('certificate_code', $code)->exists());
-            }
-            Certificate::updateOrCreate(
-                ['enrollment_id' => $enrollment->id],
-                [
-                    'user_id' => $enrollment->user_id,
-                    'training_id' => $enrollment->training_id,
-                    'score' => $scoreTen,
-                    'certificate_code' => $code,
-                    'issued_at' => now(),
-                    'expires_at' => now()->addMonths((int) config('app.certificate_validity_months', 24)),
-                ]
-            );
+        if ($scoreTen !== null) {
+            TrainingSession::issueCertificateForPassedEnrollment($enrollment, $training, (float) $scoreTen);
         }
     }
 }

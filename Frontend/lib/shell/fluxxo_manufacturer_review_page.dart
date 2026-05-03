@@ -6,6 +6,7 @@ import '../l10n/app_localizations.dart';
 import '../l10n/error_snacks.dart';
 import '../services/api_client.dart';
 import '../services/production_api.dart';
+import '../theme/instructor_page_chrome.dart';
 
 /// Revisores Fluxxo (e-mail em MANUFACTURER_REVIEWER_EMAILS): fila e decisão.
 class FluxxoManufacturerReviewPage extends StatefulWidget {
@@ -88,34 +89,39 @@ class _FluxxoManufacturerReviewPageState extends State<FluxxoManufacturerReviewP
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return instructorShellScaffold(child: const Center(child: CircularProgressIndicator()));
     }
     if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              FilledButton(onPressed: _reload, child: Text(l.actionRetry)),
-            ],
+      return instructorShellScaffold(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_error!, textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                FilledButton(onPressed: _reload, child: Text(l.actionRetry)),
+              ],
+            ),
           ),
         ),
       );
     }
     if (_rows.isEmpty) {
-      return Center(
-        child: Text(
-          l.fluxRevEmpty,
-          style: const TextStyle(color: Color(0xFF45464D)),
+      return instructorShellScaffold(
+        child: Center(
+          child: Text(
+            l.fluxRevEmpty,
+            style: const TextStyle(color: Color(0xFF45464D)),
+          ),
         ),
       );
     }
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
+    return instructorShellScaffold(
+      child: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
         Text(
           l.fluxRevQueueTitle,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22),
@@ -142,6 +148,7 @@ class _FluxxoManufacturerReviewPageState extends State<FluxxoManufacturerReviewP
           ];
         }),
       ],
+    ),
     );
   }
 
@@ -175,7 +182,7 @@ class _ReviewCard extends StatelessWidget {
     final cnpj = row['cnpj']?.toString();
     final email = row['support_email']?.toString();
 
-    return Card(
+    return instructorShellCard(
       margin: const EdgeInsets.only(bottom: 14),
       child: Padding(
         padding: const EdgeInsets.all(16),

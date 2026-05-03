@@ -8,11 +8,12 @@ use App\Models\Enrollment;
 use App\Models\SecurityAuditLog;
 use App\Models\TraineeProfile;
 use App\Models\UserConsent;
+use App\Services\GoogleIdTokenVerifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class PrivacyController extends Controller
 {
@@ -121,7 +122,7 @@ class PrivacyController extends Controller
      * Eliminação / anonimização da conta (Art. 16–18 LGPD).
      * Retenções fiscais futuras: estender com fiscal_retention quando houver CPF de instrutor em NF.
      */
-    public function requestAccountDeletion(Request $request)
+    public function requestAccountDeletion(Request $request, GoogleIdTokenVerifier $verifier)
     {
         $user = $request->user();
 
@@ -138,18 +139,17 @@ class PrivacyController extends Controller
         $data = $request->validate($rules);
 
         if ($user->google_sub !== null) {
-            $tokenResponse = Http::timeout(10)->get('https://oauth2.googleapis.com/tokeninfo', [
-                'id_token' => $data['id_token'],
-            ]);
-            if (! $tokenResponse->successful()) {
+            $expectedAud = config('services.google.client_id');
+            if (! is_string($expectedAud) || $expectedAud === '') {
+                return response()->json(['message' => 'Login Google não configurado no servidor.'], 503);
+            }
+            try {
+                $payload = $verifier->verify($data['id_token'], $expectedAud);
+            } catch (InvalidArgumentException) {
                 return response()->json(['message' => 'Token Google inválido.'], 401);
             }
-            $payload = $tokenResponse->json();
             if (($payload['sub'] ?? null) !== $user->google_sub) {
                 return response()->json(['message' => 'Token Google não corresponde a esta conta.'], 403);
-            }
-            if (($payload['aud'] ?? null) !== config('services.google.client_id')) {
-                return response()->json(['message' => 'Audiência do token inválida.'], 401);
             }
         } elseif (! Hash::check($data['password'], $user->password)) {
             return response()->json(['message' => 'Senha incorreta.'], 422);

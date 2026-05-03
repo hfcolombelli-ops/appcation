@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Manufacturer;
 use App\Models\SecurityAuditLog;
 use App\Services\ManufacturerReviewerNotifier;
+use App\Support\ManufacturerRegistrationSupport;
 use Illuminate\Http\Request;
 
 class ManufacturerValidationController extends Controller
@@ -23,7 +24,17 @@ class ManufacturerValidationController extends Controller
             ->where('validation_status', 'pending_validation')
             ->orderBy('updated_at')
             ->limit(100)
-            ->get(['id', 'name', 'slug', 'cnpj', 'support_email', 'validation_status', 'updated_at']);
+            ->get([
+                'id',
+                'name',
+                'slug',
+                'cnpj',
+                'support_email',
+                'validation_status',
+                'validation_protocol',
+                'validation_submitted_at',
+                'updated_at',
+            ]);
 
         return response()->json($rows);
     }
@@ -46,7 +57,21 @@ class ManufacturerValidationController extends Controller
             ], 422);
         }
 
-        $m->update(['validation_status' => 'pending_validation']);
+        $blocking = ManufacturerRegistrationSupport::onboardingBlockingReasons($m);
+        if ($blocking !== []) {
+            return response()->json([
+                'message' => 'Complete todos os campos obrigatórios, anexe os três documentos e aceite a declaração antes de enviar para análise.',
+                'blocking_reasons' => $blocking,
+            ], 422);
+        }
+
+        $protocol = $m->validation_protocol ?? ManufacturerRegistrationSupport::nextValidationProtocol();
+
+        $m->update([
+            'validation_status' => 'pending_validation',
+            'validation_protocol' => $protocol,
+            'validation_submitted_at' => now(),
+        ]);
 
         $fresh = $m->fresh();
         ManufacturerReviewerNotifier::notifyValidationRequested($fresh);
@@ -83,7 +108,12 @@ class ManufacturerValidationController extends Controller
             'validation_status' => $data['validation_status'],
         ]);
 
-        return response()->json(['manufacturer' => $manufacturer->fresh()]);
+        $fresh = $manufacturer->fresh();
+        if ($data['validation_status'] === 'active') {
+            ManufacturerReviewerNotifier::notifyManufacturerApproved($fresh);
+        }
+
+        return response()->json(['manufacturer' => $fresh]);
     }
 
     protected function userIsReviewer(Request $request): bool

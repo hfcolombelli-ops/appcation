@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ManufacturerDocument;
+use App\Support\ManufacturerRegistrationSupport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 /**
  * Documentos enviados pelo fabricante (Fluxxo / homologação).
@@ -52,9 +54,11 @@ class ManufacturerDocumentController extends Controller
             return response()->json(['message' => 'Sem permissão.'], 403);
         }
 
+        $allowedKinds = array_merge(ManufacturerRegistrationSupport::REQUIRED_DOCUMENT_KINDS, ['other']);
+
         $data = $request->validate([
             'file' => ['required', 'file', 'max:12288', 'mimes:pdf,jpg,jpeg,png,webp'],
-            'document_kind' => ['nullable', 'string', 'max:80'],
+            'document_kind' => ['nullable', 'string', 'max:80', Rule::in($allowedKinds)],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
@@ -13,7 +14,23 @@ import '../services/api_client.dart';
 import '../services/production_api.dart';
 import '../util/download_bytes.dart';
 import '../widgets/version_badge.dart';
+import 'manufacturer_equipment_wizard.dart';
+import 'manufacturer_onboarding_wizard.dart';
+import 'manufacturer_pending_approval_screen.dart';
 import 'manufacturer_template_editor.dart';
+
+Color _mfgCredentialChipColor(String? s) {
+  switch (s) {
+    case 'approved':
+      return const Color(0xFFE8FFF4);
+    case 'pending':
+      return const Color(0xFFFFF7ED);
+    case 'rejected':
+      return const Color(0xFFFFF1F2);
+    default:
+      return const Color(0xFFF4F6F8);
+  }
+}
 
 /// Área do fabricante: perfil da empresa e catálogo de equipamentos (instituição nula).
 class ManufacturerShell extends StatefulWidget {
@@ -37,7 +54,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
   List<Map<String, dynamic>> _categoryCatalog = [];
   Map<String, dynamic>? _dashboardSummary;
 
-  /// Secção principal (menu inferior): 0 Início, 1 Empresa, 2 Produtos, 3 Operações.
+  /// Secção principal (menu lateral): 0 Início, 1 Empresa, 2 Produtos, 3 Operações, 4 Homologações.
   int _mfgNavIndex = 0;
 
   final ScrollController _mfgScrollController = ScrollController();
@@ -45,19 +62,21 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
   /// Filtro do catálogo (id da categoria ou null = todos).
   String? _equipmentCategoryFilter;
 
-  /// Categoria escolhida para o próximo registo (id alinhado à API).
-  String? _eqCategoryId;
+  /// Pesquisa texto (nome / modelo / série).
+  final _equipmentSearchCtrl = TextEditingController();
 
-  /// Se não nulo, o próximo «Adicionar ao catálogo» cria uma nova versão (POST com parent_equipment_id).
-  int? _eqVersionParentId;
+  /// Filtro de estado na lista (`null` = todos).
+  String? _equipmentStatusFilter;
+
+  /// Pedidos de credenciamento de instrutores (Applications).
+  List<Map<String, dynamic>> _credentialQueue = [];
+
+  /// Filtro local na lista de homologações: `null` = todos.
+  String? _homologStatusFilter;
 
   final _name = TextEditingController();
   final _supportEmail = TextEditingController();
   final _cnpj = TextEditingController();
-
-  final _eqName = TextEditingController();
-  final _eqModel = TextEditingController();
-  final _eqSector = TextEditingController();
   final _templateTitle = TextEditingController();
   final _docKind = TextEditingController();
   final _docNotes = TextEditingController();
@@ -73,9 +92,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
     _name.dispose();
     _supportEmail.dispose();
     _cnpj.dispose();
-    _eqName.dispose();
-    _eqModel.dispose();
-    _eqSector.dispose();
+    _equipmentSearchCtrl.dispose();
     _templateTitle.dispose();
     _docKind.dispose();
     _docNotes.dispose();
@@ -93,34 +110,70 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
     try {
       final prof = await _api.manufacturerProfile(t);
       final m = Map<String, dynamic>.from(prof['manufacturer'] as Map);
+      final vs = m['validation_status']?.toString();
+      final operational = vs == 'active';
+
       Map<String, dynamic>? dash;
-      try {
-        dash = await _api.manufacturerDashboardSummary(t);
-      } catch (_) {
-        dash = null;
-      }
       var cats = _categoryCatalog;
-      if (cats.isEmpty) {
-        try {
-          cats = await _api.equipmentCategoriesCatalog(t);
-        } catch (_) {
-          cats = [];
-        }
-      }
-      final list = await _api.manufacturerEquipmentList(t, category: _equipmentCategoryFilter);
-      final templates = await _api.manufacturerTemplates(t);
+      List<Map<String, dynamic>> list = [];
+      List<Map<String, dynamic>> templates = [];
       final docs = await _api.listManufacturerDocuments(t);
       List<Map<String, dynamic>> seasons = [];
-      try {
-        seasons = await _api.manufacturerSeasons(t);
-      } catch (_) {
-        seasons = [];
-      }
       List<Map<String, dynamic>> prizes = [];
-      try {
-        prizes = await _api.manufacturerPrizes(t);
-      } catch (_) {
+
+      if (operational) {
+        try {
+          dash = await _api.manufacturerDashboardSummary(t);
+        } catch (_) {
+          dash = null;
+        }
+        if (cats.isEmpty) {
+          try {
+            cats = await _api.equipmentCategoriesCatalog(t);
+          } catch (_) {
+            cats = [];
+          }
+        }
+        try {
+          list = await _api.manufacturerEquipmentList(
+            t,
+            category: _equipmentCategoryFilter,
+            search: _equipmentSearchCtrl.text.trim().isEmpty ? null : _equipmentSearchCtrl.text.trim(),
+            status: _equipmentStatusFilter,
+          );
+        } catch (_) {
+          list = [];
+        }
+        try {
+          templates = await _api.manufacturerTemplates(t);
+        } catch (_) {
+          templates = [];
+        }
+        try {
+          seasons = await _api.manufacturerSeasons(t);
+        } catch (_) {
+          seasons = [];
+        }
+        try {
+          prizes = await _api.manufacturerPrizes(t);
+        } catch (_) {
+          prizes = [];
+        }
+      } else {
+        dash = null;
+        list = [];
+        templates = [];
+        seasons = [];
         prizes = [];
+      }
+
+      List<Map<String, dynamic>> credQueue = [];
+      if (operational) {
+        try {
+          credQueue = await _api.credentialManufacturerQueue(t);
+        } catch (_) {
+          credQueue = [];
+        }
       }
       if (!mounted) return;
       setState(() {
@@ -132,6 +185,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
         _documents = docs;
         _seasons = seasons;
         _prizes = prizes;
+        _credentialQueue = credQueue;
         _name.text = m['name']?.toString() ?? '';
         _supportEmail.text = m['support_email']?.toString() ?? '';
         _cnpj.text = m['cnpj']?.toString() ?? '';
@@ -530,12 +584,6 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
     }
   }
 
-  void _cancelEquipmentVersionDraft() {
-    setState(() {
-      _eqVersionParentId = null;
-    });
-  }
-
   String _categoryLabel(String id) {
     for (final c in _categoryCatalog) {
       if (c['id']?.toString() == id) {
@@ -550,53 +598,51 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
     _reload();
   }
 
-  void _startNewEquipmentVersion(int parentId, String name, String model, String? categoryId) {
-    setState(() {
-      _eqVersionParentId = parentId;
-      _eqName.text = name;
-      _eqModel.text = model;
-      _eqCategoryId = categoryId;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context).mfgSnackVersionDraftHint(parentId))),
+  void _setEquipmentStatusFilter(String? status) {
+    setState(() => _equipmentStatusFilter = status);
+    _reload();
+  }
+
+  Future<void> _openEquipmentWizard({
+    int? parentEquipmentId,
+    String? initialName,
+    String? initialModel,
+    String? initialCategoryId,
+    Map<String, dynamic>? editEquipment,
+  }) async {
+    final ok = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ManufacturerEquipmentWizardScreen(
+          api: _api,
+          categoryCatalog: _categoryCatalog,
+          parentEquipmentId: parentEquipmentId,
+          initialName: initialName,
+          initialModel: initialModel,
+          initialCategoryId: initialCategoryId,
+          editEquipment: editEquipment,
+        ),
+      ),
+    );
+    if (ok == true && mounted) await _reload();
+  }
+
+  Future<void> _startNewEquipmentVersion(int parentId, String name, String model, String? categoryId) async {
+    await _openEquipmentWizard(
+      parentEquipmentId: parentId,
+      initialName: name,
+      initialModel: model,
+      initialCategoryId: categoryId,
     );
   }
 
-  Future<void> _addEquipment() async {
+  Future<void> _deleteEquipment(int id) async {
     final t = appAuth.token;
     if (t == null) return;
-    if (_eqName.text.trim().isEmpty || _eqModel.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).mfgSnackNameModelRequired)),
-      );
-      return;
-    }
     setState(() => _loading = true);
     try {
-      final wasVersion = _eqVersionParentId != null;
-      await _api.createManufacturerEquipment(
-        t,
-        name: _eqName.text.trim(),
-        model: _eqModel.text.trim(),
-        sector: _eqSector.text.trim().isEmpty ? null : _eqSector.text.trim(),
-        category: _eqCategoryId,
-        parentEquipmentId: _eqVersionParentId,
-      );
+      await _api.deleteManufacturerEquipment(t, id);
       if (mounted) {
-        setState(() {
-          _eqName.clear();
-          _eqModel.clear();
-          _eqSector.clear();
-          _eqCategoryId = null;
-          _eqVersionParentId = null;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              wasVersion ? AppLocalizations.of(context).mfgSnackNewVersionRegistered : AppLocalizations.of(context).mfgSnackEquipmentCreated,
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).mfgSnackRemoved)));
       }
       await _reload();
     } on ApiException catch (e) {
@@ -612,14 +658,21 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
     }
   }
 
-  Future<void> _deleteEquipment(int id) async {
+  void _setHomologStatusFilter(String? status) {
+    setState(() => _homologStatusFilter = status);
+  }
+
+  Future<void> _decideHomologCredential(dynamic rowId, String status) async {
     final t = appAuth.token;
-    if (t == null) return;
+    final id = rowId is int ? rowId : int.tryParse(rowId.toString());
+    if (t == null || id == null) return;
     setState(() => _loading = true);
     try {
-      await _api.deleteManufacturerEquipment(t, id);
+      await _api.credentialManufacturerDecide(t, id, status: status, feePaid: status == 'approved');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).mfgSnackRemoved)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).mfgSnackHomologUpdated)),
+        );
       }
       await _reload();
     } on ApiException catch (e) {
@@ -812,6 +865,49 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
     final email = user?['email']?.toString() ?? '';
     final l = AppLocalizations.of(context);
 
+    if (_loading && _manufacturer == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF7F9FB),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null && _manufacturer == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF7F9FB),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_error!, textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                FilledButton(onPressed: _reload, child: Text(l.actionRetry)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final vs = _manufacturer?['validation_status']?.toString();
+    if (_manufacturer != null && (vs == 'pending_info' || vs == 'rejected')) {
+      return ManufacturerOnboardingWizard(
+        manufacturer: _manufacturer!,
+        onCompleted: _reload,
+        onLogout: () => appAuth.logout(),
+      );
+    }
+
+    if (_manufacturer != null && vs == 'pending_validation') {
+      return ManufacturerPendingApprovalScreen(
+        manufacturer: _manufacturer!,
+        userEmail: email,
+        onLogout: () => appAuth.logout(),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FB),
       body: Stack(
@@ -847,23 +943,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                 ),
               ),
               Expanded(
-                child: _loading && _manufacturer == null
-                    ? const Center(child: CircularProgressIndicator())
-                    : _error != null && _manufacturer == null
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(_error!, textAlign: TextAlign.center),
-                                  const SizedBox(height: 12),
-                                  FilledButton(onPressed: _reload, child: Text(l.actionRetry)),
-                                ],
-                              ),
-                            ),
-                          )
-                        : Row(
+                child: Row(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               _MfgSideNav(
@@ -957,6 +1037,32 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                                 label: Text(l.dashExportPdf),
                                               ),
                                             ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+                                if (_manufacturer != null &&
+                                    _manufacturer!['validation_status']?.toString() == 'active') ...[
+                                  Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(l.mfgDashQuickCatalogTitle, style: Theme.of(context).textTheme.titleMedium),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            l.mfgDashQuickCatalogBody,
+                                            style: const TextStyle(color: Color(0xFF45464D), fontSize: 12),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          FilledButton.icon(
+                                            onPressed: _loading ? null : () => unawaited(_openEquipmentWizard()),
+                                            icon: const Icon(Icons.medical_services_outlined),
+                                            label: Text(l.mfgDashNewEquipment),
                                           ),
                                         ],
                                       ),
@@ -1191,6 +1297,176 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                   child: Text(l.mfgBtnSaveProfile),
                                 ),
                                       ],
+                                      if (_mfgNavIndex == 4) ...[
+                                Text(l.mfgNavHomologations, style: Theme.of(context).textTheme.titleLarge),
+                                const SizedBox(height: 8),
+                                if (_manufacturer == null ||
+                                    _manufacturer!['validation_status']?.toString() != 'active') ...[
+                                  Text(
+                                    l.mfgValHelpPendingValidation,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                  ),
+                                ] else ...[
+                                  Text(
+                                    l.credQueueManuBody,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(l.parkFilterByState, style: Theme.of(context).textTheme.titleSmall),
+                                  const SizedBox(height: 8),
+                                  SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Row(
+                                      children: [
+                                        ChoiceChip(
+                                          label: Text(l.mfgHomologFilterAll),
+                                          selected: _homologStatusFilter == null,
+                                          onSelected: _loading ? null : (_) => _setHomologStatusFilter(null),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.only(left: 6),
+                                          child: ChoiceChip(
+                                            label: Text(l.mfgHomologFilterPending),
+                                            selected: _homologStatusFilter == 'pending',
+                                            onSelected: _loading ? null : (_) => _setHomologStatusFilter('pending'),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.only(left: 6),
+                                          child: ChoiceChip(
+                                            label: Text(l.mfgHomologFilterApproved),
+                                            selected: _homologStatusFilter == 'approved',
+                                            onSelected: _loading ? null : (_) => _setHomologStatusFilter('approved'),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.only(left: 6),
+                                          child: ChoiceChip(
+                                            label: Text(l.mfgHomologFilterRejected),
+                                            selected: _homologStatusFilter == 'rejected',
+                                            onSelected: _loading ? null : (_) => _setHomologStatusFilter('rejected'),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Builder(
+                                    builder: (ctx) {
+                                      final loc = AppLocalizations.of(ctx);
+                                      final rows = _homologStatusFilter == null
+                                          ? _credentialQueue
+                                          : _credentialQueue
+                                              .where((r) => (r['status']?.toString() ?? '') == _homologStatusFilter)
+                                              .toList();
+                                      if (rows.isEmpty) {
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 24),
+                                          child: Center(child: Text(loc.mfgHomologEmpty)),
+                                        );
+                                      }
+                                      return Column(
+                                        children: [
+                                          for (final row in rows)
+                                            Builder(
+                                              builder: (cctx) {
+                                                final ins = row['instructor'] as Map?;
+                                                final nm = ins?['name']?.toString() ?? loc.trainReqDashNone;
+                                                final em = ins?['email']?.toString() ?? '';
+                                                final st = row['status']?.toString();
+                                                final endorsed = row['endorsed_by_institution'] is Map &&
+                                                    (((row['endorsed_by_institution'] as Map)['name']?.toString() ?? '')
+                                                        .isNotEmpty);
+                                                final endName = endorsed
+                                                    ? (row['endorsed_by_institution'] as Map)['name']?.toString() ?? ''
+                                                    : null;
+                                                final rowId = row['id'];
+                                                final canDecide = st == 'pending';
+                                                return Card(
+                                                  margin: const EdgeInsets.only(bottom: 10),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.all(14),
+                                                    child: Row(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Expanded(
+                                                          child: Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: [
+                                                              Text(
+                                                                nm,
+                                                                style: const TextStyle(
+                                                                  fontWeight: FontWeight.w700,
+                                                                  fontSize: 15,
+                                                                ),
+                                                              ),
+                                                              if (em.isNotEmpty)
+                                                                Padding(
+                                                                  padding: const EdgeInsets.only(top: 4),
+                                                                  child: Text(
+                                                                    em,
+                                                                    style: const TextStyle(
+                                                                      fontSize: 13,
+                                                                      color: Color(0xFF45464D),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              const SizedBox(height: 6),
+                                                              Text(
+                                                                endorsed
+                                                                    ? loc.credEndorsementWith(endName ?? '')
+                                                                    : loc.credEndorsementPending,
+                                                                style: TextStyle(
+                                                                  fontSize: 12.5,
+                                                                  color: Colors.blueGrey.shade800,
+                                                                  height: 1.35,
+                                                                ),
+                                                              ),
+                                                              const SizedBox(height: 8),
+                                                              Chip(
+                                                                label: Text(
+                                                                  localizedCredentialQueueStatus(
+                                                                    AppLocalizations.of(cctx),
+                                                                    st,
+                                                                  ),
+                                                                ),
+                                                                visualDensity: VisualDensity.compact,
+                                                                backgroundColor: _mfgCredentialChipColor(st),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        if (canDecide)
+                                                          Column(
+                                                            mainAxisSize: MainAxisSize.min,
+                                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                                            children: [
+                                                              TextButton(
+                                                                onPressed: _loading
+                                                                    ? null
+                                                                    : () => _decideHomologCredential(rowId, 'approved'),
+                                                                child: Text(loc.credBtnApprove),
+                                                              ),
+                                                              TextButton(
+                                                                onPressed: _loading
+                                                                    ? null
+                                                                    : () => _decideHomologCredential(rowId, 'rejected'),
+                                                                child: Text(loc.credBtnReject),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ],
+                                      ],
                                       if (_mfgNavIndex == 2) ...[
                                 const SizedBox(height: 28),
                                 Text(l.mfgOfficialTrainingTitle, style: Theme.of(context).textTheme.titleLarge),
@@ -1243,80 +1519,71 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                     );
                                   }),
                                 const SizedBox(height: 32),
-                                Text(l.mfgCatalogSectionTitle, style: Theme.of(context).textTheme.titleLarge),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Text(l.mfgCatalogSectionTitle, style: Theme.of(context).textTheme.titleLarge),
+                                    ),
+                                    FilledButton.icon(
+                                      onPressed: _loading ? null : () => unawaited(_openEquipmentWizard()),
+                                      icon: const Icon(Icons.add_rounded),
+                                      label: Text(l.mfgDashNewEquipment),
+                                    ),
+                                  ],
+                                ),
                                 const SizedBox(height: 8),
                                 Text(
                                   l.mfgCatalogIntro,
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
                                 ),
-                                if (_eqVersionParentId != null) ...[
-                                  const SizedBox(height: 10),
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Wrap(
-                                      spacing: 8,
-                                      crossAxisAlignment: WrapCrossAlignment.center,
-                                      children: [
-                                        Text(
-                                          l.mfgNewVersionFromRecord(_eqVersionParentId!),
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                                        ),
-                                        TextButton(onPressed: _cancelEquipmentVersionDraft, child: Text(l.mfgBtnCancel)),
-                                      ],
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _equipmentSearchCtrl,
+                                  decoration: InputDecoration(
+                                    labelText: l.mfgEquipSearchHint,
+                                    suffixIcon: IconButton(
+                                      icon: const Icon(Icons.search_rounded),
+                                      onPressed: _loading ? null : () => unawaited(_reload()),
                                     ),
                                   ),
-                                ],
+                                  onSubmitted: (_) => unawaited(_reload()),
+                                ),
                                 const SizedBox(height: 14),
-                                TextField(
-                                  controller: _eqName,
-                                  decoration: InputDecoration(labelText: l.mfgFieldEquipmentName),
-                                ),
-                                const SizedBox(height: 10),
-                                TextField(
-                                  controller: _eqModel,
-                                  decoration: InputDecoration(labelText: l.mfgFieldModel),
-                                ),
-                                const SizedBox(height: 10),
-                                TextField(
-                                  controller: _eqSector,
-                                  decoration: InputDecoration(labelText: l.mfgFieldSectorOptionalCatalog),
-                                ),
-                                const SizedBox(height: 10),
                                 Align(
                                   alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    l.mfgCategoryOptionalLabel,
-                                    style: Theme.of(context).textTheme.labelLarge,
+                                  child: Text(l.mfgEquipFilterStatusLabel, style: Theme.of(context).textTheme.titleSmall),
+                                ),
+                                const SizedBox(height: 6),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      ChoiceChip(
+                                        label: Text(l.mfgEquipStatusFilterAll),
+                                        selected: _equipmentStatusFilter == null,
+                                        onSelected: _loading ? null : (_) => _setEquipmentStatusFilter(null),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 6),
+                                        child: ChoiceChip(
+                                          label: Text(l.mfgEquipStatusActive),
+                                          selected: _equipmentStatusFilter == 'active',
+                                          onSelected: _loading ? null : (_) => _setEquipmentStatusFilter('active'),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 6),
+                                        child: ChoiceChip(
+                                          label: Text(l.mfgEquipStatusInactive),
+                                          selected: _equipmentStatusFilter == 'inactive',
+                                          onSelected: _loading ? null : (_) => _setEquipmentStatusFilter('inactive'),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                DropdownButton<String?>(
-                                  isExpanded: true,
-                                  value: _eqCategoryId,
-                                  hint: Text(l.trainReqDashNone),
-                                  items: [
-                                    DropdownMenuItem<String?>(
-                                      value: null,
-                                      child: Text(l.trainReqDashNone),
-                                    ),
-                                    ..._categoryCatalog.map((c) {
-                                      final cid = c['id']?.toString() ?? '';
-                                      return DropdownMenuItem<String?>(
-                                        value: cid,
-                                        child: Text(c['label']?.toString() ?? cid),
-                                      );
-                                    }),
-                                  ],
-                                  onChanged: _loading
-                                      ? null
-                                      : (v) => setState(() => _eqCategoryId = v),
-                                ),
                                 const SizedBox(height: 12),
-                                OutlinedButton(
-                                  onPressed: _loading ? null : _addEquipment,
-                                  child: Text(l.mfgBtnAddToCatalog),
-                                ),
-                                const SizedBox(height: 16),
                                 Align(
                                   alignment: Alignment.centerLeft,
                                   child: Text(
@@ -1373,11 +1640,43 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                     final lineage = parentId != null
                                         ? '$catPrefix${l.mfgEquipmentDerivedFrom(parentId, model)}'
                                         : '$catPrefix$model';
+                                    final hasImg = row['has_image'] == true;
+                                    final tmplRaw = row['official_templates_count'];
+                                    final tmplCount = tmplRaw is int
+                                        ? tmplRaw
+                                        : int.tryParse(tmplRaw?.toString() ?? '') ?? 0;
+                                    final serial = row['serial_number']?.toString();
                                     return Card(
                                       margin: const EdgeInsets.only(bottom: 10),
                                       child: ListTile(
+                                        leading: iid == null
+                                            ? const CircleAvatar(
+                                                backgroundColor: Color(0xFFE2E8F0),
+                                                child: Icon(
+                                                  Icons.medical_services_outlined,
+                                                  color: Color(0xFF475569),
+                                                ),
+                                              )
+                                            : _ManufacturerEquipmentThumb(
+                                                api: _api,
+                                                equipmentId: iid,
+                                                hasImage: hasImg,
+                                              ),
                                         title: Text(title),
-                                        subtitle: Text(lineage),
+                                        isThreeLine: serial != null && serial.isNotEmpty,
+                                        subtitle: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(lineage),
+                                            if (serial != null && serial.isNotEmpty)
+                                              Text(serial, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                                            Text(
+                                              l.mfgEquipTemplatesCount(tmplCount),
+                                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                            ),
+                                          ],
+                                        ),
                                         trailing: iid == null
                                             ? null
                                             : Wrap(
@@ -1386,12 +1685,20 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                                   TextButton(
                                                     onPressed: _loading
                                                         ? null
-                                                        : () => _startNewEquipmentVersion(
+                                                        : () => unawaited(_openEquipmentWizard(
+                                                              editEquipment: Map<String, dynamic>.from(row),
+                                                            )),
+                                                    child: Text(l.mfgBtnEditEquipment),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: _loading
+                                                        ? null
+                                                        : () => unawaited(_startNewEquipmentVersion(
                                                               iid,
                                                               title,
                                                               model,
                                                               catRaw,
-                                                            ),
+                                                            )),
                                                     child: Text(l.mfgBtnNewVersion),
                                                   ),
                                                   IconButton(
@@ -1415,6 +1722,65 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
           ),
           const Positioned(right: 16, bottom: 16, child: VersionBadge()),
         ],
+      ),
+    );
+  }
+}
+
+/// Miniatura da imagem do equipamento (download autenticado); ícone se não houver ou falhar.
+class _ManufacturerEquipmentThumb extends StatefulWidget {
+  const _ManufacturerEquipmentThumb({
+    required this.api,
+    required this.equipmentId,
+    required this.hasImage,
+  });
+
+  final ProductionApi api;
+  final int equipmentId;
+  final bool hasImage;
+
+  @override
+  State<_ManufacturerEquipmentThumb> createState() => _ManufacturerEquipmentThumbState();
+}
+
+class _ManufacturerEquipmentThumbState extends State<_ManufacturerEquipmentThumb> {
+  Uint8List? _bytes;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.hasImage) {
+      unawaited(_load());
+    }
+  }
+
+  Future<void> _load() async {
+    final t = appAuth.token;
+    if (t == null || !mounted) return;
+    try {
+      final b = await widget.api.downloadManufacturerEquipmentAttachment(t, widget.equipmentId, 'image');
+      if (mounted) setState(() => _bytes = b);
+    } catch (_) {
+      // Mantém ícone de recurso.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipOval(
+      child: ColoredBox(
+        color: const Color(0xFFE2E8F0),
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: _bytes != null
+              ? Image.memory(_bytes!, fit: BoxFit.cover, gaplessPlayback: true)
+              : Icon(
+                  widget.hasImage ? Icons.broken_image_outlined : Icons.medical_services_outlined,
+                  color: const Color(0xFF475569),
+                  size: 22,
+                ),
+        ),
       ),
     );
   }
@@ -1492,6 +1858,13 @@ class _MfgSideNav extends StatelessWidget {
               label: l.mfgNavOperations,
               selected: selectedIndex == 3,
               onTap: () => onSelect(3),
+            ),
+            _MfgSideTile(
+              icon: Icons.verified_user_outlined,
+              selectedIcon: Icons.verified_user_rounded,
+              label: l.mfgNavHomologations,
+              selected: selectedIndex == 4,
+              onTap: () => onSelect(4),
             ),
             const Spacer(),
           ],

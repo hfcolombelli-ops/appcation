@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Certificate;
+use App\Models\Training;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\Response;
 
 class CertificateController extends Controller
 {
@@ -45,6 +46,34 @@ class CertificateController extends Controller
             ])
             ->firstOrFail();
 
+        return $this->pdfDownloadResponse($certificate);
+    }
+
+    /**
+     * Certificado emitido para um participante — apenas o instrutor dono do treino.
+     */
+    public function instructorDownloadPdf(Request $request, string $trainingId, string $certificateId): Response
+    {
+        $training = Training::query()->findOrFail($trainingId);
+
+        if ((int) $training->instructor_id !== (int) $request->user()->id) {
+            return response()->json(['message' => 'Acesso negado.'], 403);
+        }
+
+        $certificate = Certificate::query()
+            ->whereKey($certificateId)
+            ->where('training_id', $training->id)
+            ->with([
+                'user',
+                'training' => fn ($q) => $q->with('institution:id,name'),
+            ])
+            ->firstOrFail();
+
+        return $this->pdfDownloadResponse($certificate);
+    }
+
+    protected function pdfDownloadResponse(Certificate $certificate): Response
+    {
         $base = rtrim((string) config('app.certificate_verify_base_url'), '/');
         $verifyUrl = $base.'/certificates/verify/'.rawurlencode($certificate->certificate_code);
 

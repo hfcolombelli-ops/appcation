@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Answer;
+use App\Models\Certificate;
 use App\Models\Enrollment;
 use App\Models\Question;
 use App\Models\Training;
@@ -108,12 +109,17 @@ class EnrollmentController extends Controller
 
         $eids = $enrollmentRows->pluck('id');
 
+        $certsByEnrollment = Certificate::query()
+            ->whereIn('enrollment_id', $eids)
+            ->get(['id', 'enrollment_id', 'certificate_code', 'issued_at', 'expires_at', 'score'])
+            ->keyBy('enrollment_id');
+
         $answersByEnrollment = Answer::query()
             ->whereIn('enrollment_id', $eids)
             ->get()
             ->groupBy('enrollment_id');
 
-        $enrollments = $enrollmentRows->map(function (Enrollment $e) use ($questionCount, $blocks, $questionsByBlock, $answersByEnrollment) {
+        $enrollments = $enrollmentRows->map(function (Enrollment $e) use ($questionCount, $blocks, $questionsByBlock, $answersByEnrollment, $certsByEnrollment) {
             $answered = Answer::query()
                 ->where('enrollment_id', $e->id)
                 ->whereNotNull('question_option_id')
@@ -161,12 +167,21 @@ class EnrollmentController extends Controller
                 ];
             }
 
+            $cert = $certsByEnrollment->get($e->id);
+
             return [
                 'enrollment' => $e,
                 'user' => $e->user,
                 'answered_count' => $answered,
                 'question_count' => $questionCount,
                 'block_metrics' => $blockMetrics,
+                'certificate' => $cert === null ? null : [
+                    'id' => $cert->id,
+                    'certificate_code' => $cert->certificate_code,
+                    'issued_at' => $cert->issued_at,
+                    'expires_at' => $cert->expires_at,
+                    'score' => $cert->score,
+                ],
             ];
         });
 

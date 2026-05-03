@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Equipment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 /**
@@ -59,6 +60,17 @@ class InstitutionEquipmentController extends Controller
             $q->where('category', (string) $request->query('category'));
         }
 
+        if ($request->filled('search')) {
+            $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], mb_strtolower(trim((string) $request->query('search')))).'%';
+            $q->where(function ($w) use ($term) {
+                $w->whereRaw('LOWER(equipment.name) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(equipment.model) LIKE ?', [$term])
+                    ->orWhereHas('manufacturer', function ($m) use ($term) {
+                        $m->whereRaw('LOWER(manufacturers.name) LIKE ?', [$term]);
+                    });
+            });
+        }
+
         $rows = $q
             ->orderBy('manufacturer_id')
             ->orderBy('name')
@@ -66,7 +78,14 @@ class InstitutionEquipmentController extends Controller
             ->limit(500)
             ->get();
 
-        return response()->json($rows);
+        $mapped = $rows->map(function (Equipment $row) {
+            $a = $row->toArray();
+            $a['has_image'] = is_string($row->image_stored_path) && $row->image_stored_path !== '';
+
+            return $a;
+        });
+
+        return response()->json($mapped);
     }
 
     public function index(Request $request)
@@ -103,9 +122,54 @@ class InstitutionEquipmentController extends Controller
             $q->where('status', (string) $request->query('status'));
         }
 
+        if ($request->filled('search')) {
+            $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], mb_strtolower(trim((string) $request->query('search')))).'%';
+            $q->where(function ($w) use ($term) {
+                $w->whereRaw('LOWER(equipment.name) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(equipment.model) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(COALESCE(equipment.sector, "")) LIKE ?', [$term]);
+            });
+        }
+
         $rows = $q->orderBy('name')->orderBy('id')->limit(200)->get();
 
-        return response()->json($rows);
+        $mapped = $rows->map(function (Equipment $row) {
+            $a = $row->toArray();
+            $a['catalog_has_image'] = $row->catalogTemplate !== null
+                && is_string($row->catalogTemplate->image_stored_path)
+                && $row->catalogTemplate->image_stored_path !== '';
+
+            return $a;
+        });
+
+        return response()->json($mapped);
+    }
+
+    /**
+     * Imagem pública do modelo de catálogo (ficheiro do fabricante) — leitura para gestores de instituição.
+     */
+    public function downloadCatalogImage(Request $request, string $catalogId)
+    {
+        if ($this->institutionId($request) === null) {
+            return response()->json(['message' => 'Sem permissão.'], 403);
+        }
+
+        $eq = Equipment::query()->find($catalogId);
+        if ($eq === null || $eq->institution_id !== null || $eq->manufacturer_id === null) {
+            return response()->json(['message' => 'Modelo de catálogo não encontrado.'], 404);
+        }
+
+        $path = $eq->image_stored_path;
+        if (! is_string($path) || $path === '') {
+            return response()->json(['message' => 'Imagem não disponível.'], 404);
+        }
+
+        $disk = config('filesystems.default', 'local');
+        if (! Storage::disk($disk)->exists($path)) {
+            return response()->json(['message' => 'Ficheiro em falta no armazenamento.'], 404);
+        }
+
+        return Storage::disk($disk)->download($path, 'modelo-equipamento.jpg');
     }
 
     public function store(Request $request)

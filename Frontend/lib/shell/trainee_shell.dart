@@ -50,6 +50,7 @@ class _TraineeShellState extends State<TraineeShell> {
   List<Map<String, dynamic>> _questions = [];
   int _questionPos = 0;
   int? _pickedOptionId;
+  _AnswerReveal? _answerReveal;
 
   Timer? _waitPoll;
   Timer? _livePoll;
@@ -283,6 +284,7 @@ class _TraineeShellState extends State<TraineeShell> {
       if (step != 3) {
         _sessionPaused = false;
         _scorePolicyHint = null;
+        _answerReveal = null;
       }
     });
 
@@ -397,6 +399,7 @@ class _TraineeShellState extends State<TraineeShell> {
       if (mounted) {
         setState(() {
           _questions = list;
+          _answerReveal = null;
           if (!quiet) {
             _questionPos = 0;
             _pickedOptionId = null;
@@ -506,22 +509,49 @@ class _TraineeShellState extends State<TraineeShell> {
 
     setState(() => _loading = true);
     try {
-      await _api.submitAnswer(t, {
+      final resp = await _api.submitAnswer(t, {
         'enrollment_id': eid,
         'question_id': qid,
         'question_option_id': _pickedOptionId,
       });
-      if (_questionPos >= _questions.length - 1) {
-        await _bootstrap();
+      final rawCorrect = resp['is_correct'];
+      final bool? isCorrect =
+          rawCorrect == null ? null : (rawCorrect == true || rawCorrect == 1 || rawCorrect == '1' || rawCorrect == 'true');
+      final isLast = _questionPos >= _questions.length - 1;
+
+      if (!mounted) return;
+
+      if (isCorrect == null) {
+        if (isLast) {
+          await _bootstrap();
+        } else {
+          setState(() {
+            _questionPos++;
+            _pickedOptionId = null;
+            _loading = false;
+          });
+        }
         return;
       }
-      if (mounted) {
-        setState(() {
-          _questionPos++;
-          _pickedOptionId = null;
-          _loading = false;
-        });
+
+      String? correctLabel;
+      for (final rawOpt in (q['options'] as List<dynamic>?) ?? const []) {
+        if (rawOpt is! Map) continue;
+        final o = Map<String, dynamic>.from(rawOpt);
+        if (o['is_correct'] == true || o['is_correct'] == 1) {
+          correctLabel = o['label']?.toString();
+          break;
+        }
       }
+
+      setState(() {
+        _loading = false;
+        _answerReveal = _AnswerReveal(
+          isCorrect: isCorrect,
+          correctOptionLabel: correctLabel,
+          isLast: isLast,
+        );
+      });
     } on ApiException catch (ex) {
       if (mounted) {
         setState(() => _loading = false);
@@ -535,6 +565,20 @@ class _TraineeShellState extends State<TraineeShell> {
     }
   }
 
+  Future<void> _onRevealContinue() async {
+    final r = _answerReveal;
+    if (r == null) return;
+    setState(() => _answerReveal = null);
+    if (r.isLast) {
+      await _bootstrap();
+    } else if (mounted) {
+      setState(() {
+        _questionPos++;
+        _pickedOptionId = null;
+      });
+    }
+  }
+
   void _goJoinAnother() {
     _waitPoll?.cancel();
     _livePoll?.cancel();
@@ -544,6 +588,7 @@ class _TraineeShellState extends State<TraineeShell> {
       _enrollment = null;
       _questions = [];
       _sessionPaused = false;
+      _answerReveal = null;
       _joinHash.clear();
     });
   }
@@ -759,6 +804,8 @@ class _TraineeShellState extends State<TraineeShell> {
           onPick: (id) => setState(() => _pickedOptionId = id),
           onConfirm: _submitAnswer,
           loading: _loading,
+          answerReveal: _answerReveal,
+          onRevealContinue: _onRevealContinue,
           inRecovery: _enrollment?['in_recovery'] == true,
           sessionPaused: _sessionPaused,
           scorePolicyHint: _scorePolicyHint,
@@ -1779,6 +1826,14 @@ class _PulseDot extends StatelessWidget {
   }
 }
 
+class _AnswerReveal {
+  const _AnswerReveal({required this.isCorrect, this.correctOptionLabel, required this.isLast});
+
+  final bool isCorrect;
+  final String? correctOptionLabel;
+  final bool isLast;
+}
+
 class _QuestionnairePanel extends StatelessWidget {
   const _QuestionnairePanel({
     required this.questions,
@@ -1787,6 +1842,8 @@ class _QuestionnairePanel extends StatelessWidget {
     required this.onPick,
     required this.onConfirm,
     required this.loading,
+    this.answerReveal,
+    this.onRevealContinue,
     this.inRecovery = false,
     this.sessionPaused = false,
     this.scorePolicyHint,
@@ -1800,6 +1857,8 @@ class _QuestionnairePanel extends StatelessWidget {
   final ValueChanged<int> onPick;
   final VoidCallback onConfirm;
   final bool loading;
+  final _AnswerReveal? answerReveal;
+  final VoidCallback? onRevealContinue;
   final bool inRecovery;
   final bool sessionPaused;
   final String? scorePolicyHint;
@@ -1917,6 +1976,8 @@ class _QuestionnairePanel extends StatelessWidget {
                 pickedOptionId: pickedOptionId,
                 sessionPaused: sessionPaused,
                 loading: loading,
+                answerReveal: answerReveal,
+                onRevealContinue: onRevealContinue,
                 onPick: onPick,
                 onConfirm: onConfirm,
               );
@@ -2145,6 +2206,8 @@ class _TraineeQuestionMainCard extends StatelessWidget {
     required this.pickedOptionId,
     required this.sessionPaused,
     required this.loading,
+    this.answerReveal,
+    this.onRevealContinue,
     required this.onPick,
     required this.onConfirm,
   });
@@ -2156,11 +2219,16 @@ class _TraineeQuestionMainCard extends StatelessWidget {
   final int? pickedOptionId;
   final bool sessionPaused;
   final bool loading;
+  final _AnswerReveal? answerReveal;
+  final VoidCallback? onRevealContinue;
   final ValueChanged<int> onPick;
   final VoidCallback onConfirm;
 
   @override
   Widget build(BuildContext context) {
+    final reveal = answerReveal;
+    final optionsLocked = sessionPaused || reveal != null;
+
     return Card(
       elevation: 6,
       shadowColor: const Color(0x120F172A),
@@ -2215,23 +2283,60 @@ class _TraineeQuestionMainCard extends StatelessWidget {
                       id: oid,
                       label: o['label']?.toString() ?? '',
                       selected: pickedOptionId == oid,
-                      enabled: !sessionPaused,
+                      enabled: !optionsLocked,
                       onTap: () => onPick(oid),
                     );
                   }),
                 ],
               ),
             ),
+            if (reveal != null) ...[
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: reveal.isCorrect ? const Color(0xFFECFDF5) : const Color(0xFFFFF1F2),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: reveal.isCorrect ? const Color(0xFF6EE7B7) : const Color(0xFFFBCFE8)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      reveal.isCorrect ? l.trnAnswerFeedbackCorrect : l.trnAnswerFeedbackIncorrect,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        color: reveal.isCorrect ? const Color(0xFF065F46) : const Color(0xFF9F1239),
+                      ),
+                    ),
+                    if (!reveal.isCorrect &&
+                        reveal.correctOptionLabel != null &&
+                        reveal.correctOptionLabel!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        l.trnAnswerCorrectWas(reveal.correctOptionLabel!.trim()),
+                        style: const TextStyle(fontSize: 13, height: 1.35, color: Color(0xFF881337)),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+            if (reveal != null) const SizedBox(height: 14),
             FilledButton(
-              onPressed: loading || sessionPaused ? null : onConfirm,
+              onPressed: reveal != null
+                  ? onRevealContinue
+                  : (loading || sessionPaused ? null : onConfirm),
               style: FilledButton.styleFrom(
                 backgroundColor: ClinicalPrecisionColors.primaryContainer,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              child: loading
+              child: loading && reveal == null
                   ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(l.trnBtnConfirmAnswer),
+                  : Text(reveal != null ? l.trnBtnContinueAfterFeedback : l.trnBtnConfirmAnswer),
             ),
           ],
         ),
@@ -2423,9 +2528,26 @@ class _ResultPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final score = enrollment?['score']?.toString() ?? l.trainReqDashNone;
+    final scoreRaw = enrollment?['score'];
+    final scoreStr = scoreRaw?.toString() ?? l.trainReqDashNone;
+    final scoreVal = _parseScoreDouble(scoreRaw);
+    final inRecovery = enrollment?['in_recovery'] == true || enrollment?['in_recovery'] == 1;
+    final passed = scoreVal != null && scoreVal >= 7.0;
     final tr = enrollment?['training'] as Map<String, dynamic>?;
     final title = tr?['title']?.toString() ?? '';
+
+    final IconData iconData;
+    final Color iconColor;
+    if (scoreVal == null) {
+      iconData = Icons.flag_rounded;
+      iconColor = const Color(0xFF64748B);
+    } else if (passed) {
+      iconData = Icons.verified_rounded;
+      iconColor = const Color(0xFF10B981);
+    } else {
+      iconData = Icons.warning_amber_rounded;
+      iconColor = const Color(0xFFF59E0B);
+    }
 
     return Center(
       child: ConstrainedBox(
@@ -2436,14 +2558,44 @@ class _ResultPanel extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.verified_rounded, size: 72, color: Color(0xFF10B981)),
+                Icon(iconData, size: 72, color: iconColor),
                 const SizedBox(height: 16),
                 Text(l.trnResultTitle, style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 8),
                 Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
+                if (scoreVal != null) ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: passed ? const Color(0xFFECFDF5) : const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: passed ? const Color(0xFF6EE7B7) : const Color(0xFFFDBA74)),
+                    ),
+                    child: Text(
+                      passed ? l.trnResultApprovedBanner : l.trnResultInsufficientBanner,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                        color: passed ? const Color(0xFF065F46) : const Color(0xFF9A3412),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 Text(l.trnScoreLabel, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF45464D))),
-                Text(score, style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900)),
+                Text(scoreStr, style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900)),
+                if (inRecovery) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    l.trnResultRecoveryNote,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 13, height: 1.35, color: Color(0xFF45464D)),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 OutlinedButton(
                   onPressed: onAgain,
@@ -2457,6 +2609,13 @@ class _ResultPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+double? _parseScoreDouble(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v.toDouble();
+  final s = v.toString().trim().replaceAll(',', '.');
+  return double.tryParse(s);
 }
 
 int? _parseInt(dynamic v) {

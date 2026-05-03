@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:typed_data';
 
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
@@ -11,6 +13,8 @@ import '../services/api_client.dart';
 import '../services/production_api.dart';
 import '../util/download_bytes.dart';
 import '../services/training_reverb_listener.dart';
+import '../theme/clinical_precision_tokens.dart';
+import '../theme/instructor_page_chrome.dart';
 import '../widgets/fluxo_premium_panel.dart';
 import '../widgets/version_badge.dart';
 import 'fluxxo_manufacturer_review_page.dart';
@@ -65,6 +69,8 @@ class _InstructorShellState extends State<InstructorShell> {
         return l.shellTitleEndorsements;
       case '/instructor/revisao-fluxxo':
         return l.shellTitleFluxxoReview;
+      case '/instructor/resultados':
+        return l.shellTitlePostTrainingResults;
       default:
         return l.shellTitleOverview;
     }
@@ -75,6 +81,9 @@ class _InstructorShellState extends State<InstructorShell> {
     switch (settings.name) {
       case '/instructor/comando':
         page = _ComandoPage(api: _api);
+        break;
+      case '/instructor/resultados':
+        page = _PostTrainingResultsPage(api: _api);
         break;
       case '/instructor/treinamento':
         page = _TreinamentoPage(api: _api);
@@ -286,6 +295,8 @@ class _Sidebar extends StatelessWidget {
       (l.shellNavDashboard, '/instructor/dashboard', Icons.dashboard_rounded),
       (l.shellNavCommandRoom, '/instructor/comando', Icons.monitor_heart_rounded),
       (l.shellNavTrainings, '/instructor/treinamento', Icons.add_box_rounded),
+      if (appAuth.role == 'instructor')
+        (l.shellNavPostTrainingResults, '/instructor/resultados', Icons.assessment_outlined),
       if (appAuth.role == 'institution_admin') ...[
         (l.shellNavTrainingRequests, '/institution/pedidos', Icons.playlist_add_check_rounded),
         (l.shellNavTechPark, '/institution/parque', Icons.precision_manufacturing_outlined),
@@ -521,38 +532,42 @@ class _DashboardPageState extends State<_DashboardPage> {
   @override
   Widget build(BuildContext context) {
     if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: _load,
-                child: Text(AppLocalizations.of(context).actionRetry),
-              ),
-            ],
+      return instructorShellScaffold(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(_error!, textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: _load,
+                  child: Text(AppLocalizations.of(context).actionRetry),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
     if (appAuth.role == 'institution_admin' && _gestorNeedsInstitutionLink()) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            AppLocalizations.of(context).dashLinkInstitutionForKpis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0xFF45464D)),
+      return instructorShellScaffold(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              AppLocalizations.of(context).dashLinkInstitutionForKpis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xFF45464D)),
+            ),
           ),
         ),
       );
     }
     if (appAuth.role == 'institution_admin') {
       if (_institutionDashboard == null) {
-        return const Center(child: CircularProgressIndicator());
+        return instructorShellScaffold(child: const Center(child: CircularProgressIndicator()));
       }
       return _InstitutionDashboardView(
         data: _institutionDashboard!,
@@ -562,7 +577,7 @@ class _DashboardPageState extends State<_DashboardPage> {
       );
     }
     if (_summary == null) {
-      return const Center(child: CircularProgressIndicator());
+      return instructorShellScaffold(child: const Center(child: CircularProgressIndicator()));
     }
 
     final l = AppLocalizations.of(context);
@@ -575,56 +590,58 @@ class _DashboardPageState extends State<_DashboardPage> {
     final apprLabel = appr == null ? l.trainReqDashNone : '${appr.toString()} %';
     final recent = (_summary!['recent_trainings'] as List<dynamic>?) ?? [];
 
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          Wrap(
-            spacing: 14,
-            runSpacing: 14,
-            children: [
-              _Kpi(title: l.dashKpiTrainings, value: trainingCount),
-              _Kpi(title: l.dashKpiFinished, value: finishedCount),
-              _Kpi(title: l.dashKpiUniqueParticipants, value: participantCount),
-              _Kpi(title: l.dashKpiAvgCompleted, value: avgLabel),
-              _Kpi(title: l.dashKpiApprovalRate, value: apprLabel),
-            ],
-          ),
-          const SizedBox(height: 22),
-          if (_seasonRanks.isNotEmpty) ...[
-            Text(l.dashSeasonRankingTitle, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(
-              l.dashSeasonRankingHint,
-              style: const TextStyle(color: Color(0xFF45464D), fontSize: 12),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              child: Column(
-                children: [
-                  for (final raw in _seasonRanks) _SeasonRankRow(Map<String, dynamic>.from(raw)),
-                ],
-              ),
+    return instructorShellScaffold(
+      child: RefreshIndicator(
+        onRefresh: _load,
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            Wrap(
+              spacing: 14,
+              runSpacing: 14,
+              children: [
+                _Kpi(title: l.dashKpiTrainings, value: trainingCount),
+                _Kpi(title: l.dashKpiFinished, value: finishedCount),
+                _Kpi(title: l.dashKpiUniqueParticipants, value: participantCount),
+                _Kpi(title: l.dashKpiAvgCompleted, value: avgLabel),
+                _Kpi(title: l.dashKpiApprovalRate, value: apprLabel),
+              ],
             ),
             const SizedBox(height: 22),
+            if (_seasonRanks.isNotEmpty) ...[
+              Text(l.dashSeasonRankingTitle, style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(
+                l.dashSeasonRankingHint,
+                style: const TextStyle(color: Color(0xFF45464D), fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              instructorShellCard(
+                child: Column(
+                  children: [
+                    for (final raw in _seasonRanks) _SeasonRankRow(Map<String, dynamic>.from(raw)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+            ],
+            Text(l.dashRecentTrainings, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            instructorShellCard(
+              child: recent.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(l.dashNoTrainingsYet),
+                    )
+                  : Column(
+                      children: [
+                        for (final raw in recent)
+                          _TrainingRow(Map<String, dynamic>.from(raw as Map)),
+                      ],
+                    ),
+            ),
           ],
-          Text(l.dashRecentTrainings, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 12),
-          Card(
-            child: recent.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(l.dashNoTrainingsYet),
-                  )
-                : Column(
-                    children: [
-                      for (final raw in recent)
-                        _TrainingRow(Map<String, dynamic>.from(raw as Map)),
-                    ],
-                  ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -705,12 +722,13 @@ class _InstitutionDashboardView extends StatelessWidget {
     final bySector = (data['aggregated_by_sector'] as List<dynamic>?) ?? [];
     final byEq = (data['aggregated_by_equipment'] as List<dynamic>?) ?? [];
 
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      child: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          Text(l.dashInstitutionKpisTitle, style: Theme.of(context).textTheme.titleLarge),
+    return instructorShellScaffold(
+      child: RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            Text(l.dashInstitutionKpisTitle, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 6),
           Text(
             l.dashInstitutionLgpdNote,
@@ -753,7 +771,7 @@ class _InstitutionDashboardView extends StatelessWidget {
           const SizedBox(height: 24),
           Text(l.dashByEquipment, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          Card(
+          instructorShellCard(
             child: byEq.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.all(16),
@@ -781,7 +799,7 @@ class _InstitutionDashboardView extends StatelessWidget {
           const SizedBox(height: 20),
           Text(l.dashSectorAveragesTitle, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          Card(
+          instructorShellCard(
             child: bySector.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.all(16),
@@ -806,6 +824,7 @@ class _InstitutionDashboardView extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -820,15 +839,15 @@ class _Kpi extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: 200,
-      child: Card(
+      child: instructorShellCard(
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(color: Color(0xFF45464D), fontSize: 13)),
+              Text(title, style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant, fontSize: 13)),
               const SizedBox(height: 8),
-              Text(value, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+              Text(value, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: ClinicalPrecisionColors.onSurface)),
             ],
           ),
         ),
@@ -853,7 +872,374 @@ class _TrainingRow extends StatelessWidget {
     return ListTile(
       title: Text(t['title']?.toString() ?? l.trainReqDashNone, style: const TextStyle(fontWeight: FontWeight.w700)),
       subtitle: Text('$instName · $statusLabel'),
-      trailing: Text(hashLabel, style: const TextStyle(fontSize: 12, color: Color(0xFF00677D))),
+      trailing: Text(hashLabel, style: const TextStyle(fontSize: 12, color: ClinicalPrecisionColors.secondary)),
+    );
+  }
+}
+
+/// APP-SAL-02 — gestão pós-sessão: lista de inscritos + repescagem (fluxo Application).
+class _PostTrainingResultsPage extends StatefulWidget {
+  const _PostTrainingResultsPage({required this.api});
+
+  final ProductionApi api;
+
+  @override
+  State<_PostTrainingResultsPage> createState() => _PostTrainingResultsPageState();
+}
+
+class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
+  List<Map<String, dynamic>> _trainings = [];
+  int? _selectedId;
+  Map<String, dynamic>? _monitor;
+  bool _loading = false;
+  bool _closingTraining = false;
+  int? _certPdfLoadingId;
+  final Set<int> _repescageIds = {};
+  List<Map<String, dynamic>> _trainingBlocks = [];
+  int? _repescageBlockId;
+
+  bool _canFinishTrainingFromMonitor() {
+    final st = _monitor?['training']?['status']?.toString();
+    return st != null && st != 'finished' && st != 'cancelled';
+  }
+
+  Future<void> _confirmFinishTraining() async {
+    final l = AppLocalizations.of(context);
+    final tid = _selectedId;
+    if (tid == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.postTrainingFinishTrainingConfirmTitle),
+        content: Text(l.postTrainingFinishTrainingConfirmBody),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.mfgBtnCancel)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l.postTrainingFinishTraining)),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final t = appAuth.token;
+    if (t == null) return;
+    setState(() => _closingTraining = true);
+    try {
+      await widget.api.updateTraining(t, tid, {'status': 'finished'});
+      await _refreshTrainings();
+      await _loadMonitor();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.postTrainingFinishTrainingDone)));
+      }
+    } on ApiException catch (e) {
+      if (mounted) context.showLocalizedApiExceptionSnack(e);
+    } catch (_) {
+      if (mounted) context.showErrApiConnectionSnack();
+    } finally {
+      if (mounted) setState(() => _closingTraining = false);
+    }
+  }
+
+  Future<void> _onParticipantCertificatePdf(Map<String, dynamic> cert) async {
+    final l = AppLocalizations.of(context);
+    final t = appAuth.token;
+    final tid = _selectedId;
+    final cid = _parseInt(cert['id']);
+    final code = cert['certificate_code']?.toString() ?? l.trnCertCodeFallback;
+    if (t == null || tid == null || cid == null) return;
+    setState(() => _certPdfLoadingId = cid);
+    try {
+      final bytes = await widget.api.downloadTrainingParticipantCertificatePdf(t, tid, cid);
+      if (!mounted) return;
+      final safe = code.replaceAll(RegExp(r'[^A-Za-z0-9_.-]'), '-');
+      final filename = l.trnCertDownloadFilename(safe);
+      if (downloadBytesSupported) {
+        downloadBytesAsFile(bytes, '$filename.pdf');
+      } else {
+        await FileSaver.instance.saveFile(
+          name: filename,
+          fileExtension: 'pdf',
+          bytes: bytes,
+          mimeType: MimeType.pdf,
+        );
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.trnSnackCertPdfDownloaded)));
+      }
+    } on ApiException catch (e) {
+      if (mounted) context.showLocalizedApiExceptionSnack(e);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.trnSnackCertPdfFailed)));
+      }
+    } finally {
+      if (mounted) setState(() => _certPdfLoadingId = null);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshTrainings();
+  }
+
+  Future<void> _refreshTrainings() async {
+    final t = appAuth.token;
+    if (t == null) return;
+    try {
+      final list = await widget.api.myTrainings(t);
+      if (mounted) {
+        setState(() {
+          _trainings = list;
+          if (_selectedId == null && list.isNotEmpty) {
+            _selectedId = _parseInt(list.first['id']);
+          }
+        });
+        _loadMonitor();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _loadMonitor() async {
+    final t = appAuth.token;
+    final id = _selectedId;
+    if (t == null || id == null) return;
+    try {
+      final m = await widget.api.trainingParticipants(t, id);
+      if (mounted) {
+        final bl = m['training_blocks'];
+        final blocks = bl is List
+            ? bl.map((e) => Map<String, dynamic>.from(e as Map)).toList()
+            : <Map<String, dynamic>>[];
+        setState(() {
+          _monitor = m;
+          _trainingBlocks = blocks;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _monitor = null);
+    }
+  }
+
+  Future<void> _runRepescage() async {
+    final t = appAuth.token;
+    final id = _selectedId;
+    if (t == null || id == null || _repescageIds.isEmpty) return;
+    setState(() => _loading = true);
+    try {
+      await widget.api.realtimeTrainingCommand(
+        t,
+        id,
+        action: 'repescage',
+        payload: {
+          'enrollment_ids': _repescageIds.toList(),
+          if (_repescageBlockId != null) 'training_block_id': _repescageBlockId,
+        },
+      );
+      setState(() => _repescageIds.clear());
+      await _loadMonitor();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).comandoSnackRepescageDone)),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) context.showLocalizedApiExceptionSnack(e);
+    } catch (_) {
+      if (mounted) context.showErrApiConnectionSnack();
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final participants = (_monitor?['participants'] as List<dynamic>?) ?? [];
+
+    final body = _selectedId == null
+        ? Center(child: Text(l.postTrainingPickTraining, style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant)))
+        : LayoutBuilder(
+            builder: (context, constraints) {
+              final narrow = constraints.maxWidth < 900;
+              final participantPane = instructorShellCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l.comandoParticipantsTitle, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: participants.isEmpty
+                            ? Center(child: Text(l.comandoNoParticipants))
+                            : ListView.separated(
+                                itemCount: participants.length,
+                                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                                itemBuilder: (context, index) {
+                                  final raw = participants[index];
+                                  final row = Map<String, dynamic>.from(raw as Map);
+                                  final eid = _parseInt(row['enrollment']?['id']);
+                                  return _ParticipantTile(
+                                    row,
+                                    selected: eid != null && _repescageIds.contains(eid),
+                                    onToggle: (enrollmentId) {
+                                      setState(() {
+                                        if (_repescageIds.contains(enrollmentId)) {
+                                          _repescageIds.remove(enrollmentId);
+                                        } else {
+                                          _repescageIds.add(enrollmentId);
+                                        }
+                                      });
+                                    },
+                                    onCertificatePdf: _onParticipantCertificatePdf,
+                                    certificatePdfLoadingForId: _certPdfLoadingId,
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+              final repescPane = instructorShellCard(
+                color: ClinicalPrecisionColors.primaryContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          l.comandoRepescageScope,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 12),
+                        if (_trainingBlocks.isNotEmpty)
+                          DropdownButtonFormField<int?>(
+                            key: ValueKey<String>('repesc_post_${_repescageBlockId ?? 'all'}'),
+                            decoration: InputDecoration(
+                              labelText: l.comandoRepescageScope,
+                              labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
+                              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.35))),
+                            ),
+                            dropdownColor: const Color(0xFF1E293B),
+                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                            initialValue: _repescageBlockId,
+                            items: [
+                              DropdownMenuItem<int?>(
+                                value: null,
+                                child: Text(l.comandoRepescageScopeAll, style: const TextStyle(color: Colors.white)),
+                              ),
+                              for (final b in _trainingBlocks)
+                                DropdownMenuItem<int?>(
+                                  value: _parseInt(b['id']),
+                                  child: Text(
+                                    b['title']?.toString() ?? l.comandoBlockDefault,
+                                    style: const TextStyle(color: Colors.white),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
+                            onChanged: (v) => setState(() => _repescageBlockId = v),
+                          ),
+                        const SizedBox(height: 16),
+                        OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.amber.shade200,
+                            side: BorderSide(color: Colors.amber.withValues(alpha: 0.65)),
+                          ),
+                          onPressed: _loading || _repescageIds.isEmpty ? null : _runRepescage,
+                          child: Text(l.comandoRepescageCount(_repescageIds.length)),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          l.comandoHelpFooter,
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11, height: 1.35),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+              if (narrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(flex: 3, child: participantPane),
+                    const SizedBox(height: 16),
+                    Expanded(flex: 2, child: repescPane),
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(flex: 3, child: participantPane),
+                  const SizedBox(width: 16),
+                  Expanded(flex: 2, child: repescPane),
+                ],
+              );
+            },
+          );
+
+    return instructorShellScaffold(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l.shellTitlePostTrainingResults,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text(l.postTrainingIntro, style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.4)),
+            const SizedBox(height: 20),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    key: ValueKey<int?>(_selectedId),
+                    decoration: InputDecoration(
+                      labelText: l.comandoActiveTraining,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: ClinicalPrecisionColors.surfaceContainerLowest,
+                    ),
+                    initialValue: _selectedId,
+                    items: [
+                      for (final tr in _trainings)
+                        DropdownMenuItem(
+                          value: _parseInt(tr['id']),
+                          child: Text(tr['title']?.toString() ?? ''),
+                        ),
+                    ],
+                    onChanged: (v) {
+                      setState(() {
+                        _selectedId = v;
+                        _repescageIds.clear();
+                        _repescageBlockId = null;
+                      });
+                      _loadMonitor();
+                    },
+                  ),
+                ),
+                IconButton(onPressed: _refreshTrainings, icon: const Icon(Icons.refresh_rounded)),
+                if (_selectedId != null && _canFinishTrainingFromMonitor())
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, top: 6),
+                    child: FilledButton.tonal(
+                      onPressed: _closingTraining ? null : _confirmFinishTraining,
+                      child: Text(l.postTrainingFinishTraining),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(child: body),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1136,18 +1522,19 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
     final s = AppLocalizations.of(context);
     final tr = _createdTraining;
 
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Text(s.trainingSectionTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
-        const SizedBox(height: 14),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                DropdownButtonFormField<int>(
+    return instructorShellScaffold(
+      child: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(s.trainingSectionTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
+          const SizedBox(height: 14),
+          instructorShellCard(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  DropdownButtonFormField<int>(
                   decoration: InputDecoration(labelText: s.fieldInstitution),
                   initialValue: _institutionId,
                   items: [
@@ -1195,11 +1582,11 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
                 ),
               ],
             ),
+            ),
           ),
-        ),
         if (_officialTemplates.isNotEmpty) ...[
           const SizedBox(height: 18),
-          Card(
+          instructorShellCard(
             color: const Color(0xFFF0FDFA),
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -1238,7 +1625,7 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
         ],
         if (tr != null) ...[
           const SizedBox(height: 22),
-          Card(
+          instructorShellCard(
             color: const Color(0xFF0F172A),
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -1261,7 +1648,7 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
             ),
           ),
           const SizedBox(height: 18),
-          Card(
+          instructorShellCard(
             child: Padding(
               padding: const EdgeInsets.all(18),
               child: Column(
@@ -1336,7 +1723,8 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
             child: Text(s.trainingSaveQuestionnaireApi),
           ),
         ],
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1347,9 +1735,102 @@ int? _parseInt(dynamic v) {
   return int.tryParse(v.toString());
 }
 
+double? _parseScoreDouble(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v.toDouble();
+  final s = v.toString().trim().replaceAll(',', '.');
+  return double.tryParse(s);
+}
+
+Widget _postTrainingOutcomeChip(BuildContext context, Map<String, dynamic>? enrollment) {
+  final l = AppLocalizations.of(context);
+  final inRecovery = enrollment?['in_recovery'] == true || enrollment?['in_recovery'] == 1;
+  final st = enrollment?['status']?.toString();
+  final scoreVal = _parseScoreDouble(enrollment?['score']);
+
+  if (inRecovery) {
+    return _PostTrainingOutcomePill(
+      label: l.postTrainingOutcomeRecovery,
+      background: const Color(0xFFFFF7ED),
+      foreground: const Color(0xFFC2410C),
+      border: const Color(0xFFFDBA74),
+    );
+  }
+  if (st == 'completed') {
+    if (scoreVal != null) {
+      if (scoreVal >= 7.0) {
+        return _PostTrainingOutcomePill(
+          label: l.postTrainingOutcomeApproved,
+          background: const Color(0xFFECFDF5),
+          foreground: const Color(0xFF065F46),
+          border: const Color(0xFF6EE7B7),
+        );
+      }
+      return _PostTrainingOutcomePill(
+        label: l.postTrainingOutcomeInsufficient,
+        background: const Color(0xFFFFF7ED),
+        foreground: const Color(0xFF9A3412),
+        border: const Color(0xFFFDBA74),
+      );
+    }
+    return _PostTrainingOutcomePill(
+      label: l.postTrainingOutcomeCompletedNoGrade,
+      background: const Color(0xFFF1F5F9),
+      foreground: const Color(0xFF475569),
+      border: const Color(0xFFE2E8F0),
+    );
+  }
+  return _PostTrainingOutcomePill(
+    label: l.postTrainingOutcomeInProgress,
+    background: const Color(0xFFF1F5F9),
+    foreground: const Color(0xFF475569),
+    border: const Color(0xFFE2E8F0),
+  );
+}
+
+class _PostTrainingOutcomePill extends StatelessWidget {
+  const _PostTrainingOutcomePill({
+    required this.label,
+    required this.background,
+    required this.foreground,
+    required this.border,
+  });
+
+  final String label;
+  final Color background;
+  final Color foreground;
+  final Color border;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: border),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: foreground, height: 1.2),
+      ),
+    );
+  }
+}
+
 String _joinHashDisplay(Map<String, dynamic> row, AppLocalizations l) {
   final h = row['join_hash']?.toString().trim();
   return (h != null && h.isNotEmpty) ? h : l.trainReqDashNone;
+}
+
+String _participantInitials(String name) {
+  final parts = name.trim().split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
+  if (parts.isEmpty) return '?';
+  if (parts.length == 1) {
+    final s = parts.single;
+    return s.length >= 2 ? s.substring(0, 2).toUpperCase() : s[0].toUpperCase();
+  }
+  return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
 }
 
 Color _credentialStatusColor(String? s) {
@@ -1474,7 +1955,7 @@ class _QuestionEditorCardState extends State<_QuestionEditorCard> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final draft = widget.draft;
-    return Card(
+    return instructorShellCard(
       margin: const EdgeInsets.only(bottom: 14),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1544,6 +2025,7 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
   String? _categoryFilter;
   int? _pickedCatalogId;
   final _sector = TextEditingController();
+  final _parkSearchCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -1554,6 +2036,7 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
   @override
   void dispose() {
     _sector.dispose();
+    _parkSearchCtrl.dispose();
     super.dispose();
   }
 
@@ -1573,8 +2056,9 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
           cats = [];
         }
       }
-      final tpl = await widget.api.institutionEquipmentTemplates(t, category: _categoryFilter);
-      final u = await widget.api.institutionEquipmentPark(t, status: _statusFilter, category: _categoryFilter);
+      final q = _parkSearchCtrl.text.trim().isEmpty ? null : _parkSearchCtrl.text.trim();
+      final tpl = await widget.api.institutionEquipmentTemplates(t, category: _categoryFilter, search: q);
+      final u = await widget.api.institutionEquipmentPark(t, status: _statusFilter, category: _categoryFilter, search: q);
       if (!mounted) return;
       setState(() {
         _categoryCatalog = cats;
@@ -1701,19 +2185,22 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     if (_gestorNeedsInstitutionLink()) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(l.parkBannerLinkInstitutionFirst),
+      return instructorShellScaffold(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(l.parkBannerLinkInstitutionFirst),
+          ),
         ),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _reload,
-      child: _loading && _templates.isEmpty && _units.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
+    return instructorShellScaffold(
+      child: RefreshIndicator(
+        onRefresh: _reload,
+        child: _loading && _templates.isEmpty && _units.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
               children: [
                 if (_error != null)
@@ -1726,6 +2213,18 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                 Text(
                   l.parkIntro,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _parkSearchCtrl,
+                  decoration: InputDecoration(
+                    labelText: l.parkSearchHint,
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.search_rounded),
+                      onPressed: _loading ? null : () => unawaited(_reload()),
+                    ),
+                  ),
+                  onSubmitted: (_) => unawaited(_reload()),
                 ),
                 const SizedBox(height: 16),
                 Text(l.parkFilterByState, style: Theme.of(context).textTheme.titleSmall),
@@ -1824,6 +2323,8 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                 else
                   ..._units.map((row) {
                     final id = _parseInt(row['id']);
+                    final catalogId = _parseInt(row['catalog_equipment_id']);
+                    final hasCatalogImg = row['catalog_has_image'] == true;
                     final st = row['status']?.toString() ?? '';
                     final pending = st == 'pending';
                     final catRaw = row['category']?.toString();
@@ -1837,9 +2338,22 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                         subtitle = '${mm['name']} · $subtitle';
                       }
                     }
-                    return Card(
+                    return instructorShellCard(
                       margin: const EdgeInsets.only(bottom: 10),
                       child: ListTile(
+                        leading: catalogId == null
+                            ? const CircleAvatar(
+                                backgroundColor: Color(0xFFE2E8F0),
+                                child: Icon(
+                                  Icons.precision_manufacturing_outlined,
+                                  color: Color(0xFF475569),
+                                ),
+                              )
+                            : _InstitutionCatalogThumb(
+                                api: widget.api,
+                                catalogEquipmentId: catalogId,
+                                hasImage: hasCatalogImg,
+                              ),
                         title: Text(row['name']?.toString() ?? l.parkEquipmentFallbackName),
                         subtitle: Text(
                           '$catPrefix${row['sector']?.toString().isNotEmpty == true ? '${row['sector']} · ' : ''}$subtitle · ${localizedParkEquipmentStatus(l, st)}',
@@ -1865,6 +2379,66 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                   }),
               ],
             ),
+      ),
+    );
+  }
+}
+
+/// Miniatura do modelo de catálogo (imagem enviada pelo fabricante).
+class _InstitutionCatalogThumb extends StatefulWidget {
+  const _InstitutionCatalogThumb({
+    required this.api,
+    required this.catalogEquipmentId,
+    required this.hasImage,
+  });
+
+  final ProductionApi api;
+  final int catalogEquipmentId;
+  final bool hasImage;
+
+  @override
+  State<_InstitutionCatalogThumb> createState() => _InstitutionCatalogThumbState();
+}
+
+class _InstitutionCatalogThumbState extends State<_InstitutionCatalogThumb> {
+  Uint8List? _bytes;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.hasImage) {
+      unawaited(_load());
+    }
+  }
+
+  Future<void> _load() async {
+    final t = appAuth.token;
+    if (t == null || !mounted) return;
+    try {
+      final b = await widget.api.downloadInstitutionCatalogEquipmentImage(t, widget.catalogEquipmentId);
+      if (mounted) setState(() => _bytes = b);
+    } catch (_) {
+      // Mantém ícone.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipOval(
+      child: ColoredBox(
+        color: const Color(0xFFE2E8F0),
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: _bytes != null
+              ? Image.memory(_bytes!, fit: BoxFit.cover, gaplessPlayback: true)
+              : Icon(
+                  widget.hasImage ? Icons.broken_image_outlined : Icons.precision_manufacturing_outlined,
+                  color: const Color(0xFF475569),
+                  size: 22,
+                ),
+        ),
+      ),
     );
   }
 }
@@ -1948,47 +2522,54 @@ class _InstitutionEndorsementsPageState extends State<_InstitutionEndorsementsPa
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     if (_gestorNeedsInstitutionLink()) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            l.trainReqUseOrangeBanner,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0xFF45464D)),
+      return instructorShellScaffold(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              l.trainReqUseOrangeBanner,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xFF45464D)),
+            ),
           ),
         ),
       );
     }
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return instructorShellScaffold(child: const Center(child: CircularProgressIndicator()));
     }
     if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              FilledButton(onPressed: _reload, child: Text(l.actionRetry)),
-            ],
+      return instructorShellScaffold(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_error!, textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                FilledButton(onPressed: _reload, child: Text(l.actionRetry)),
+              ],
+            ),
           ),
         ),
       );
     }
     if (_rows.isEmpty) {
-      return Center(
-        child: Text(
-          l.endorsEmpty,
-          style: const TextStyle(color: Color(0xFF45464D)),
+      return instructorShellScaffold(
+        child: Center(
+          child: Text(
+            l.endorsEmpty,
+            style: const TextStyle(color: Color(0xFF45464D)),
+          ),
         ),
       );
     }
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Text(l.shellTitleEndorsements, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
+    return instructorShellScaffold(
+      child: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(l.shellTitleEndorsements, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
         const SizedBox(height: 8),
         Text(
           l.endorsIntro,
@@ -2006,7 +2587,7 @@ class _InstitutionEndorsementsPageState extends State<_InstitutionEndorsementsPa
               final instName = row['instructor'] is Map
                   ? (row['instructor']['name']?.toString() ?? l.trainReqDashNone)
                   : l.trainReqDashNone;
-              return Card(
+              return instructorShellCard(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -2042,6 +2623,134 @@ class _InstitutionEndorsementsPageState extends State<_InstitutionEndorsementsPa
               );
             },
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrainingRequestsKanban extends StatelessWidget {
+  const _TrainingRequestsKanban({
+    required this.colQueue,
+    required this.colScheduled,
+    required this.colClosed,
+    required this.instructors,
+    required this.trainings,
+    required this.onSubmit,
+    required this.wide,
+  });
+
+  final List<Map<String, dynamic>> colQueue;
+  final List<Map<String, dynamic>> colScheduled;
+  final List<Map<String, dynamic>> colClosed;
+  final List<Map<String, dynamic>> instructors;
+  final List<Map<String, dynamic>> trainings;
+  final Future<void> Function(int id, Map<String, dynamic> body) onSubmit;
+  final bool wide;
+
+  Widget _column({
+    required String title,
+    required String subtitle,
+    required List<Map<String, dynamic>> rows,
+  }) {
+    final header = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0F172A)),
+              ),
+              if (subtitle.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), height: 1.25)),
+              ],
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Text(
+            '${rows.length}',
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF334155)),
+          ),
+        ),
+      ],
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          header,
+          const SizedBox(height: 14),
+          ...rows.map(
+            (row) => _InstitutionPedidoCard(
+              key: ValueKey(row['id']),
+              row: row,
+              instructors: instructors,
+              trainings: trainings,
+              onSubmit: onSubmit,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final c1 = _column(
+      title: l.trainReqKanbanColumnQueue,
+      subtitle: l.trainReqKanbanColumnQueueHint,
+      rows: colQueue,
+    );
+    final c2 = _column(
+      title: l.trainReqKanbanColumnScheduled,
+      subtitle: '',
+      rows: colScheduled,
+    );
+    final c3 = _column(
+      title: l.trainReqKanbanColumnClosed,
+      subtitle: l.trainReqKanbanColumnClosedHint,
+      rows: colClosed,
+    );
+
+    if (wide) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: c1),
+          const SizedBox(width: 14),
+          Expanded(child: c2),
+          const SizedBox(width: 14),
+          Expanded(child: c3),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        c1,
+        const SizedBox(height: 14),
+        c2,
+        const SizedBox(height: 14),
+        c3,
       ],
     );
   }
@@ -2128,59 +2837,91 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     if (_gestorNeedsInstitutionLink()) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            l.trainReqUseOrangeBanner,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0xFF45464D)),
+      return instructorShellScaffold(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              l.trainReqUseOrangeBanner,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xFF45464D)),
+            ),
           ),
         ),
       );
     }
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return instructorShellScaffold(child: const Center(child: CircularProgressIndicator()));
     }
     if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              FilledButton(onPressed: _reload, child: Text(l.actionRetry)),
-            ],
+      return instructorShellScaffold(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_error!, textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                FilledButton(onPressed: _reload, child: Text(l.actionRetry)),
+              ],
+            ),
           ),
         ),
       );
     }
     if (_requests.isEmpty) {
-      return Center(
-        child: Text(l.trainReqEmpty, style: const TextStyle(color: Color(0xFF45464D))),
+      return instructorShellScaffold(
+        child: Center(
+          child: Text(l.trainReqEmpty, style: const TextStyle(color: Color(0xFF45464D))),
+        ),
       );
     }
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Text(l.shellTitleTrainingRequests, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
-        const SizedBox(height: 8),
-        Text(
-          l.trainReqIntro,
-          style: const TextStyle(color: Color(0xFF45464D)),
-        ),
-        const SizedBox(height: 18),
-        for (final row in _requests)
-          _InstitutionPedidoCard(
-            key: ValueKey(row['id']),
-            row: row,
-            instructors: _instructors,
-            trainings: _trainings,
-            onSubmit: _update,
-          ),
-      ],
+    List<Map<String, dynamic>> byStatuses(Set<String> statuses) {
+      return _requests.where((r) => statuses.contains(r['status']?.toString() ?? 'pending')).toList();
+    }
+
+    var colQueue = byStatuses({'pending', 'approved'});
+    final colScheduled = byStatuses({'scheduled'});
+    final colClosed = byStatuses({'fulfilled', 'rejected'});
+    final assigned = <dynamic>{
+      for (final r in [...colQueue, ...colScheduled, ...colClosed]) r['id'],
+    };
+    final orphans = _requests.where((r) => !assigned.contains(r['id'])).toList();
+    if (orphans.isNotEmpty) {
+      colQueue = [...colQueue, ...orphans];
+    }
+
+    return instructorShellScaffold(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= 960;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(l.shellTitleTrainingRequests, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
+                const SizedBox(height: 8),
+                Text(
+                  l.trainReqIntro,
+                  style: const TextStyle(color: Color(0xFF45464D)),
+                ),
+                const SizedBox(height: 18),
+                _TrainingRequestsKanban(
+                  colQueue: colQueue,
+                  colScheduled: colScheduled,
+                  colClosed: colClosed,
+                  instructors: _instructors,
+                  trainings: _trainings,
+                  onSubmit: _update,
+                  wide: wide,
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -2248,7 +2989,7 @@ class _InstitutionPedidoCardState extends State<_InstitutionPedidoCard> {
     final email = req?['email']?.toString() ?? '';
     final ft = widget.row['fulfilled_training'] as Map?;
 
-    return Card(
+    return instructorShellCard(
       margin: const EdgeInsets.only(bottom: 14),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -2628,190 +3369,523 @@ class _ComandoPageState extends State<_ComandoPage> {
     }
   }
 
+  (int, int) _participantCounts(List<dynamic> participants) {
+    var a = 0;
+    var w = 0;
+    for (final raw in participants) {
+      final row = Map<String, dynamic>.from(raw as Map);
+      final st = row['enrollment']?['status']?.toString();
+      if (st == 'waiting') {
+        w++;
+      } else {
+        a++;
+      }
+    }
+    return (a, w);
+  }
+
+  double _avgBlockCompletionPercent(List<dynamic> participants, int blockId) {
+    var sum = 0.0;
+    var n = 0;
+    for (final raw in participants) {
+      final row = Map<String, dynamic>.from(raw as Map);
+      final bm = row['block_metrics'];
+      if (bm is! List) continue;
+      for (final m in bm) {
+        if (m is! Map) continue;
+        if (_parseInt(m['training_block_id']) != blockId) continue;
+        final total = _parseInt(m['question_count']) ?? 0;
+        if (total <= 0) continue;
+        final correct = (m['correct_count'] as num? ?? 0).toDouble();
+        final wrong = (m['wrong_count'] as num? ?? 0).toDouble();
+        sum += (correct + wrong) / total;
+        n++;
+        break;
+      }
+    }
+    return n == 0 ? 0 : sum / n * 100;
+  }
+
+  double? _avgBlockAccuracyPercent(List<dynamic> participants, int blockId) {
+    var sum = 0.0;
+    var n = 0;
+    for (final raw in participants) {
+      final row = Map<String, dynamic>.from(raw as Map);
+      final bm = row['block_metrics'];
+      if (bm is! List) continue;
+      for (final m in bm) {
+        if (m is! Map) continue;
+        if (_parseInt(m['training_block_id']) != blockId) continue;
+        final acc = m['accuracy_percent'];
+        if (acc is num) {
+          sum += acc.toDouble();
+          n++;
+        }
+        break;
+      }
+    }
+    return n == 0 ? null : sum / n;
+  }
+
+  String _deckLifecycleBadge(AppLocalizations l, Map<String, dynamic>? training, bool sessionPaused) {
+    if (training == null) return l.comandoDeckBadgeScheduled;
+    if (sessionPaused) return l.comandoDeckBadgePaused;
+    switch (training['status']?.toString()) {
+      case 'in_progress':
+        return l.comandoDeckBadgeRunning;
+      case 'scheduled':
+        return l.comandoDeckBadgeScheduled;
+      case 'finished':
+        return l.comandoDeckBadgeFinished;
+      default:
+        return localizedTrainingLifecycleStatus(l, training['status']?.toString());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final participants = (_monitor?['participants'] as List<dynamic>?) ?? [];
     final training = _monitor?['training'] as Map<String, dynamic>?;
     final sessionPaused = training != null && training['session_paused'] == true;
+    final moduleTitle = training?['title']?.toString() ?? l.trainReqDashNone;
+    final counts = _participantCounts(participants);
+    final activeCt = counts.$1;
+    final waitingCt = counts.$2;
+    final sortedBlocks = List<Map<String, dynamic>>.from(_trainingBlocks);
+    sortedBlocks.sort((a, b) => (_parseInt(a['sort_order']) ?? 0).compareTo(_parseInt(b['sort_order']) ?? 0));
+    final deckBadge = _deckLifecycleBadge(l, training, sessionPaused);
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 5,
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<int>(
-                            decoration: InputDecoration(labelText: l.comandoActiveTraining),
-                            initialValue: _selectedId,
-                            items: [
-                              for (final tr in _trainings)
-                                DropdownMenuItem(
-                                  value: _parseInt(tr['id']),
-                                  child: Text(tr['title']?.toString() ?? ''),
-                                ),
-                            ],
-                            onChanged: (v) {
-                              setState(() {
-                                _selectedId = v;
-                                _repescageIds.clear();
-                                _repescageBlockId = null;
-                              });
-                              _restartPollingAndReverb();
-                              _loadMonitor();
-                            },
-                          ),
-                        ),
-                        IconButton(onPressed: _refreshTrainings, icon: const Icon(Icons.refresh_rounded)),
-                      ],
-                    ),
-                    if (_selectedId != null) ...[
-                      const SizedBox(height: 10),
-                      TrainingRealtimeLinkChip(phase: _rtPhase),
-                    ],
-                    if (training != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          l.comandoTrainingStatusHash(
-                            localizedTrainingLifecycleStatus(l, training['status']?.toString()),
-                            _joinHashDisplay(Map<String, dynamic>.from(training), l),
-                          ),
-                          style: const TextStyle(fontSize: 13, color: Color(0xFF45464D)),
-                        ),
-                      ),
-                    const SizedBox(height: 14),
-                    Text(l.comandoParticipantsTitle, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: participants.isEmpty
-                          ? Center(child: Text(l.comandoNoParticipants))
-                          : ListView(
-                              children: [
-                                ...participants.map((raw) {
-                                  final row = Map<String, dynamic>.from(raw as Map);
-                                  final eid = _parseInt(row['enrollment']?['id']);
-                                  return _ParticipantTile(
-                                    row,
-                                    selected: eid != null && _repescageIds.contains(eid),
-                                    onToggle: (enrollmentId) {
-                                      setState(() {
-                                        if (_repescageIds.contains(enrollmentId)) {
-                                          _repescageIds.remove(enrollmentId);
-                                        } else {
-                                          _repescageIds.add(enrollmentId);
-                                        }
-                                      });
-                                    },
-                                  );
-                                }),
-                              ],
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+    Widget statPill(String label, String value) {
+      return SizedBox(
+        width: 148,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: ClinicalPrecisionColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.45)),
+            boxShadow: ClinicalPrecisionShadows.ambientCard,
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 4,
-            child: Card(
-              color: const Color(0xFF0F172A),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(l.comandoSessionControlTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
-                    const SizedBox(height: 16),
-                    if (_trainingBlocks.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: DropdownButtonFormField<int?>(
-                          decoration: InputDecoration(
-                            labelText: l.comandoRepescageScope,
-                            labelStyle: const TextStyle(color: Colors.white70),
-                            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white38)),
-                          ),
-                          dropdownColor: const Color(0xFF1E293B),
-                          style: const TextStyle(color: Colors.white, fontSize: 14),
-                          initialValue: _repescageBlockId,
-                          items: [
-                            DropdownMenuItem<int?>(
-                              value: null,
-                              child: Text(l.comandoRepescageScopeAll, style: const TextStyle(color: Colors.white)),
-                            ),
-                            for (final b in _trainingBlocks)
-                              DropdownMenuItem<int?>(
-                                value: _parseInt(b['id']),
-                                child: Text(
-                                  b['title']?.toString() ?? l.comandoBlockDefault,
-                                  style: const TextStyle(color: Colors.white),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                          ],
-                          onChanged: (v) => setState(() => _repescageBlockId = v),
-                        ),
-                      ),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        FilledButton(
-                          onPressed: _loading ? null : () => _setTrainingStatus('in_progress'),
-                          child: Text(l.comandoBtnStart),
-                        ),
-                        FilledButton.tonal(
-                          onPressed: _loading ? null : _releaseNextBlock,
-                          child: Text(l.comandoBtnReleaseBlock),
-                        ),
-                        FilledButton.tonal(
-                          onPressed: _loading || _selectedId == null || sessionPaused ? null : () => _runSessionSignal('pause'),
-                          child: Text(l.comandoBtnPause),
-                        ),
-                        FilledButton.tonal(
-                          onPressed: _loading || _selectedId == null || !sessionPaused ? null : () => _runSessionSignal('resume'),
-                          child: Text(l.comandoBtnResume),
-                        ),
-                        FilledButton.tonal(
-                          onPressed: _loading ? null : () => _setTrainingStatus('scheduled'),
-                          child: Text(l.comandoBtnReschedule),
-                        ),
-                        OutlinedButton(
-                          style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white54)),
-                          onPressed: _loading ? null : () => _setTrainingStatus('finished'),
-                          child: Text(l.comandoBtnClose),
-                        ),
-                        OutlinedButton(
-                          style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.amber)),
-                          onPressed: _loading || _repescageIds.isEmpty ? null : _runRepescage,
-                          child: Text(l.comandoRepescageCount(_repescageIds.length)),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      l.comandoHelpFooter,
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.65), height: 1.4),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontSize: 11, color: ClinicalPrecisionColors.onSurfaceVariant)),
+              const SizedBox(height: 4),
+              Text(value, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: ClinicalPrecisionColors.onSurface)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final liveBadge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEE2E2),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFDC2626)),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            _selectedId != null ? '${l.comandoHeroLiveBadge} · #$_selectedId' : l.comandoHeroLiveBadge,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF991B1B)),
           ),
         ],
+      ),
+    );
+
+    Widget participantsCard() {
+      return instructorShellCard(
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l.comandoParticipantsTitle,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: ClinicalPrecisionColors.onSurface),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: participants.isEmpty
+                    ? Center(
+                        child: Text(l.comandoNoParticipants, style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant)),
+                      )
+                    : ListView.separated(
+                        itemCount: participants.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final raw = participants[index];
+                          final row = Map<String, dynamic>.from(raw as Map);
+                          final eid = _parseInt(row['enrollment']?['id']);
+                          return _ParticipantTile(
+                            row,
+                            selected: eid != null && _repescageIds.contains(eid),
+                            onToggle: (enrollmentId) {
+                              setState(() {
+                                if (_repescageIds.contains(enrollmentId)) {
+                                  _repescageIds.remove(enrollmentId);
+                                } else {
+                                  _repescageIds.add(enrollmentId);
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    Widget controlDeck() {
+      return instructorShellCard(
+        color: ClinicalPrecisionColors.primaryContainer,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      l.comandoSessionControlTitle,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(deckBadge, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l.comandoDeckSubtitle,
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 13, height: 1.35),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: _ComandoDeckTile(
+                      icon: Icons.play_arrow_rounded,
+                      label: l.comandoBtnStart,
+                      enabled: !_loading,
+                      onTap: () => _setTrainingStatus('in_progress'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ComandoDeckTile(
+                      icon: Icons.pause_rounded,
+                      label: l.comandoBtnPause,
+                      enabled: !_loading && _selectedId != null && !sessionPaused,
+                      onTap: () => _runSessionSignal('pause'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ComandoDeckTile(
+                      icon: Icons.stop_rounded,
+                      label: l.comandoBtnClose,
+                      enabled: !_loading,
+                      onTap: () => _setTrainingStatus('finished'),
+                    ),
+                  ),
+                ],
+              ),
+              if (sessionPaused) ...[
+                const SizedBox(height: 10),
+                FilledButton(
+                  onPressed: _loading || _selectedId == null ? null : () => _runSessionSignal('resume'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ClinicalPrecisionColors.secondary,
+                    foregroundColor: ClinicalPrecisionColors.onSecondary,
+                  ),
+                  child: Text(l.comandoBtnResume),
+                ),
+              ],
+              const SizedBox(height: 10),
+              FilledButton.tonal(
+                style: FilledButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.white.withValues(alpha: 0.14),
+                ),
+                onPressed: _loading ? null : () => _setTrainingStatus('scheduled'),
+                child: Text(l.comandoBtnReschedule),
+              ),
+              const SizedBox(height: 14),
+              FilledButton(
+                onPressed: _loading ? null : _releaseNextBlock,
+                style: FilledButton.styleFrom(
+                  backgroundColor: ClinicalPrecisionColors.secondary,
+                  foregroundColor: ClinicalPrecisionColors.onSecondary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: Text(l.comandoBtnReleaseBlock),
+              ),
+              if (_trainingBlocks.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                DropdownButtonFormField<int?>(
+                  key: ValueKey<String>('repesc_${_repescageBlockId ?? 'all'}'),
+                  decoration: InputDecoration(
+                    labelText: l.comandoRepescageScope,
+                    labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.35))),
+                  ),
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  initialValue: _repescageBlockId,
+                  items: [
+                    DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text(l.comandoRepescageScopeAll, style: const TextStyle(color: Colors.white)),
+                    ),
+                    for (final b in _trainingBlocks)
+                      DropdownMenuItem<int?>(
+                        value: _parseInt(b['id']),
+                        child: Text(
+                          b['title']?.toString() ?? l.comandoBlockDefault,
+                          style: const TextStyle(color: Colors.white),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() => _repescageBlockId = v),
+                ),
+              ],
+              const SizedBox(height: 8),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.amber.shade200,
+                  side: BorderSide(color: Colors.amber.withValues(alpha: 0.65)),
+                ),
+                onPressed: _loading || _repescageIds.isEmpty ? null : _runRepescage,
+                child: Text(l.comandoRepescageCount(_repescageIds.length)),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                l.comandoHelpFooter,
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.55), height: 1.45, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    Widget progressCard() {
+      return instructorShellCard(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l.comandoProgressByBlockTitle,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: ClinicalPrecisionColors.onSurface),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: sortedBlocks.isEmpty
+                    ? Center(child: Text(l.trainReqDashNone, style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant)))
+                    : SingleChildScrollView(
+                        child: Table(
+                          columnWidths: const {
+                            0: FlexColumnWidth(2.2),
+                            1: FlexColumnWidth(1),
+                            2: FlexColumnWidth(1),
+                            3: FlexColumnWidth(1),
+                          },
+                          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                          children: [
+                            TableRow(
+                              decoration: const BoxDecoration(
+                                border: Border(bottom: BorderSide(color: ClinicalPrecisionColors.outlineVariant)),
+                              ),
+                              children: [
+                                _ComandoTableHeaderCell(l.comandoColBlockTitle),
+                                _ComandoTableHeaderCell(l.comandoColState),
+                                _ComandoTableHeaderCell(l.comandoColCompletion),
+                                _ComandoTableHeaderCell(l.comandoColAccuracy),
+                              ],
+                            ),
+                            for (final b in sortedBlocks)
+                              TableRow(
+                                children: [
+                                  _ComandoTableDataCell(b['title']?.toString() ?? l.comandoBlockDefault),
+                                  _ComandoTableDataCell(
+                                    b['is_released'] == true ? l.comandoBlockStateReleased : l.comandoBlockStatePending,
+                                    emphasize: true,
+                                  ),
+                                  _ComandoTableDataCell(
+                                    '${_avgBlockCompletionPercent(participants, _parseInt(b['id']) ?? 0).toStringAsFixed(0)}%',
+                                  ),
+                                  _ComandoTableDataCell(() {
+                                    final acc = _avgBlockAccuracyPercent(participants, _parseInt(b['id']) ?? 0);
+                                    return acc == null ? l.trainReqDashNone : '${acc.toStringAsFixed(1)}%';
+                                  }()),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final body = LayoutBuilder(
+      builder: (context, constraints) {
+        final narrow = constraints.maxWidth < 960;
+        final stack = Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(flex: 5, child: participantsCard()),
+            const SizedBox(height: 16),
+            Expanded(flex: 5, child: controlDeck()),
+            const SizedBox(height: 16),
+            Expanded(flex: 5, child: progressCard()),
+          ],
+        );
+        final row = Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(flex: 5, child: participantsCard()),
+            const SizedBox(width: 16),
+            Expanded(
+              flex: 4,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(flex: 52, child: controlDeck()),
+                  const SizedBox(height: 16),
+                  Expanded(flex: 48, child: progressCard()),
+                ],
+              ),
+            ),
+          ],
+        );
+        return narrow ? stack : row;
+      },
+    );
+
+    return instructorShellScaffold(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    key: ValueKey<int?>(_selectedId),
+                    decoration: InputDecoration(
+                      labelText: l.comandoActiveTraining,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: ClinicalPrecisionColors.surfaceContainerLowest,
+                    ),
+                    initialValue: _selectedId,
+                    items: [
+                      for (final tr in _trainings)
+                        DropdownMenuItem(
+                          value: _parseInt(tr['id']),
+                          child: Text(tr['title']?.toString() ?? ''),
+                        ),
+                    ],
+                    onChanged: (v) {
+                      setState(() {
+                        _selectedId = v;
+                        _repescageIds.clear();
+                        _repescageBlockId = null;
+                      });
+                      _restartPollingAndReverb();
+                      _loadMonitor();
+                    },
+                  ),
+                ),
+                IconButton(onPressed: _refreshTrainings, icon: const Icon(Icons.refresh_rounded)),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    liveBadge,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        l.comandoHeroTitle,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: ClinicalPrecisionColors.onSurface,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${l.comandoHeroModulePrefix} $moduleTitle',
+                  style: const TextStyle(fontSize: 14, color: ClinicalPrecisionColors.onSurfaceVariant),
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    statPill(l.comandoStatDurationLabel, l.comandoDurationPlaceholder),
+                    statPill(l.comandoStatParticipantsLabel, '${participants.length}'),
+                    statPill(l.comandoStatActiveShort, '$activeCt'),
+                    statPill(l.comandoStatWaitingShort, '$waitingCt'),
+                  ],
+                ),
+                if (_selectedId != null) ...[
+                  const SizedBox(height: 12),
+                  TrainingRealtimeLinkChip(phase: _rtPhase),
+                ],
+                if (training != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      l.comandoTrainingStatusHash(
+                        localizedTrainingLifecycleStatus(l, training['status']?.toString()),
+                        _joinHashDisplay(Map<String, dynamic>.from(training), l),
+                      ),
+                      style: const TextStyle(fontSize: 12, color: ClinicalPrecisionColors.onSurfaceVariant),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Expanded(child: body),
+          ],
+        ),
       ),
     );
   }
@@ -2848,6 +3922,97 @@ class _ComandoPageState extends State<_ComandoPage> {
   }
 }
 
+class _ComandoDeckTile extends StatelessWidget {
+  const _ComandoDeckTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: enabled ? 0.08 : 0.04),
+      borderRadius: BorderRadius.circular(ClinicalPrecisionRadii.button),
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(ClinicalPrecisionRadii.button),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: enabled ? Colors.white : Colors.white38, size: 28),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: enabled ? Colors.white.withValues(alpha: 0.92) : Colors.white38,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ComandoTableHeaderCell extends StatelessWidget {
+  const _ComandoTableHeaderCell(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, top: 4),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+          color: ClinicalPrecisionColors.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+class _ComandoTableDataCell extends StatelessWidget {
+  const _ComandoTableDataCell(this.text, {this.emphasize = false});
+
+  final String text;
+  final bool emphasize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: emphasize ? FontWeight.w600 : FontWeight.w400,
+          color: ClinicalPrecisionColors.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
 class _BlockMetricChip extends StatelessWidget {
   const _BlockMetricChip(this.m);
 
@@ -2876,17 +4041,28 @@ class _BlockMetricChip extends StatelessWidget {
 }
 
 class _ParticipantTile extends StatelessWidget {
-  const _ParticipantTile(this.row, {required this.selected, required this.onToggle});
+  const _ParticipantTile(
+    this.row, {
+    required this.selected,
+    required this.onToggle,
+    this.onCertificatePdf,
+    this.certificatePdfLoadingForId,
+  });
 
   final Map<String, dynamic> row;
   final bool selected;
   final ValueChanged<int> onToggle;
+  final ValueChanged<Map<String, dynamic>>? onCertificatePdf;
+  final int? certificatePdfLoadingForId;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final u = row['user'] as Map<String, dynamic>?;
     final e = row['enrollment'] as Map<String, dynamic>?;
+    final certRaw = row['certificate'];
+    final cert = certRaw is Map ? Map<String, dynamic>.from(certRaw) : null;
+    final certId = cert != null ? _parseInt(cert['id']) : null;
     final eid = _parseInt(e?['id']) ?? 0;
     final name = u?['name']?.toString() ?? l.trainReqDashNone;
     final answered = row['answered_count']?.toString() ?? '0';
@@ -2894,38 +4070,129 @@ class _ParticipantTile extends StatelessWidget {
     final score = e?['score']?.toString();
     final enrollmentStatusLabel = localizedEnrollmentStatus(l, e?['status']?.toString());
     final blockMetrics = row['block_metrics'];
-    return ListTile(
-      leading: CircleAvatar(child: Text(name.isNotEmpty ? name[0] : '?')),
-      title: Text(name),
-      isThreeLine: blockMetrics is List && blockMetrics.isNotEmpty,
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(l.comandoParticipantAnswers(answered, total, enrollmentStatusLabel)),
-          if (blockMetrics is List && blockMetrics.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 6,
-              runSpacing: 4,
+    final st = e?['status']?.toString();
+    final Color statusDot;
+    switch (st) {
+      case 'waiting':
+        statusDot = const Color(0xFFF59E0B);
+        break;
+      case 'active':
+        statusDot = const Color(0xFF22C55E);
+        break;
+      default:
+        statusDot = ClinicalPrecisionColors.onSurfaceVariant;
+    }
+    final ti = int.tryParse(total) ?? 0;
+    final ai = int.tryParse(answered) ?? 0;
+    final progress = ti > 0 ? (ai / ti).clamp(0.0, 1.0) : 0.0;
+
+    return Material(
+      color: ClinicalPrecisionColors.surfaceContainerLowest,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
               children: [
-                for (final raw in blockMetrics)
-                  if (raw is Map) _BlockMetricChip(Map<String, dynamic>.from(raw)),
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: ClinicalPrecisionColors.surfaceContainer,
+                  child: Text(
+                    _participantInitials(name),
+                    style: const TextStyle(fontWeight: FontWeight.w800, color: ClinicalPrecisionColors.onSurface, fontSize: 14),
+                  ),
+                ),
+                Positioned(
+                  right: -1,
+                  bottom: -1,
+                  child: Container(
+                    width: 11,
+                    height: 11,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: statusDot,
+                      border: Border.all(color: ClinicalPrecisionColors.surfaceContainerLowest, width: 2),
+                    ),
+                  ),
+                ),
               ],
             ),
-          ],
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (score != null) Text(score, style: const TextStyle(fontWeight: FontWeight.w700)),
-          if (eid > 0)
-            Checkbox(
-              value: selected,
-              onChanged: (_) => onToggle(eid),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: ClinicalPrecisionColors.onSurface)),
+                  const SizedBox(height: 6),
+                  Align(alignment: Alignment.centerLeft, child: _postTrainingOutcomeChip(context, e)),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 6,
+                      backgroundColor: ClinicalPrecisionColors.surfaceContainer,
+                      color: ClinicalPrecisionColors.secondary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    l.comandoParticipantAnswers(answered, total, enrollmentStatusLabel),
+                    style: const TextStyle(fontSize: 12, color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.3),
+                  ),
+                  if (blockMetrics is List && blockMetrics.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        for (final raw in blockMetrics)
+                          if (raw is Map) _BlockMetricChip(Map<String, dynamic>.from(raw)),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ),
-        ],
+            if (eid > 0)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (score != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(score, style: const TextStyle(fontWeight: FontWeight.w800, color: ClinicalPrecisionColors.secondary)),
+                    ),
+                  if (certId != null && onCertificatePdf != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Tooltip(
+                        message: l.postTrainingCertificatePdfTooltip,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                          onPressed: certificatePdfLoadingForId == certId ? null : () => onCertificatePdf!(cert!),
+                          icon: certificatePdfLoadingForId == certId
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFB91C1C)),
+                        ),
+                      ),
+                    ),
+                  Checkbox(
+                    value: selected,
+                    onChanged: (_) => onToggle(eid),
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -3028,14 +4295,15 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Text(l.credTitleInstitutions, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
+    return instructorShellScaffold(
+      child: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(l.credTitleInstitutions, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
         const SizedBox(height: 8),
         Text(l.credIntroInstitutions, style: const TextStyle(color: Color(0xFF45464D))),
         const SizedBox(height: 18),
-        Card(
+        instructorShellCard(
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -3061,7 +4329,7 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
         const SizedBox(height: 22),
         Text(l.credListedCount(_list.length), style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 10),
-        Card(
+        instructorShellCard(
           child: Column(
             children: [
               for (final i in _list)
@@ -3078,7 +4346,7 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
           const SizedBox(height: 8),
           Text(l.credDoubleIntro, style: const TextStyle(color: Color(0xFF45464D))),
           const SizedBox(height: 14),
-          Card(
+          instructorShellCard(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -3121,7 +4389,7 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
           if (_credMine != null) ...[
             const SizedBox(height: 12),
             Text(l.credMyLinksTitle, style: Theme.of(context).textTheme.titleMedium),
-            Card(
+            instructorShellCard(
               child: Padding(
                 padding: const EdgeInsets.all(14),
                 child: Column(
@@ -3171,7 +4439,7 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
                 final nm = ins?['name']?.toString() ?? loc.trainReqDashNone;
                 final em = ins?['email']?.toString() ?? '';
                 final st = row['status']?.toString();
-                return Card(
+                return instructorShellCard(
                   margin: const EdgeInsets.only(bottom: 10),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
@@ -3239,7 +4507,7 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
                     (((row['endorsed_by_institution'] as Map)['name']?.toString() ?? '').isNotEmpty);
                 final endName =
                     endorsed ? (row['endorsed_by_institution'] as Map)['name']?.toString() ?? '' : null;
-                return Card(
+                return instructorShellCard(
                   margin: const EdgeInsets.only(bottom: 10),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
@@ -3292,6 +4560,7 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
             ),
         ],
       ],
+    ),
     );
   }
 

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\ManufacturerRegistrationApproved;
 use App\Mail\ManufacturerValidationRequested;
 use App\Mail\NewManufacturerRegistered;
 use App\Models\Manufacturer;
@@ -42,6 +43,20 @@ class ManufacturerReviewerNotifier
             Mail::to($emails)->send(new NewManufacturerRegistered($manufacturer));
         } catch (\Throwable $e) {
             Log::warning('manufacturer.registration_mail_failed', ['message' => $e->getMessage()]);
+        }
+    }
+
+    public static function notifyManufacturerApproved(Manufacturer $manufacturer): void
+    {
+        $to = strtolower(trim((string) $manufacturer->support_email));
+        if ($to === '') {
+            return;
+        }
+
+        try {
+            Mail::to($to)->send(new ManufacturerRegistrationApproved($manufacturer));
+        } catch (\Throwable $e) {
+            Log::warning('manufacturer.approved_mail_failed', ['message' => $e->getMessage()]);
         }
     }
 }

@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Manufacturer;
 use App\Models\User;
+use App\Services\GoogleIdTokenVerifier;
 use App\Services\ManufacturerReviewerNotifier;
+use App\Support\ManufacturerRegistrationSupport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class GoogleAuthController extends Controller
 {
@@ -17,12 +19,12 @@ class GoogleAuthController extends Controller
      * Login ou registo via Google ID token (Flutter Web / mobile).
      * Configure GOOGLE_CLIENT_ID igual ao OAuth Client ID (tipo Web) usado no cliente.
      */
-    public function callback(Request $request)
+    public function callback(Request $request, GoogleIdTokenVerifier $verifier)
     {
         $data = $request->validate([
             'id_token' => ['required', 'string'],
             'role' => ['nullable', 'in:trainee,instructor,manufacturer_admin'],
-            'manufacturer_name' => ['required_if:role,manufacturer_admin', 'string', 'max:180'],
+            'manufacturer_name' => ['nullable', 'string', 'max:180'],
             'manufacturer_cnpj' => ['nullable', 'string', 'max:20'],
         ]);
 
@@ -31,19 +33,11 @@ class GoogleAuthController extends Controller
             return response()->json(['message' => 'Login Google não configurado no servidor (GOOGLE_CLIENT_ID).'], 503);
         }
 
-        $tokenResponse = Http::timeout(10)->get('https://oauth2.googleapis.com/tokeninfo', [
-            'id_token' => $data['id_token'],
-        ]);
-
-        if (! $tokenResponse->successful()) {
-            return response()->json(['message' => 'Token Google inválido ou expirado.'], 401);
-        }
-
-        /** @var array<string, mixed> $payload */
-        $payload = $tokenResponse->json();
-
-        if (($payload['aud'] ?? null) !== $expectedAud) {
-            return response()->json(['message' => 'Audiência do token não confere com este aplicativo.'], 401);
+        try {
+            /** @var array<string, mixed> $payload */
+            $payload = $verifier->verify($data['id_token'], $expectedAud);
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 401);
         }
 
         $email = strtolower(trim((string) ($payload['email'] ?? '')));
@@ -67,15 +61,34 @@ class GoogleAuthController extends Controller
 
             $manufacturerId = null;
             if ($role === 'manufacturer_admin') {
-                $manufacturer = Manufacturer::create([
-                    'name' => $data['manufacturer_name'],
-                    'slug' => Str::slug($data['manufacturer_name']).'-'.Str::lower(Str::random(8)),
-                    'cnpj' => $data['manufacturer_cnpj'] ?? null,
-                    'support_email' => $email,
-                    'validation_status' => 'pending_info',
-                ]);
-                $manufacturerId = $manufacturer->id;
-                ManufacturerReviewerNotifier::notifyNewRegistrationIfConfigured($manufacturer);
+                $domain = ManufacturerRegistrationSupport::domainFromEmail($email);
+                if ($domain === null) {
+                    return response()->json(['message' => 'E-mail inválido para registo de fabricante.'], 422);
+                }
+
+                $existingByDomain = Manufacturer::query()->where('registration_email_domain', $domain)->first();
+                if ($existingByDomain !== null) {
+                    $manufacturerId = $existingByDomain->id;
+                } else {
+                    $nameInput = trim((string) ($data['manufacturer_name'] ?? ''));
+                    $displayName = $nameInput !== '' ? $nameInput : 'Fabricante — '.$domain;
+
+                    $cnpjRaw = $data['manufacturer_cnpj'] ?? null;
+                    $cnpjDigits = is_string($cnpjRaw) && $cnpjRaw !== ''
+                        ? preg_replace('/\D+/', '', $cnpjRaw)
+                        : null;
+
+                    $manufacturer = Manufacturer::create([
+                        'name' => $displayName,
+                        'slug' => Str::slug($displayName).'-'.Str::lower(Str::random(8)),
+                        'cnpj' => ($cnpjDigits !== null && $cnpjDigits !== '') ? $cnpjDigits : null,
+                        'support_email' => $email,
+                        'registration_email_domain' => $domain,
+                        'validation_status' => 'pending_info',
+                    ]);
+                    $manufacturerId = $manufacturer->id;
+                    ManufacturerReviewerNotifier::notifyNewRegistrationIfConfigured($manufacturer);
+                }
             }
 
             $user = User::create([
