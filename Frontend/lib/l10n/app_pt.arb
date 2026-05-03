@@ -88,6 +88,7 @@
   "postTrainingOutcomeInsufficient": "Insuficiente (< 7,0)",
   "postTrainingOutcomeRecovery": "Em recuperação",
   "postTrainingOutcomeInProgress": "Em curso",
+  "postTrainingOutcomeWaitingRoom": "Sala de espera",
   "postTrainingOutcomeCompletedNoGrade": "Concluído (sem nota)",
   "postTrainingFinishTraining": "Encerrar treino",
   "postTrainingFinishTrainingConfirmTitle": "Encerrar este treino?",
@@ -136,9 +137,22 @@
   "profileGateTitle": "Perfil não reconhecido",
   "profileGateBody": "A sessão está ativa, mas este utilizador não tem um perfil associado a uma área da aplicação (treinando, instrutor, gestor ou fabricante). Termine a sessão e entre novamente; no primeiro acesso com Google, escolha o tipo de conta correto.",
   "profileGateDocHint": "Fluxo oficial do produto: docs/product/fluxo_app2cation.mermaid",
+  "profileGateYourAccount": "Conta com sessão iniciada",
+  "profileGateRoleFromApi": "Função (role) no servidor: {role}",
+  "@profileGateRoleFromApi": {
+    "placeholders": {
+      "role": {}
+    }
+  },
+  "profileGateRefreshSession": "Actualizar sessão",
+  "profileGateRefreshHint": "Use depois de um administrador actualizar a sua função — sem voltar a escrever a palavra-passe.",
+  "profileGateClaimSectionTitle": "Definir perfil (uma vez)",
+  "profileGateClaimIntro": "Se a sua conta deve ser treinando, instrutor ou administrador de fabricante mas a função no servidor estava em falta ou inválida, escolha abaixo. Só é permitido até existir uma função válida gravada.",
+  "profileGateClaimHint": "Gestor de instituição não se define aqui — o hospital ou o fabricante cria esse acesso.",
+  "profileGateChooseRole": "Perfil na plataforma",
+  "profileGateConfirmProfile": "Confirmar perfil",
+  "profileGatePickRoleFirst": "Escolha um perfil primeiro.",
   "actionRetry": "Tentar novamente",
-  "dashExportCsvWebOnly": "Exportação CSV está disponível na versão Web.",
-  "dashExportPdfWebOnly": "Exportação PDF está disponível na versão Web.",
   "dashLinkInstitutionForKpis": "Associe a sua instituição no aviso laranja no topo para ver indicadores agregados.",
   "dashKpiTrainings": "Treinamentos",
   "dashKpiFinished": "Encerrados",
@@ -176,13 +190,23 @@
       "avg": {}
     }
   },
-  "dashSectorAveragesTitle": "Médias por setor (concluídos)",
+  "dashSectorAveragesTitle": "Por setor (treinos da instituição)",
   "dashNoSectorHistory": "Sem histórico por setor.",
-  "dashSectorSubtitle": "Conclusões: {c} · Média: {a}",
+  "dashSectorSubtitle": "Inscrições: {total} · Concluídas: {done} · Com nota: {scored} · Média: {avg}",
   "@dashSectorSubtitle": {
     "placeholders": {
-      "c": {},
-      "a": {}
+      "total": {
+        "type": "int"
+      },
+      "done": {
+        "type": "int"
+      },
+      "scored": {
+        "type": "int"
+      },
+      "avg": {
+        "type": "String"
+      }
     }
   },
   "trainingSectionTitle": "Configuração",
@@ -217,6 +241,7 @@
   "trainLifecycleScheduled": "Agendado",
   "trainLifecycleInProgress": "Em curso",
   "trainLifecycleFinished": "Concluído",
+  "trainLifecycleCancelled": "Cancelado",
   "enrollmentStatusWaiting": "Em espera",
   "enrollmentStatusActive": "Ativo",
   "enrollmentStatusCompleted": "Concluído",
@@ -262,6 +287,8 @@
     }
   },
   "comandoParticipantsTitle": "Participantes",
+  "comandoParticipantsSearchHint": "Filtrar por nome ou e-mail",
+  "comandoParticipantsNoMatch": "Nenhum participante corresponde a este filtro.",
   "comandoNoParticipants": "Nenhum participante inscrito.",
   "comandoSessionControlTitle": "Controle da sessão",
   "comandoRepescageScope": "Âmbito da repescagem",
@@ -336,6 +363,9 @@
   "credQueueManuTitle": "Homologações pendentes (fabricante)",
   "credQueueManuBody": "Homologação de instrutores junto do fabricante. Verifique o endosso da instituição antes de aprovar.",
   "credBtnApprove": "Aprovar",
+  "credBtnSuspend": "Suspender",
+  "credBtnReactivateHomolog": "Reactivar",
+  "credStatusSuspended": "Suspenso",
   "credBtnReject": "Recusar",
   "credEndorsementWith": "Endosso institucional: {name}",
   "@credEndorsementWith": {
@@ -512,16 +542,67 @@
   "mfgNavProducts": "Produtos",
   "mfgNavOperations": "Operações",
   "mfgNavHomologations": "Homologações",
+  "mfgNavAnalytics": "Análises",
+  "mfgAnalyticsTitle": "Análises agregadas",
+  "mfgAnalyticsIntro": "Filtre por instituição, equipamento ligado ao treino ou período de criação dos treinos. Dados agregados, sem identificação individual (LGPD).",
+  "mfgAnalyticsFilterInstitution": "Instituição",
+  "mfgAnalyticsFilterEquipment": "Equipamento (no treino)",
+  "mfgAnalyticsDateFrom": "Treinos criados desde (AAAA-MM-DD)",
+  "mfgAnalyticsDateTo": "Treinos criados até (AAAA-MM-DD)",
+  "mfgAnalyticsApply": "Aplicar filtros",
+  "mfgAnalyticsReset": "Limpar",
+  "mfgAnalyticsAll": "Todas/os",
+  "mfgAnalyticsSectionInstitutions": "Por instituição",
+  "mfgAnalyticsSectionEquipment": "Por equipamento",
+  "mfgAnalyticsEmpty": "Sem dados para estes filtros.",
+  "mfgAnalyticsLoading": "A carregar…",
+  "mfgAnalyticsBreakdownSubtitle": "{trainings} treinos · inscr.: {enr} · concl.: {done} · taxa: {rate} · média: {avg}",
+  "@mfgAnalyticsBreakdownSubtitle": {
+    "placeholders": {
+      "trainings": {
+        "type": "int"
+      },
+      "enr": {
+        "type": "int"
+      },
+      "done": {
+        "type": "int"
+      },
+      "rate": {
+        "type": "String"
+      },
+      "avg": {
+        "type": "String"
+      }
+    }
+  },
+  "mfgAnalyticsSectionMonthlyTrend": "Tendência mensal (combinada)",
+  "mfgAnalyticsMonthlyTrendIntro": "Mesmo eixo temporal (AAAA-MM): inscrições por COALESCE(joined_at, created_at) e conclusões por completed_at (UTC). Barras normalizadas ao máximo de cada métrica.",
+  "mfgAnalyticsMonthlyTrendEmpty": "Sem dados mensais no período filtrado.",
+  "mfgAnalyticsTrendLegendEnroll": "Inscrições",
+  "mfgAnalyticsTrendLegendComplete": "Concluídas",
+  "mfgHomologRequestedAt": "Registado: {date}",
+  "@mfgHomologRequestedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "mfgHomologEmpty": "Nenhum pedido de credenciamento neste momento.",
   "mfgHomologFilterAll": "Todos",
   "mfgHomologFilterPending": "Pendentes",
   "mfgHomologFilterApproved": "Aprovados",
   "mfgHomologFilterRejected": "Recusados",
+  "mfgHomologFilterSuspended": "Suspensos",
   "mfgSnackHomologUpdated": "Pedido de homologação atualizado.",
   "mfgNavGroupSummary": "Resumo e cadastro",
   "mfgNavGroupOffer": "Oferta e rotina",
   "mfgDashSummaryTitle": "Resumo agregado",
   "mfgDashSummaryIntro": "Treinos e inscrições ligados a este fabricante — dados agregados (LGPD).",
+  "mfgDashMonthlyTrendTitle": "Evolução recente (mensal)",
+  "mfgDashMonthlyTrendIntro": "Até os últimos 6 meses com dados: inscrições vs. conclusões (mesma lógica que em Análises).",
+  "mfgDashOpenAnalytics": "Abrir análises",
   "mfgSnackValidationRequested": "Pedido de validação enviado. A nossa equipa irá analisar.",
   "mfgSeasonNewTitle": "Nova temporada",
   "mfgFieldName": "Nome",
@@ -601,6 +682,10 @@
   "mfgPrizesEmpty": "Nenhum prémio registado.",
   "mfgDocumentsSectionTitle": "Documentos para validação",
   "mfgDocumentsIntro": "PDF ou imagem até 12 MB. O servidor usa o disco configurado (local ou S3 via FILESYSTEM_DISK); envie manuais ou anexos para homologação.",
+  "mfgOpsSearchHint": "Pesquisar épocas, prémios e documentos enviados",
+  "mfgOpsServerFilterHint": "Filtro no servidor; os resultados actualizam pouco depois de parar de escrever.",
+  "mfgOpsSublistNoMatch": "Sem resultados neste bloco.",
+  "mfgOpsLoadMore": "Carregar mais",
   "mfgDocKindOptional": "Tipo (opcional)",
   "mfgDocKindHint": "Ex.: manual, certificado, ficha técnica",
   "mfgDocNotesOptional": "Notas (opcional)",
@@ -614,6 +699,29 @@
   "mfgBtnCreateTemplateDraft": "Criar template (rascunho)",
   "mfgYourTemplates": "Seus templates",
   "mfgTemplatesEmpty": "Nenhum template ainda. Crie um acima.",
+  "mfgTplSearchHint": "Pesquisar título do template",
+  "mfgTplFilterStatusLabel": "Estado do template",
+  "mfgTplSortLabel": "Ordenar lista",
+  "mfgTplSortUpdated": "Actualizados recentemente",
+  "mfgTplSortTitleAsc": "Título (A–Z)",
+  "mfgTplSortTitleDesc": "Título (Z–A)",
+  "mfgTplSortStatus": "Por estado",
+  "mfgTplRowUpdatedAt": "Actualizado: {date}",
+  "@mfgTplRowUpdatedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "mfgTplListResultCount": "{count} template(s) listado(s) (até 80).",
+  "@mfgTplListResultCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "mfgTplClearFilters": "Limpar filtros",
+  "mfgTplNoMatches": "Nenhum template corresponde aos filtros actuais.",
   "mfgTrainingFallbackTitle": "Treino",
   "mfgBtnEditQuestionnaire": "Editar questionário",
   "mfgCompanySectionTitle": "Empresa",
@@ -655,6 +763,12 @@
   "mfgEquipWizardNext": "Seguinte",
   "mfgEquipWizardBack": "Voltar",
   "mfgEquipWizardSubmit": "Guardar",
+  "mfgEquipErrInvalidInteger": "Use números inteiros nos campos numéricos opcionais.",
+  "mfgEquipErrHoursRange": "Horas de treino: entre 1 e 999.",
+  "mfgEquipErrPassRange": "Nota mínima (%): entre 40 e 100.",
+  "mfgEquipErrCertMonthsRange": "Validade do certificado (meses): entre 1 e 240.",
+  "mfgEquipErrReassessRange": "Reavaliação (dias): entre 1 e 365.",
+  "mfgEquipErrQuantityRange": "Quantidade: pelo menos 1 se preenchida.",
   "mfgEquipFieldFirmware": "Firmware (versão)",
   "mfgEquipFieldSerial": "Número de série",
   "mfgEquipCategoryRequired": "Categoria *",
@@ -665,6 +779,12 @@
   "mfgEquipAddSpecRow": "Adicionar linha",
   "mfgEquipFieldIntroVideoUrl": "URL vídeo de introdução (opcional)",
   "mfgEquipDefaultsTitle": "Pré-definições de treino (opcional)",
+  "mfgEquipDefaultsRangeHint": "Se preencher: horas 1–999, nota 40–100 %, certificado 1–240 meses, reavaliação 1–365 dias, quantidade ≥ 1.",
+  "mfgEquipHelperHours": "Opcional · inteiro · 1–999",
+  "mfgEquipHelperPass": "Opcional · inteiro · 40–100",
+  "mfgEquipHelperCertMonths": "Opcional · inteiro · 1–240",
+  "mfgEquipHelperReassess": "Opcional · inteiro · 1–365",
+  "mfgEquipHelperQuantity": "Opcional · inteiro · ≥ 1",
   "mfgEquipDefaultTrainingHours": "Horas de treino",
   "mfgEquipDefaultPassingScore": "Nota mínima (%)",
   "mfgEquipDefaultCertMonths": "Validade certificado (meses)",
@@ -690,6 +810,17 @@
       "count": {}
     }
   },
+  "mfgEquipSortLabel": "Ordenar lista",
+  "mfgEquipSortName": "Nome (A–Z)",
+  "mfgEquipSortUpdated": "Actualizados recentemente",
+  "mfgEquipSortTemplates": "Mais templates oficiais",
+  "mfgEquipListResultCount": "{count} modelo(s) listado(s) (até 200).",
+  "@mfgEquipListResultCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "mfgEquipClearFilters": "Limpar filtros",
   "mfgEquipSnackPartialUpload": "Equipamento criado; alguns anexos falharam.",
   "mfgValidationTitle": "Credenciação do fabricante",
   "mfgValidationStateLine": "Estado: {status}",
@@ -749,10 +880,13 @@
   "trnLgpdIntro": "Antes de usar o treinamento, precisamos do seu consentimento explícito (LGPD — Lei 13.709/2018):",
   "trnLgpdBullets": "• Finalidade: identificação em treinamentos, certificados e relatórios agregados da instituição.\n• Compartilhamento: dados individuais apenas com o instrutor durante a sessão; à instituição, de forma agregada.\n• Retenção: até 5 anos após o último treinamento para auditoria, salvo exclusão ou anonimização a seu pedido.\n• Direitos: acesso, correção, portabilidade e exclusão pelo menu Privacidade (ícone no topo).\n• Google: ao usar login Google, dados também são tratados segundo a política do Google.",
   "trnLgpdCheckboxTitle": "Li e concordo com o tratamento dos meus dados pessoais conforme a Política de Privacidade do App²cation.",
+  "trnLgpdAfterConsentHint": "Depois de continuar, pode exportar os seus dados ou pedir exclusão da conta a qualquer momento no menu Privacidade (ícone de escudo) no cabeçalho.",
   "trnBtnContinue": "Continuar",
   "trnPreregTitle": "Pré-registro",
   "trnPreregSubtitle": "Dados reais gravados na sua conta.",
   "trnFieldInstitutionOptional": "Instituição (opcional)",
+  "trnInstitutionNone": "Sem instituição",
+  "trnProfileInstitutionHint": "Vincular um hospital desbloqueia o parque de equipamentos da instituição para pedidos de treino e pode ser exigido pela política da sua unidade.",
   "trnFieldSectorTeam": "Setor / equipe *",
   "trnFieldEquipmentContext": "Equipamento / contexto",
   "trnFieldSessionAtOptional": "Data e hora da sessão (opcional)",
@@ -795,17 +929,25 @@
   "trnMyRequests": "Meus pedidos",
   "trnJoinTitle": "Entrar no treinamento",
   "trnJoinIntro": "Use o código fornecido pelo instrutor.",
+  "trnJoinIntroDetail": "O instrutor partilha o código ou hash depois de ser convidado (e-mail, aplicação ou presencial). Pode colar a partir de uma mensagem; espaços são ignorados e maiúsculas/minúsculas não importam.",
+  "trnJoinAccessCodeHint": "Cole o código enviado pelo instrutor",
+  "trnJoinHashKeepTyping": "A maioria dos códigos tem 12 caracteres — continue a escrever ou cole o código completo.",
+  "trnJoinHashFormatOk": "O formato parece válido. Toque em confirmar para entrar.",
   "trnFieldAccessCode": "Código de acesso",
   "trnBtnConfirmJoin": "Confirmar entrada",
+  "trnJoinOfflineHint": "A aplicação não consegue contactar o servidor. Verifique a ligação antes de confirmar a entrada.",
   "trnWaitingRoomTitle": "Sala de espera",
   "trnWaitingRoomBody": "Assim que o instrutor iniciar, o questionário abre automaticamente.",
   "trnWaitingHeroTitle": "Aguardando início do treinamento",
   "trnWaitingHeroBody": "O instrutor iniciará a sessão em breve. Mantenha esta janela aberta para entrar automaticamente na sala virtual.",
+  "trnWaitingOfflineHint": "Não há ligação à API. Quando a rede voltar, puxe para actualizar ou toque em «Actualizar estado» para sincronizar assim que o instrutor iniciar.",
   "trnWaitingStatusChip": "Status: sala de espera ativa",
   "trnWaitingTestConnection": "Testar conexão e periféricos",
+  "trnWaitingCheckNow": "Actualizar estado",
   "trnWaitingPingOk": "Ligação ao servidor OK.",
   "trnWaitingPingFail": "Não foi possível contactar o servidor.",
   "trnWaitingPrivacyNote": "Câmara e microfone permanecem desativados por defeito nesta versão.",
+  "trnHeaderProfileStep": "Perfil e instituição",
   "trnHeaderWaitingInstructor": "Aguardando instrutor",
   "trnHeaderRealtimeActive": "Tempo real: ativo",
   "trnQuestionSidebarNavTitle": "Navegação",
@@ -838,6 +980,17 @@
   "trnResultApprovedBanner": "Aprovado — nota igual ou superior a 7,0.",
   "trnResultInsufficientBanner": "Nota abaixo de 7,0. Em caso de dúvida, fale com o instrutor.",
   "trnResultRecoveryNote": "Está em recuperação: conclua as questões indicadas pelo instrutor.",
+  "trnResultInstitution": "Instituição: {name}",
+  "@trnResultInstitution": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "trnResultRefresh": "Actualizar estado",
+  "trnResultCertificateHint": "Se o instrutor acabou de encerrar o treino, actualize — o certificado pode demorar alguns segundos a aparecer.",
+  "trnResultCertificateDownload": "Certificado (PDF)",
+  "trnResultFollowUpIntro": "Quando a data prevista abrir, toque em Responder para preencher o breve questionário.",
+  "trnResultOfflineHint": "Sem ligação ao servidor. Pode actualizar quando a rede voltar; o certificado (PDF) e o questionário de seguimento só funcionam online.",
   "trnBtnJoinAnother": "Entrar em outro treinamento",
   "trnFollowUpDialogTitle": "Reavaliação pós-treino",
   "trnTrainingDefaultTitle": "Treinamento",
@@ -867,6 +1020,12 @@
   "mfgTplSnackSaved": "Questionário guardado.",
   "mfgTplErrNeedCorrect": "Cada pergunta precisa de uma opção correta.",
   "mfgTplErrMinQuestions": "Adicione pelo menos uma pergunta com 2+ opções.",
+  "mfgTplErrQuestionNeedTwoOptions": "Cada pergunta com enunciado precisa de pelo menos duas opções preenchidas.",
+  "mfgTplErrCorrectMustHaveLabel": "A opção marcada como correta tem de ter texto.",
+  "mfgTplBtnAddOption": "Opção",
+  "mfgTplRemoveOptionTooltip": "Remover opção",
+  "mfgTplMaxOptionsSnack": "No máximo 12 opções por pergunta.",
+  "mfgTplOptionsCountHint": "2–12 opções; linhas vazias são ignoradas ao guardar.",
   "mfgTplQuestionNumber": "Pergunta {n}",
   "@mfgTplQuestionNumber": {
     "placeholders": {
@@ -883,6 +1042,32 @@
   },
   "mfgTplBtnSaveApi": "Guardar questionário na API",
   "mfgTplOfficialBlockTitle": "Conteúdo oficial",
+  "mfgTplReloadTooltip": "Recarregar do servidor",
+  "mfgTplRefreshHint": "Puxe para baixo para recarregar do servidor. Alterações não guardadas no formulário serão substituídas.",
+  "mfgTplMoveUpTooltip": "Subir pergunta",
+  "mfgTplMoveDownTooltip": "Descer pergunta",
+  "mfgTplDiscardTitle": "Descartar alterações?",
+  "mfgTplDiscardBody": "Tem edições não guardadas. Sair sem guardar?",
+  "mfgTplKeepEditing": "Continuar a editar",
+  "mfgTplDiscardLeave": "Sair sem guardar",
+  "mfgTplSectionBlocks": "Secções do questionário",
+  "mfgTplFieldBlockTitle": "Título da secção",
+  "mfgTplBtnAddBlock": "Adicionar secção",
+  "mfgTplRemoveBlockTooltip": "Remover secção e unir perguntas à secção acima",
+  "mfgTplBlockDefaultTitle": "Secção {n}",
+  "@mfgTplBlockDefaultTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "mfgTplViewEdit": "Editar",
+  "mfgTplViewPreview": "Pré-visualizar",
+  "mfgTplPreviewBanner": "Pré-visualização ao estilo treinando: sem respostas gravadas e sem destacar a opção correcta.",
+  "mfgTplPreviewEmpty": "Nenhuma pergunta com enunciado para mostrar. Volte a Editar e preencha pelo menos um enunciado.",
+  "mfgTplMoveBlockUpTooltip": "Subir secção",
+  "mfgTplMoveBlockDownTooltip": "Descer secção",
   "fluxPanelTraineeTitle": "Fluxo do treinando",
   "fluxPanelTraineeSubtitle": "Jornada alinhada à especificação: pré-registro → ingresso → LGPD → sessão em tempo real → resultado.",
   "fluxPanelTraineeS1Label": "Perfil e contexto clínico",

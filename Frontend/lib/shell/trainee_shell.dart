@@ -21,6 +21,98 @@ import '../theme/clinical_precision_tokens.dart';
 import '../widgets/fluxo_premium_panel.dart';
 import '../widgets/version_badge.dart';
 
+Future<void> _downloadTraineeMyCertificatePdf({
+  required BuildContext context,
+  required ProductionApi api,
+  required String token,
+  required Map<String, dynamic> cert,
+}) async {
+  final lang = AppLocalizations.of(context);
+  final idRaw = cert['id'];
+  final cid = idRaw is int ? idRaw : int.tryParse(idRaw.toString());
+  final code = cert['certificate_code']?.toString() ?? lang.trnCertCodeFallback;
+  if (cid == null) return;
+  try {
+    final bytes = await api.downloadMyCertificatePdf(token, cid);
+    if (!context.mounted) return;
+    final safe = code.replaceAll(RegExp(r'[^A-Za-z0-9_.-]'), '-');
+    await FileSaver.instance.saveFile(
+      name: lang.trnCertDownloadFilename(safe),
+      fileExtension: 'pdf',
+      bytes: bytes,
+      mimeType: MimeType.pdf,
+    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.trnSnackCertPdfDownloaded)));
+    }
+  } on ApiException catch (e) {
+    if (context.mounted) context.showLocalizedApiExceptionSnack(e);
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.trnSnackCertPdfFailed)));
+    }
+  }
+}
+
+Future<void> showTraineeFollowUpAssessmentDialog({
+  required BuildContext context,
+  required ProductionApi api,
+  required int followUpId,
+  required Future<void> Function() afterSubmit,
+}) async {
+  final t = appAuth.token;
+  if (t == null) return;
+  late final Map<String, dynamic> detail;
+  try {
+    detail = await api.followUpAssessmentDetail(t, followUpId);
+  } on ApiException catch (e) {
+    if (context.mounted) context.showLocalizedApiExceptionSnack(e);
+    return;
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).trnSnackFormOpenFailed)),
+      );
+    }
+    return;
+  }
+  if (!context.mounted) return;
+  final l = AppLocalizations.of(context);
+  if (detail['can_submit'] != true) {
+    final fu = detail['follow_up'];
+    final due = fu is Map ? fu['due_at']?.toString() : null;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(due != null ? l.trnSnackFollowUpAvailableFrom(due) : l.trnSnackFollowUpNotYet),
+      ),
+    );
+    return;
+  }
+  final questions = List<Map<String, dynamic>>.from(
+    (detail['questions'] as List?)?.map((e) => Map<String, dynamic>.from(e as Map)) ?? [],
+  );
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(AppLocalizations.of(ctx).trnFollowUpDialogTitle),
+      content: SizedBox(
+        width: 440,
+        child: _FollowUpFormContent(
+          questions: questions,
+          onSubmit: (responses) async {
+            await api.submitFollowUpAssessment(t, followUpId, responses);
+            if (ctx.mounted) Navigator.of(ctx).pop();
+            await afterSubmit();
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.trnSnackResponsesSaved)));
+            }
+          },
+        ),
+      ),
+    ),
+  );
+}
+
 /// Shell treinando: cabeçalho fixo; conteúdo troca por etapa real da API.
 class TraineeShell extends StatefulWidget {
   const TraineeShell({super.key});
@@ -194,7 +286,7 @@ class _TraineeShellState extends State<TraineeShell> {
       if (mounted) {
         setState(() {
           _institutions = list;
-          _institutionId ??= list.isNotEmpty ? _parseInt(list.first['id']) : null;
+          // Instituição é opcional (TRE-CON): não pré-seleccionar o primeiro hospital ao carregar o catálogo.
         });
       }
     } catch (_) {}
@@ -745,7 +837,7 @@ class _TraineeShellState extends State<TraineeShell> {
                             child: FluxoPremiumPanel(dense: false),
                           ),
                           Expanded(
-                            child: _loading && _step != 2 && _step != 3
+                            child: _loading && _step != 2 && _step != 3 && _step != 4
                                 ? const Center(child: CircularProgressIndicator())
                                 : _error != null && _profile == null
                                     ? Center(
@@ -783,11 +875,12 @@ class _TraineeShellState extends State<TraineeShell> {
   Widget _stepBody() {
     switch (_step) {
       case 1:
-        return _JoinPanel(joinHash: _joinHash, loading: _loading, onJoin: _doJoin);
+        return _JoinPanel(joinHash: _joinHash, loading: _loading, apiOnline: _apiOnline, onJoin: _doJoin);
       case 2:
         return _WaitingPanel(
           enrollment: _enrollment,
           apiOnline: _apiOnline,
+          onRefresh: _bootstrap,
           onPing: () {
             final l = AppLocalizations.of(context);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -813,7 +906,13 @@ class _TraineeShellState extends State<TraineeShell> {
           equipmentSubtitle: _profile?['equipment_label']?.toString(),
         );
       case 4:
-        return _ResultPanel(enrollment: _enrollment, onAgain: _goJoinAnother);
+        return _ResultPanel(
+          api: _api,
+          enrollment: _enrollment,
+          apiOnline: _apiOnline,
+          onAgain: _goJoinAnother,
+          onRefresh: _bootstrap,
+        );
       case 0:
       default:
         return _ProfilePanel(
@@ -904,8 +1003,18 @@ class _TraineeHeader extends StatelessWidget {
                 TrainingRealtimeLinkChip(phase: realtimeLinkPhase!),
               ],
               Expanded(
-                child: Center(
-                  child: flowStep == 2
+                  child: Center(
+                  child: flowStep == 0
+                      ? Text(
+                          l.trnHeaderProfileStep.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            letterSpacing: 2.2,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF64748B),
+                          ),
+                        )
+                      : flowStep == 2
                       ? Text(
                           l.trnHeaderWaitingInstructor.toUpperCase(),
                           style: const TextStyle(
@@ -1015,6 +1124,11 @@ class _LgpdConsentPanel extends StatelessWidget {
           onChanged: onChanged,
           controlAffinity: ListTileControlAffinity.leading,
           title: Text(l.trnLgpdCheckboxTitle),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l.trnLgpdAfterConsentHint,
+          style: TextStyle(fontSize: 12.5, height: 1.35, color: Colors.grey.shade700),
         ),
         const SizedBox(height: 20),
         FilledButton(
@@ -1148,58 +1262,17 @@ class _ProfilePanelState extends State<_ProfilePanel> {
   }
 
   Future<void> _openFollowUpAssessment(int id) async {
-    final t = appAuth.token;
-    if (t == null) return;
     setState(() => _loadingExtra = true);
-    Map<String, dynamic>? detail;
     try {
-      detail = await widget.api.followUpAssessmentDetail(t, id);
-    } on ApiException catch (e) {
-      if (mounted) context.showLocalizedApiExceptionSnack(e);
-      return;
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).trnSnackFormOpenFailed)));
-      }
-      return;
+      await showTraineeFollowUpAssessmentDialog(
+        context: context,
+        api: widget.api,
+        followUpId: id,
+        afterSubmit: _reloadExtras,
+      );
     } finally {
       if (mounted) setState(() => _loadingExtra = false);
     }
-    if (!mounted) return;
-    if (detail['can_submit'] != true) {
-      final fu = detail['follow_up'];
-      final due = fu is Map ? fu['due_at']?.toString() : null;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            due != null ? AppLocalizations.of(context).trnSnackFollowUpAvailableFrom(due) : AppLocalizations.of(context).trnSnackFollowUpNotYet,
-          ),
-        ),
-      );
-      return;
-    }
-    final questions = List<Map<String, dynamic>>.from(
-      (detail['questions'] as List?)?.map((e) => Map<String, dynamic>.from(e as Map)) ?? [],
-    );
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(ctx).trnFollowUpDialogTitle),
-        content: SizedBox(
-          width: 440,
-          child: _FollowUpFormContent(
-            questions: questions,
-            onSubmit: (responses) async {
-              await widget.api.submitFollowUpAssessment(t, id, responses);
-              if (ctx.mounted) Navigator.of(ctx).pop();
-              await _reloadExtras();
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).trnSnackResponsesSaved)));
-            },
-          ),
-        ),
-      ),
-    );
   }
 
   String _followUpTrainingTitle(AppLocalizations l, Map<String, dynamic> fu) {
@@ -1237,32 +1310,11 @@ class _ProfilePanelState extends State<_ProfilePanel> {
   }
 
   Future<void> _downloadCertificatePdf(Map<String, dynamic> c) async {
-    final lang = AppLocalizations.of(context);
     final t = appAuth.token;
-    final idRaw = c['id'];
-    final cid = idRaw is int ? idRaw : int.tryParse(idRaw.toString());
-    final code = c['certificate_code']?.toString() ?? lang.trnCertCodeFallback;
-    if (t == null || cid == null) return;
+    if (t == null) return;
     setState(() => _loadingExtra = true);
     try {
-      final bytes = await widget.api.downloadMyCertificatePdf(t, cid);
-      if (!mounted) return;
-      final safe = code.replaceAll(RegExp(r'[^A-Za-z0-9_.-]'), '-');
-      await FileSaver.instance.saveFile(
-        name: lang.trnCertDownloadFilename(safe),
-        fileExtension: 'pdf',
-        bytes: bytes,
-        mimeType: MimeType.pdf,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).trnSnackCertPdfDownloaded)));
-      }
-    } on ApiException catch (e) {
-      if (mounted) context.showLocalizedApiExceptionSnack(e);
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).trnSnackCertPdfFailed)));
-      }
+      await _downloadTraineeMyCertificatePdf(context: context, api: widget.api, token: t, cert: c);
     } finally {
       if (mounted) setState(() => _loadingExtra = false);
     }
@@ -1322,14 +1374,24 @@ class _ProfilePanelState extends State<_ProfilePanel> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                DropdownButtonFormField<int>(
+                DropdownButtonFormField<int?>(
+                  key: ValueKey('trn_inst_${widget.institutions.length}_${widget.institutionId}'),
                   decoration: InputDecoration(labelText: l.trnFieldInstitutionOptional),
                   initialValue: widget.institutionId,
                   items: [
+                    DropdownMenuItem<int?>(value: null, child: Text(l.trnInstitutionNone)),
                     for (final i in widget.institutions)
-                      DropdownMenuItem(value: _parseInt(i['id']), child: Text(i['name']?.toString() ?? '')),
+                      DropdownMenuItem<int?>(
+                        value: _parseInt(i['id']),
+                        child: Text(i['name']?.toString() ?? ''),
+                      ),
                   ],
                   onChanged: widget.onInstitution,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l.trnProfileInstitutionHint,
+                  style: const TextStyle(fontSize: 12.5, height: 1.35, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 14),
                 TextField(controller: widget.sector, decoration: InputDecoration(labelText: l.trnFieldSectorTeam)),
@@ -1563,22 +1625,70 @@ class _ProfilePanelState extends State<_ProfilePanel> {
   }
 }
 
-class _JoinPanel extends StatelessWidget {
-  const _JoinPanel({required this.joinHash, required this.loading, required this.onJoin});
+class _JoinPanel extends StatefulWidget {
+  const _JoinPanel({
+    required this.joinHash,
+    required this.loading,
+    required this.apiOnline,
+    required this.onJoin,
+  });
 
   final TextEditingController joinHash;
   final bool loading;
+  final bool apiOnline;
   final VoidCallback onJoin;
+
+  @override
+  State<_JoinPanel> createState() => _JoinPanelState();
+}
+
+class _JoinPanelState extends State<_JoinPanel> {
+  static final _joinHashChars = RegExp(r'[a-zA-Z0-9\-]');
+
+  void _onHashChanged() => setState(() {});
+
+  @override
+  void initState() {
+    super.initState();
+    widget.joinHash.addListener(_onHashChanged);
+  }
+
+  @override
+  void didUpdateWidget(_JoinPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.joinHash != widget.joinHash) {
+      oldWidget.joinHash.removeListener(_onHashChanged);
+      widget.joinHash.addListener(_onHashChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.joinHash.removeListener(_onHashChanged);
+    super.dispose();
+  }
+
+  String _normalizedJoinHash() {
+    return widget.joinHash.text.trim().replaceAll(RegExp(r'\s+'), '').toLowerCase();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final normalized = _normalizedJoinHash();
+    final len = normalized.length;
+    final looksReady = len >= 8 && len <= 64;
+    final hasSome = len > 0 && len < 8;
+    final canJoin = widget.apiOnline && !widget.loading && normalized.isNotEmpty;
+
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
         Text(l.trnJoinTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 26)),
         const SizedBox(height: 8),
-        Text(l.trnJoinIntro, style: const TextStyle(color: Color(0xFF45464D))),
+        Text(l.trnJoinIntro, style: const TextStyle(color: Color(0xFF45464D), height: 1.4)),
+        const SizedBox(height: 10),
+        Text(l.trnJoinIntroDetail, style: const TextStyle(color: Color(0xFF45464D), height: 1.45, fontSize: 13.5)),
         const SizedBox(height: 22),
         Card(
           child: Padding(
@@ -1586,16 +1696,60 @@ class _JoinPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (!widget.apiOnline) ...[
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF1F2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFECACA)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.wifi_off_rounded, color: Color(0xFFB91C1C), size: 22),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              l.trnJoinOfflineHint,
+                              style: const TextStyle(fontSize: 13.5, height: 1.4, color: Color(0xFF7F1D1D)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 TextField(
-                  controller: joinHash,
+                  controller: widget.joinHash,
                   textCapitalization: TextCapitalization.characters,
-                  decoration: InputDecoration(labelText: l.trnFieldAccessCode),
+                  maxLength: 64,
+                  inputFormatters: [FilteringTextInputFormatter.allow(_joinHashChars)],
+                  decoration: InputDecoration(
+                    labelText: l.trnFieldAccessCode,
+                    hintText: l.trnJoinAccessCodeHint,
+                    counterText: '$len/64',
+                    helperText: looksReady ? l.trnJoinHashFormatOk : (hasSome ? l.trnJoinHashKeepTyping : null),
+                    helperStyle: TextStyle(
+                      color: looksReady ? const Color(0xFF047857) : const Color(0xFF64748B),
+                      fontWeight: looksReady ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                    suffixIcon: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Icon(
+                        looksReady ? Icons.check_circle_rounded : Icons.tag_rounded,
+                        color: looksReady ? const Color(0xFF059669) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 FilledButton(
-                  onPressed: loading ? null : onJoin,
+                  onPressed: canJoin ? widget.onJoin : null,
                   style: FilledButton.styleFrom(backgroundColor: const Color(0xFF00677D), padding: const EdgeInsets.symmetric(vertical: 16)),
-                  child: loading
+                  child: widget.loading
                       ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : Text(l.trnBtnConfirmJoin),
                 ),
@@ -1612,11 +1766,13 @@ class _WaitingPanel extends StatefulWidget {
   const _WaitingPanel({
     required this.enrollment,
     required this.apiOnline,
+    required this.onRefresh,
     required this.onPing,
   });
 
   final Map<String, dynamic>? enrollment;
   final bool apiOnline;
+  final Future<void> Function() onRefresh;
   final VoidCallback onPing;
 
   @override
@@ -1625,6 +1781,7 @@ class _WaitingPanel extends StatefulWidget {
 
 class _WaitingPanelState extends State<_WaitingPanel> with SingleTickerProviderStateMixin {
   late AnimationController _ringCtrl;
+  bool _refreshBusy = false;
 
   @override
   void initState() {
@@ -1636,6 +1793,15 @@ class _WaitingPanelState extends State<_WaitingPanel> with SingleTickerProviderS
   void dispose() {
     _ringCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _doRefresh() async {
+    setState(() => _refreshBusy = true);
+    try {
+      await widget.onRefresh();
+    } finally {
+      if (mounted) setState(() => _refreshBusy = false);
+    }
   }
 
   @override
@@ -1676,16 +1842,20 @@ class _WaitingPanelState extends State<_WaitingPanel> with SingleTickerProviderS
         ),
         SafeArea(
           child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 220,
-                    width: 220,
-                    child: Stack(
+            child: RefreshIndicator(
+              color: ClinicalPrecisionColors.secondary,
+              onRefresh: _doRefresh,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 220,
+                      width: 220,
+                      child: Stack(
                       alignment: Alignment.center,
                       children: [
                         RotationTransition(
@@ -1730,6 +1900,35 @@ class _WaitingPanelState extends State<_WaitingPanel> with SingleTickerProviderS
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 16, height: 1.55, color: ClinicalPrecisionColors.onSurfaceVariant),
                   ),
+                  if (!widget.apiOnline) ...[
+                    const SizedBox(height: 16),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF1F2),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFFECACA)),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.wifi_off_rounded, color: Color(0xFFB91C1C), size: 22),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  l.trnWaitingOfflineHint,
+                                  style: const TextStyle(fontSize: 13.5, height: 1.45, color: Color(0xFF7F1D1D)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Text(
                     title,
@@ -1779,6 +1978,23 @@ class _WaitingPanelState extends State<_WaitingPanel> with SingleTickerProviderS
                       ),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: TextButton.icon(
+                        onPressed: _refreshBusy ? null : _doRefresh,
+                        icon: _refreshBusy
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.refresh_rounded, size: 20),
+                        label: Text(l.trnWaitingCheckNow),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 18),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1798,6 +2014,7 @@ class _WaitingPanelState extends State<_WaitingPanel> with SingleTickerProviderS
               ),
             ),
           ),
+        ),
         ),
       ],
     );
@@ -1971,6 +2188,7 @@ class _QuestionnairePanel extends StatelessWidget {
               final mainCard = _TraineeQuestionMainCard(
                 l: l,
                 questionIndex: position + 1,
+                questionTotal: total,
                 prompt: prompt,
                 options: options,
                 pickedOptionId: pickedOptionId,
@@ -2201,6 +2419,7 @@ class _TraineeQuestionMainCard extends StatelessWidget {
   const _TraineeQuestionMainCard({
     required this.l,
     required this.questionIndex,
+    required this.questionTotal,
     required this.prompt,
     required this.options,
     required this.pickedOptionId,
@@ -2214,6 +2433,7 @@ class _TraineeQuestionMainCard extends StatelessWidget {
 
   final AppLocalizations l;
   final int questionIndex;
+  final int questionTotal;
   final String prompt;
   final List<dynamic> options;
   final int? pickedOptionId;
@@ -2241,35 +2461,39 @@ class _TraineeQuestionMainCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: ClinicalPrecisionColors.onSurface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '$questionIndex'.padLeft(2, '0'),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    prompt,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      height: 1.35,
+            Semantics(
+              label: '${l.trnQuestionProgress(questionIndex, questionTotal)}. $prompt',
+              excludeSemantics: true,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
                       color: ClinicalPrecisionColors.onSurface,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '$questionIndex'.padLeft(2, '0'),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      prompt,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        height: 1.35,
+                        color: ClinicalPrecisionColors.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 18),
             Expanded(
@@ -2292,51 +2516,64 @@ class _TraineeQuestionMainCard extends StatelessWidget {
             ),
             if (reveal != null) ...[
               const SizedBox(height: 14),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: reveal.isCorrect ? const Color(0xFFECFDF5) : const Color(0xFFFFF1F2),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: reveal.isCorrect ? const Color(0xFF6EE7B7) : const Color(0xFFFBCFE8)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      reveal.isCorrect ? l.trnAnswerFeedbackCorrect : l.trnAnswerFeedbackIncorrect,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                        color: reveal.isCorrect ? const Color(0xFF065F46) : const Color(0xFF9F1239),
-                      ),
-                    ),
-                    if (!reveal.isCorrect &&
-                        reveal.correctOptionLabel != null &&
-                        reveal.correctOptionLabel!.trim().isNotEmpty) ...[
-                      const SizedBox(height: 8),
+              Semantics(
+                liveRegion: true,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: reveal.isCorrect ? const Color(0xFFECFDF5) : const Color(0xFFFFF1F2),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: reveal.isCorrect ? const Color(0xFF6EE7B7) : const Color(0xFFFBCFE8)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        l.trnAnswerCorrectWas(reveal.correctOptionLabel!.trim()),
-                        style: const TextStyle(fontSize: 13, height: 1.35, color: Color(0xFF881337)),
+                        reveal.isCorrect ? l.trnAnswerFeedbackCorrect : l.trnAnswerFeedbackIncorrect,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                          color: reveal.isCorrect ? const Color(0xFF065F46) : const Color(0xFF9F1239),
+                        ),
                       ),
+                      if (!reveal.isCorrect &&
+                          reveal.correctOptionLabel != null &&
+                          reveal.correctOptionLabel!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          l.trnAnswerCorrectWas(reveal.correctOptionLabel!.trim()),
+                          style: const TextStyle(fontSize: 13, height: 1.35, color: Color(0xFF881337)),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ],
             if (reveal != null) const SizedBox(height: 14),
-            FilledButton(
-              onPressed: reveal != null
-                  ? onRevealContinue
-                  : (loading || sessionPaused ? null : onConfirm),
-              style: FilledButton.styleFrom(
-                backgroundColor: ClinicalPrecisionColors.primaryContainer,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: loading && reveal == null
-                  ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(reveal != null ? l.trnBtnContinueAfterFeedback : l.trnBtnConfirmAnswer),
+            Builder(
+              builder: (ctx) {
+                final l10n = AppLocalizations.of(ctx);
+                final needsPick = reveal == null && pickedOptionId == null && !loading && !sessionPaused;
+                Widget btn = FilledButton(
+                  onPressed: reveal != null
+                      ? onRevealContinue
+                      : (loading || sessionPaused || pickedOptionId == null ? null : onConfirm),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ClinicalPrecisionColors.primaryContainer,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: loading && reveal == null
+                      ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text(reveal != null ? l10n.trnBtnContinueAfterFeedback : l10n.trnBtnConfirmAnswer),
+                );
+                if (needsPick) {
+                  btn = Tooltip(message: l10n.trnSnackPickOption, child: btn);
+                }
+                return btn;
+              },
             ),
           ],
         ),
@@ -2365,23 +2602,30 @@ class _OptionTile extends StatelessWidget {
     final borderColor = !enabled
         ? const Color(0xFFE5E5E5)
         : (selected ? const Color(0xFF00677D) : const Color(0xFFC6C6CD));
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: !enabled
-            ? const Color(0xFFF5F5F5)
-            : (selected ? const Color(0xFFEAF9FF) : Colors.white),
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Material(
+          color: !enabled
+              ? const Color(0xFFF5F5F5)
+              : (selected ? const Color(0xFFEAF9FF) : Colors.white),
           borderRadius: BorderRadius.circular(16),
-          onTap: enabled ? onTap : null,
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: borderColor, width: 2),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: enabled ? onTap : null,
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: borderColor, width: 2),
+              ),
+              child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
             ),
-            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
           ),
         ),
       ),
@@ -2519,22 +2763,205 @@ class _FollowUpFormContentState extends State<_FollowUpFormContent> {
   }
 }
 
-class _ResultPanel extends StatelessWidget {
-  const _ResultPanel({required this.enrollment, required this.onAgain});
+class _ResultPanel extends StatefulWidget {
+  const _ResultPanel({
+    required this.api,
+    required this.enrollment,
+    required this.apiOnline,
+    required this.onAgain,
+    required this.onRefresh,
+  });
 
+  final ProductionApi api;
   final Map<String, dynamic>? enrollment;
+  final bool apiOnline;
   final VoidCallback onAgain;
+  final Future<void> Function() onRefresh;
+
+  @override
+  State<_ResultPanel> createState() => _ResultPanelState();
+}
+
+class _ResultPanelState extends State<_ResultPanel> {
+  bool _refreshBusy = false;
+  bool _extrasLoading = false;
+  List<Map<String, dynamic>> _certificatesThisEnrollment = [];
+  List<Map<String, dynamic>> _pendingFollowUpsForEnrollment = [];
+  int? _pdfLoadingCertId;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadResultExtras());
+  }
+
+  int? _trainingIdFromEnrollment(Map<String, dynamic>? en) {
+    if (en == null) return null;
+    final flat = _parseInt(en['training_id']);
+    if (flat != null) return flat;
+    final tr = en['training'];
+    return tr is Map ? _parseInt(tr['id']) : null;
+  }
+
+  @override
+  void didUpdateWidget(_ResultPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enrollment?['id'] != widget.enrollment?['id'] ||
+        oldWidget.enrollment?['training_id'] != widget.enrollment?['training_id'] ||
+        _trainingIdFromEnrollment(oldWidget.enrollment) != _trainingIdFromEnrollment(widget.enrollment)) {
+      unawaited(_loadResultExtras());
+    }
+  }
+
+  bool _followUpRowMatchesEnrollment(Map<String, dynamic> row, int? eid, int? tid) {
+    final topEnrId = _parseInt(row['enrollment_id']);
+    if (eid != null && topEnrId == eid) return true;
+    final enR = row['enrollment'];
+    if (enR is Map) {
+      final m = Map<String, dynamic>.from(enR);
+      final reid = _parseInt(m['id']);
+      if (eid != null && reid == eid) return true;
+      if (tid != null) {
+        final tr = m['training'];
+        if (tr is Map && _parseInt(tr['id']) == tid) return true;
+      }
+    }
+    return false;
+  }
+
+  Future<void> _loadResultExtras() async {
+    final t = appAuth.token;
+    final en = widget.enrollment;
+    if (t == null || en == null) return;
+    final eid = _parseInt(en['id']);
+    final tr = en['training'] as Map<String, dynamic>?;
+    final tid = _parseInt(en['training_id']) ?? _parseInt(tr?['id']);
+    if (eid == null && tid == null) return;
+    setState(() => _extrasLoading = true);
+    try {
+      final matchedCerts = <Map<String, dynamic>>[];
+      try {
+        final all = await widget.api.myCertificates(t);
+        final seen = <int>{};
+        for (final raw in all) {
+          final c = Map<String, dynamic>.from(raw);
+          final cid = _parseInt(c['id']);
+          if (cid == null || seen.contains(cid)) continue;
+          final ce = _parseInt(c['enrollment_id']);
+          final ct = _parseInt(c['training_id']);
+          final match = (eid != null && ce == eid) || (tid != null && ct == tid);
+          if (match) {
+            seen.add(cid);
+            matchedCerts.add(c);
+          }
+        }
+      } catch (_) {}
+
+      final pendingFu = <Map<String, dynamic>>[];
+      try {
+        final fuAll = await widget.api.myFollowUpAssessments(t);
+        for (final raw in fuAll) {
+          final row = Map<String, dynamic>.from(raw as Map);
+          if (row['status']?.toString() != 'pending') continue;
+          if (!_followUpRowMatchesEnrollment(row, eid, tid)) continue;
+          pendingFu.add(row);
+        }
+      } catch (_) {}
+
+      if (mounted) {
+        setState(() {
+          _certificatesThisEnrollment = matchedCerts;
+          _pendingFollowUpsForEnrollment = pendingFu;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _extrasLoading = false);
+    }
+  }
+
+  Future<void> _doRefresh() async {
+    setState(() => _refreshBusy = true);
+    try {
+      await widget.onRefresh();
+      await _loadResultExtras();
+    } finally {
+      if (mounted) setState(() => _refreshBusy = false);
+    }
+  }
+
+  Future<void> _openFollowUpAssessment(int id) async {
+    await showTraineeFollowUpAssessmentDialog(
+      context: context,
+      api: widget.api,
+      followUpId: id,
+      afterSubmit: _loadResultExtras,
+    );
+  }
+
+  Widget _followUpRespondTrailing(AppLocalizations l, Map<String, dynamic> fu) {
+    void open() {
+      final i = _parseInt(fu['id']);
+      if (i != null) unawaited(_openFollowUpAssessment(i));
+    }
+
+    final respond = TextButton(
+      onPressed: widget.apiOnline ? open : null,
+      child: Text(l.trnFollowUpRespond),
+    );
+    return widget.apiOnline ? respond : Tooltip(message: l.trnResultOfflineHint, child: respond);
+  }
+
+  Future<void> _downloadCertPdf(Map<String, dynamic> c) async {
+    final t = appAuth.token;
+    final cid = _parseInt(c['id']);
+    if (t == null || cid == null) return;
+    setState(() => _pdfLoadingCertId = cid);
+    try {
+      await _downloadTraineeMyCertificatePdf(context: context, api: widget.api, token: t, cert: c);
+    } finally {
+      if (mounted) setState(() => _pdfLoadingCertId = null);
+    }
+  }
+
+  Widget _certificateDownloadButton(AppLocalizations l, Map<String, dynamic> c) {
+    final cid = _parseInt(c['id']);
+    final busy = cid != null && _pdfLoadingCertId == cid;
+    final code = c['certificate_code']?.toString().trim();
+    final label =
+        code != null && code.isNotEmpty ? '${l.trnResultCertificateDownload} · $code' : l.trnResultCertificateDownload;
+    final canTap = widget.apiOnline && !busy;
+    final btn = FilledButton.tonalIcon(
+      onPressed: canTap ? () => _downloadCertPdf(c) : null,
+      icon: busy
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.picture_as_pdf_outlined),
+      label: Text(label, textAlign: TextAlign.center),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: !widget.apiOnline && !busy
+          ? Tooltip(message: l.trnResultOfflineHint, child: btn)
+          : btn,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final scoreRaw = enrollment?['score'];
+    final scoreRaw = widget.enrollment?['score'];
     final scoreStr = scoreRaw?.toString() ?? l.trainReqDashNone;
     final scoreVal = _parseScoreDouble(scoreRaw);
-    final inRecovery = enrollment?['in_recovery'] == true || enrollment?['in_recovery'] == 1;
+    final inRecovery = widget.enrollment?['in_recovery'] == true || widget.enrollment?['in_recovery'] == 1;
     final passed = scoreVal != null && scoreVal >= 7.0;
-    final tr = enrollment?['training'] as Map<String, dynamic>?;
+    final tr = widget.enrollment?['training'] as Map<String, dynamic>?;
     final title = tr?['title']?.toString() ?? '';
+    final inst = tr?['institution'];
+    final instName = inst is Map ? inst['name']?.toString().trim() : null;
+    final instLine = instName != null && instName.isNotEmpty ? l.trnResultInstitution(instName) : null;
 
     final IconData iconData;
     final Color iconColor;
@@ -2549,61 +2976,173 @@ class _ResultPanel extends StatelessWidget {
       iconColor = const Color(0xFFF59E0B);
     }
 
+    final cardBody = Card(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!widget.apiOnline) ...[
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF1F2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFECACA)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.wifi_off_rounded, color: Color(0xFFB91C1C), size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l.trnResultOfflineHint,
+                          style: const TextStyle(fontSize: 13.5, height: 1.4, color: Color(0xFF7F1D1D)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            Icon(iconData, size: 72, color: iconColor),
+            const SizedBox(height: 16),
+            Text(l.trnResultTitle, style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 8),
+            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
+            if (instLine != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                instLine,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, color: ClinicalPrecisionColors.onSurfaceVariant),
+              ),
+            ],
+            if (scoreVal != null) ...[
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: passed ? const Color(0xFFECFDF5) : const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: passed ? const Color(0xFF6EE7B7) : const Color(0xFFFDBA74)),
+                ),
+                child: Text(
+                  passed ? l.trnResultApprovedBanner : l.trnResultInsufficientBanner,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                    color: passed ? const Color(0xFF065F46) : const Color(0xFF9A3412),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            Text(l.trnScoreLabel, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF45464D))),
+            Text(scoreStr, style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900)),
+            if (inRecovery) ...[
+              const SizedBox(height: 16),
+              Text(
+                l.trnResultRecoveryNote,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, height: 1.35, color: Color(0xFF45464D)),
+              ),
+            ],
+            if (_extrasLoading) ...[
+              const SizedBox(height: 16),
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(8),
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+            ] else ...[
+              if (_certificatesThisEnrollment.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                for (final c in _certificatesThisEnrollment) _certificateDownloadButton(l, Map<String, dynamic>.from(c)),
+              ] else if (passed) ...[
+                const SizedBox(height: 12),
+                Text(
+                  l.trnResultCertificateHint,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    height: 1.4,
+                    color: ClinicalPrecisionColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              if (_pendingFollowUpsForEnrollment.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(l.trnFollowUpsTitle, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l.trnResultFollowUpIntro,
+                  style: const TextStyle(fontSize: 12.5, height: 1.35, color: ClinicalPrecisionColors.onSurfaceVariant),
+                ),
+                const SizedBox(height: 10),
+                for (final fu in _pendingFollowUpsForEnrollment)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(
+                      l.trnFollowUpListSubtitle(
+                        fu['days_offset']?.toString() ?? l.trainReqDashNone,
+                        localizedFollowUpStatus(l, fu['status']?.toString()),
+                        fu['due_at']?.toString() ?? l.trainReqDashNone,
+                      ),
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    trailing: _followUpRespondTrailing(l, fu),
+                  ),
+              ],
+            ],
+            const SizedBox(height: 24),
+            OutlinedButton(
+              onPressed: widget.onAgain,
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14)),
+              child: Text(l.trnBtnJoinAnother),
+            ),
+            const SizedBox(height: 10),
+            TextButton.icon(
+              onPressed: _refreshBusy ? null : _doRefresh,
+              icon: _refreshBusy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh_rounded, size: 20),
+              label: Text(l.trnResultRefresh),
+            ),
+          ],
+        ),
+      ),
+    );
+
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520),
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(iconData, size: 72, color: iconColor),
-                const SizedBox(height: 16),
-                Text(l.trnResultTitle, style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 8),
-                Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
-                if (scoreVal != null) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: passed ? const Color(0xFFECFDF5) : const Color(0xFFFFF7ED),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: passed ? const Color(0xFF6EE7B7) : const Color(0xFFFDBA74)),
-                    ),
-                    child: Text(
-                      passed ? l.trnResultApprovedBanner : l.trnResultInsufficientBanner,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.35,
-                        fontWeight: FontWeight.w600,
-                        color: passed ? const Color(0xFF065F46) : const Color(0xFF9A3412),
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                Text(l.trnScoreLabel, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF45464D))),
-                Text(scoreStr, style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900)),
-                if (inRecovery) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    l.trnResultRecoveryNote,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 13, height: 1.35, color: Color(0xFF45464D)),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                OutlinedButton(
-                  onPressed: onAgain,
-                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14)),
-                  child: Text(l.trnBtnJoinAnother),
-                ),
-              ],
-            ),
+        child: RefreshIndicator(
+          color: ClinicalPrecisionColors.secondary,
+          onRefresh: _doRefresh,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            child: cardBody,
           ),
         ),
       ),

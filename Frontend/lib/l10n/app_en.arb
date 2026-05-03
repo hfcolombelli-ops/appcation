@@ -88,6 +88,7 @@
   "postTrainingOutcomeInsufficient": "Below threshold (< 7.0)",
   "postTrainingOutcomeRecovery": "In recovery",
   "postTrainingOutcomeInProgress": "In progress",
+  "postTrainingOutcomeWaitingRoom": "Waiting room",
   "postTrainingOutcomeCompletedNoGrade": "Completed (no score)",
   "postTrainingFinishTraining": "Close training",
   "postTrainingFinishTrainingConfirmTitle": "Close this training?",
@@ -136,9 +137,22 @@
   "profileGateTitle": "Unrecognized profile",
   "profileGateBody": "You are signed in, but this account has no role mapped to an app area (trainee, instructor, institution manager, or manufacturer). Sign out and sign in again; on first Google sign-in, pick the correct account type.",
   "profileGateDocHint": "Official product flow: docs/product/fluxo_app2cation.mermaid",
+  "profileGateYourAccount": "Signed-in account",
+  "profileGateRoleFromApi": "Role from server: {role}",
+  "@profileGateRoleFromApi": {
+    "placeholders": {
+      "role": {}
+    }
+  },
+  "profileGateRefreshSession": "Refresh session",
+  "profileGateRefreshHint": "Try this after an administrator updates your role — no password needed.",
+  "profileGateClaimSectionTitle": "Set profile (one time)",
+  "profileGateClaimIntro": "If your account should be a trainee, instructor, or manufacturer admin but the server role was missing or invalid, choose it below. This is allowed only until a valid role is stored.",
+  "profileGateClaimHint": "Institution managers are not self-service here — your hospital or manufacturer creates that access.",
+  "profileGateChooseRole": "Platform role",
+  "profileGateConfirmProfile": "Confirm profile",
+  "profileGatePickRoleFirst": "Choose a role first.",
   "actionRetry": "Try again",
-  "dashExportCsvWebOnly": "CSV export is only available in the web app.",
-  "dashExportPdfWebOnly": "PDF export is only available in the web app.",
   "dashLinkInstitutionForKpis": "Link your institution using the orange banner at the top to see aggregated indicators.",
   "dashKpiTrainings": "Trainings",
   "dashKpiFinished": "Closed",
@@ -176,13 +190,23 @@
       "avg": {}
     }
   },
-  "dashSectorAveragesTitle": "Averages by sector (completed)",
+  "dashSectorAveragesTitle": "By sector (institution trainings)",
   "dashNoSectorHistory": "No sector history yet.",
-  "dashSectorSubtitle": "Completions: {c} · Average: {a}",
+  "dashSectorSubtitle": "Enrollments: {total} · Completed: {done} · With score: {scored} · Average: {avg}",
   "@dashSectorSubtitle": {
     "placeholders": {
-      "c": {},
-      "a": {}
+      "total": {
+        "type": "int"
+      },
+      "done": {
+        "type": "int"
+      },
+      "scored": {
+        "type": "int"
+      },
+      "avg": {
+        "type": "String"
+      }
     }
   },
   "trainingSectionTitle": "Setup",
@@ -217,6 +241,7 @@
   "trainLifecycleScheduled": "Scheduled",
   "trainLifecycleInProgress": "In progress",
   "trainLifecycleFinished": "Finished",
+  "trainLifecycleCancelled": "Cancelled",
   "enrollmentStatusWaiting": "Waiting",
   "enrollmentStatusActive": "Active",
   "enrollmentStatusCompleted": "Completed",
@@ -262,6 +287,8 @@
     }
   },
   "comandoParticipantsTitle": "Participants",
+  "comandoParticipantsSearchHint": "Filter by name or email",
+  "comandoParticipantsNoMatch": "No participants match this filter.",
   "comandoNoParticipants": "No enrolled participants.",
   "comandoSessionControlTitle": "Session control",
   "comandoRepescageScope": "Recovery scope",
@@ -336,6 +363,9 @@
   "credQueueManuTitle": "Pending approvals (manufacturer)",
   "credQueueManuBody": "Instructor approvals with the manufacturer. Check institutional endorsement before approving.",
   "credBtnApprove": "Approve",
+  "credBtnSuspend": "Suspend",
+  "credBtnReactivateHomolog": "Reactivate",
+  "credStatusSuspended": "Suspended",
   "credBtnReject": "Reject",
   "credEndorsementWith": "Institutional endorsement: {name}",
   "@credEndorsementWith": {
@@ -512,16 +542,67 @@
   "mfgNavProducts": "Products",
   "mfgNavOperations": "Operations",
   "mfgNavHomologations": "Credentialing",
+  "mfgNavAnalytics": "Analytics",
+  "mfgAnalyticsTitle": "Aggregated analytics",
+  "mfgAnalyticsIntro": "Filter by institution, equipment on the training, or training creation period. Aggregated data only (GDPR).",
+  "mfgAnalyticsFilterInstitution": "Institution",
+  "mfgAnalyticsFilterEquipment": "Equipment (on training)",
+  "mfgAnalyticsDateFrom": "Trainings created from (YYYY-MM-DD)",
+  "mfgAnalyticsDateTo": "Trainings created to (YYYY-MM-DD)",
+  "mfgAnalyticsApply": "Apply filters",
+  "mfgAnalyticsReset": "Clear",
+  "mfgAnalyticsAll": "All",
+  "mfgAnalyticsSectionInstitutions": "By institution",
+  "mfgAnalyticsSectionEquipment": "By equipment",
+  "mfgAnalyticsEmpty": "No data for these filters.",
+  "mfgAnalyticsLoading": "Loading…",
+  "mfgAnalyticsBreakdownSubtitle": "{trainings} trainings · enroll.: {enr} · compl.: {done} · rate: {rate} · avg.: {avg}",
+  "@mfgAnalyticsBreakdownSubtitle": {
+    "placeholders": {
+      "trainings": {
+        "type": "int"
+      },
+      "enr": {
+        "type": "int"
+      },
+      "done": {
+        "type": "int"
+      },
+      "rate": {
+        "type": "String"
+      },
+      "avg": {
+        "type": "String"
+      }
+    }
+  },
+  "mfgAnalyticsSectionMonthlyTrend": "Monthly trend (combined)",
+  "mfgAnalyticsMonthlyTrendIntro": "Same timeline (YYYY-MM): enrollments by COALESCE(joined_at, created_at) and completions by completed_at (UTC). Bars scaled to each metric’s max.",
+  "mfgAnalyticsMonthlyTrendEmpty": "No monthly data in the filtered period.",
+  "mfgAnalyticsTrendLegendEnroll": "Enrollments",
+  "mfgAnalyticsTrendLegendComplete": "Completed",
+  "mfgHomologRequestedAt": "Submitted: {date}",
+  "@mfgHomologRequestedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "mfgHomologEmpty": "No credential requests at the moment.",
   "mfgHomologFilterAll": "All",
   "mfgHomologFilterPending": "Pending",
   "mfgHomologFilterApproved": "Approved",
   "mfgHomologFilterRejected": "Rejected",
+  "mfgHomologFilterSuspended": "Suspended",
   "mfgSnackHomologUpdated": "Credential request updated.",
   "mfgNavGroupSummary": "Summary & profile",
   "mfgNavGroupOffer": "Catalog & routines",
   "mfgDashSummaryTitle": "Aggregated summary",
   "mfgDashSummaryIntro": "Trainings and enrollments linked to this manufacturer — aggregated data (GDPR).",
+  "mfgDashMonthlyTrendTitle": "Recent trend (monthly)",
+  "mfgDashMonthlyTrendIntro": "Up to the last 6 months with data: enrollments vs. completions (same logic as Analytics).",
+  "mfgDashOpenAnalytics": "Open analytics",
   "mfgSnackValidationRequested": "Validation request sent. Our team will review it.",
   "mfgSeasonNewTitle": "New season",
   "mfgFieldName": "Name",
@@ -601,6 +682,10 @@
   "mfgPrizesEmpty": "No prizes recorded.",
   "mfgDocumentsSectionTitle": "Documents for validation",
   "mfgDocumentsIntro": "PDF or image up to 12 MB. The server uses the configured disk (local or S3 via FILESYSTEM_DISK); upload manuals or attachments for approval.",
+  "mfgOpsSearchHint": "Search seasons, prizes, and uploaded documents",
+  "mfgOpsServerFilterHint": "Server-side filter; results refresh shortly after you stop typing.",
+  "mfgOpsSublistNoMatch": "No matches in this block.",
+  "mfgOpsLoadMore": "Load more",
   "mfgDocKindOptional": "Type (optional)",
   "mfgDocKindHint": "e.g. manual, certificate, datasheet",
   "mfgDocNotesOptional": "Notes (optional)",
@@ -614,6 +699,29 @@
   "mfgBtnCreateTemplateDraft": "Create template (draft)",
   "mfgYourTemplates": "Your templates",
   "mfgTemplatesEmpty": "No templates yet. Create one above.",
+  "mfgTplSearchHint": "Search template title",
+  "mfgTplFilterStatusLabel": "Template status",
+  "mfgTplSortLabel": "Sort list",
+  "mfgTplSortUpdated": "Recently updated",
+  "mfgTplSortTitleAsc": "Title (A–Z)",
+  "mfgTplSortTitleDesc": "Title (Z–A)",
+  "mfgTplSortStatus": "By status",
+  "mfgTplRowUpdatedAt": "Updated: {date}",
+  "@mfgTplRowUpdatedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "mfgTplListResultCount": "{count} template(s) listed (up to 80).",
+  "@mfgTplListResultCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "mfgTplClearFilters": "Clear filters",
+  "mfgTplNoMatches": "No templates match the current filters.",
   "mfgTrainingFallbackTitle": "Training",
   "mfgBtnEditQuestionnaire": "Edit questionnaire",
   "mfgCompanySectionTitle": "Company",
@@ -655,6 +763,12 @@
   "mfgEquipWizardNext": "Next",
   "mfgEquipWizardBack": "Back",
   "mfgEquipWizardSubmit": "Save",
+  "mfgEquipErrInvalidInteger": "Use whole numbers in optional numeric fields.",
+  "mfgEquipErrHoursRange": "Training hours must be between 1 and 999.",
+  "mfgEquipErrPassRange": "Passing score must be between 40 and 100.",
+  "mfgEquipErrCertMonthsRange": "Certificate validity must be between 1 and 240 months.",
+  "mfgEquipErrReassessRange": "Reassessment days must be between 1 and 365.",
+  "mfgEquipErrQuantityRange": "Quantity must be at least 1 when provided.",
   "mfgEquipFieldFirmware": "Firmware version",
   "mfgEquipFieldSerial": "Serial number",
   "mfgEquipCategoryRequired": "Category *",
@@ -665,6 +779,12 @@
   "mfgEquipAddSpecRow": "Add row",
   "mfgEquipFieldIntroVideoUrl": "Intro video URL (optional)",
   "mfgEquipDefaultsTitle": "Training defaults (optional)",
+  "mfgEquipDefaultsRangeHint": "When filled: hours 1–999, score 40–100 %, certificate 1–240 months, reassessment 1–365 days, quantity ≥ 1.",
+  "mfgEquipHelperHours": "Optional · whole number · 1–999",
+  "mfgEquipHelperPass": "Optional · whole number · 40–100",
+  "mfgEquipHelperCertMonths": "Optional · whole number · 1–240",
+  "mfgEquipHelperReassess": "Optional · whole number · 1–365",
+  "mfgEquipHelperQuantity": "Optional · whole number · ≥ 1",
   "mfgEquipDefaultTrainingHours": "Training hours",
   "mfgEquipDefaultPassingScore": "Passing score (%)",
   "mfgEquipDefaultCertMonths": "Certificate validity (months)",
@@ -690,6 +810,17 @@
       "count": {}
     }
   },
+  "mfgEquipSortLabel": "Sort list",
+  "mfgEquipSortName": "Name (A–Z)",
+  "mfgEquipSortUpdated": "Recently updated",
+  "mfgEquipSortTemplates": "Most official templates",
+  "mfgEquipListResultCount": "{count} model(s) listed (up to 200).",
+  "@mfgEquipListResultCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "mfgEquipClearFilters": "Clear filters",
   "mfgEquipSnackPartialUpload": "Equipment saved; some attachments failed.",
   "mfgValidationTitle": "Manufacturer credentialing",
   "mfgValidationStateLine": "Status: {status}",
@@ -749,10 +880,13 @@
   "trnLgpdIntro": "Before training, we need your explicit consent (LGPD — Law 13.709/2018):",
   "trnLgpdBullets": "• Purpose: identification in trainings, certificates, and aggregated institution reports.\n• Sharing: individual data only with the instructor during the session; to the institution, in aggregated form.\n• Retention: up to 5 years after the last training for audit, unless you request deletion or anonymization.\n• Rights: access, correction, portability, and deletion via the Privacy menu (icon at the top).\n• Google: when using Google login, data is also processed under Google’s policy.",
   "trnLgpdCheckboxTitle": "I have read and agree to the processing of my personal data under the App²cation Privacy Policy.",
+  "trnLgpdAfterConsentHint": "After continuing, you can export or request account deletion anytime from the Privacy menu (shield icon) in the header.",
   "trnBtnContinue": "Continue",
   "trnPreregTitle": "Pre-registration",
   "trnPreregSubtitle": "Real data saved to your account.",
   "trnFieldInstitutionOptional": "Institution (optional)",
+  "trnInstitutionNone": "No institution",
+  "trnProfileInstitutionHint": "Linking a hospital unlocks the institution’s equipment park for training requests and may be required by your unit’s policy.",
   "trnFieldSectorTeam": "Sector / team *",
   "trnFieldEquipmentContext": "Equipment / context",
   "trnFieldSessionAtOptional": "Session date and time (optional)",
@@ -795,17 +929,25 @@
   "trnMyRequests": "My requests",
   "trnJoinTitle": "Join training",
   "trnJoinIntro": "Use the code provided by the instructor.",
+  "trnJoinIntroDetail": "The instructor shares the code or hash after you are invited (email, app or in person). You can paste from a message; spaces are trimmed and letter case does not matter.",
+  "trnJoinAccessCodeHint": "Paste the code from the instructor",
+  "trnJoinHashKeepTyping": "Most codes are 12 characters — keep typing or paste the full code.",
+  "trnJoinHashFormatOk": "Format looks valid. Tap confirm to join.",
   "trnFieldAccessCode": "Access code",
   "trnBtnConfirmJoin": "Confirm entry",
+  "trnJoinOfflineHint": "The app cannot reach the server. Check your connection before confirming entry.",
   "trnWaitingRoomTitle": "Waiting room",
   "trnWaitingRoomBody": "As soon as the instructor starts, the questionnaire opens automatically.",
   "trnWaitingHeroTitle": "Waiting for training to start",
   "trnWaitingHeroBody": "The instructor will start the session shortly. Keep this window open to join the virtual room automatically.",
+  "trnWaitingOfflineHint": "We cannot reach the API. When you are back online, pull down or tap Refresh status to sync as soon as the instructor starts.",
   "trnWaitingStatusChip": "Status: waiting room active",
   "trnWaitingTestConnection": "Test connection and devices",
+  "trnWaitingCheckNow": "Refresh status",
   "trnWaitingPingOk": "Server connection OK.",
   "trnWaitingPingFail": "Could not reach the server.",
   "trnWaitingPrivacyNote": "Camera and microphone stay off by default in this version.",
+  "trnHeaderProfileStep": "Profile & institution",
   "trnHeaderWaitingInstructor": "Awaiting instructor",
   "trnHeaderRealtimeActive": "Realtime: active",
   "trnQuestionSidebarNavTitle": "Navigation",
@@ -838,6 +980,17 @@
   "trnResultApprovedBanner": "Passed — score is 7.0 or higher.",
   "trnResultInsufficientBanner": "Score below 7.0. If unsure, speak with your instructor.",
   "trnResultRecoveryNote": "You are in recovery: complete the questions indicated by the instructor.",
+  "trnResultInstitution": "Institution: {name}",
+  "@trnResultInstitution": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "trnResultRefresh": "Refresh status",
+  "trnResultCertificateHint": "If the instructor just finished the training, refresh — your certificate can take a few seconds to appear.",
+  "trnResultCertificateDownload": "Certificate (PDF)",
+  "trnResultFollowUpIntro": "When the due window opens, tap Respond to complete the short questionnaire.",
+  "trnResultOfflineHint": "Cannot reach the server. You can refresh when back online; the certificate (PDF) and follow-up questionnaire only work while online.",
   "trnBtnJoinAnother": "Join another training",
   "trnFollowUpDialogTitle": "Post-training follow-up",
   "trnTrainingDefaultTitle": "Training",
@@ -867,6 +1020,12 @@
   "mfgTplSnackSaved": "Questionnaire saved.",
   "mfgTplErrNeedCorrect": "Each question must have one correct option.",
   "mfgTplErrMinQuestions": "Add at least one question with two or more options.",
+  "mfgTplErrQuestionNeedTwoOptions": "Each question with a prompt needs at least two non-empty options.",
+  "mfgTplErrCorrectMustHaveLabel": "The correct choice must have text (no empty correct option).",
+  "mfgTplBtnAddOption": "Option",
+  "mfgTplRemoveOptionTooltip": "Remove option",
+  "mfgTplMaxOptionsSnack": "At most 12 options per question.",
+  "mfgTplOptionsCountHint": "2–12 options; empty rows are ignored when saving.",
   "mfgTplQuestionNumber": "Question {n}",
   "@mfgTplQuestionNumber": {
     "placeholders": {
@@ -883,6 +1042,32 @@
   },
   "mfgTplBtnSaveApi": "Save questionnaire to API",
   "mfgTplOfficialBlockTitle": "Official content",
+  "mfgTplReloadTooltip": "Reload from server",
+  "mfgTplRefreshHint": "Pull down to reload from the server. Unsaved edits in the form are replaced.",
+  "mfgTplMoveUpTooltip": "Move question up",
+  "mfgTplMoveDownTooltip": "Move question down",
+  "mfgTplDiscardTitle": "Discard changes?",
+  "mfgTplDiscardBody": "You have unsaved edits. Leave without saving?",
+  "mfgTplKeepEditing": "Keep editing",
+  "mfgTplDiscardLeave": "Leave without saving",
+  "mfgTplSectionBlocks": "Questionnaire sections",
+  "mfgTplFieldBlockTitle": "Section title",
+  "mfgTplBtnAddBlock": "Add section",
+  "mfgTplRemoveBlockTooltip": "Remove section and merge questions into the section above",
+  "mfgTplBlockDefaultTitle": "Section {n}",
+  "@mfgTplBlockDefaultTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "mfgTplViewEdit": "Edit",
+  "mfgTplViewPreview": "Preview",
+  "mfgTplPreviewBanner": "Trainee-style preview: no answers are stored and the correct option is not highlighted.",
+  "mfgTplPreviewEmpty": "No questions with a prompt to show. Switch to Edit and fill in at least one prompt.",
+  "mfgTplMoveBlockUpTooltip": "Move section up",
+  "mfgTplMoveBlockDownTooltip": "Move section down",
   "fluxPanelTraineeTitle": "Trainee journey",
   "fluxPanelTraineeSubtitle": "Aligned with the spec: pre-registration → join → GDPR consent → live session → result.",
   "fluxPanelTraineeS1Label": "Profile and clinical context",

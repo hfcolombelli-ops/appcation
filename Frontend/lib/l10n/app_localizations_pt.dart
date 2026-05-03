@@ -288,6 +288,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get postTrainingOutcomeInProgress => 'Em curso';
 
   @override
+  String get postTrainingOutcomeWaitingRoom => 'Sala de espera';
+
+  @override
   String get postTrainingOutcomeCompletedNoGrade => 'Concluído (sem nota)';
 
   @override
@@ -395,15 +398,42 @@ class AppLocalizationsPt extends AppLocalizations {
       'Fluxo oficial do produto: docs/product/fluxo_app2cation.mermaid';
 
   @override
+  String get profileGateYourAccount => 'Conta com sessão iniciada';
+
+  @override
+  String profileGateRoleFromApi(Object role) {
+    return 'Função (role) no servidor: $role';
+  }
+
+  @override
+  String get profileGateRefreshSession => 'Actualizar sessão';
+
+  @override
+  String get profileGateRefreshHint =>
+      'Use depois de um administrador actualizar a sua função — sem voltar a escrever a palavra-passe.';
+
+  @override
+  String get profileGateClaimSectionTitle => 'Definir perfil (uma vez)';
+
+  @override
+  String get profileGateClaimIntro =>
+      'Se a sua conta deve ser treinando, instrutor ou administrador de fabricante mas a função no servidor estava em falta ou inválida, escolha abaixo. Só é permitido até existir uma função válida gravada.';
+
+  @override
+  String get profileGateClaimHint =>
+      'Gestor de instituição não se define aqui — o hospital ou o fabricante cria esse acesso.';
+
+  @override
+  String get profileGateChooseRole => 'Perfil na plataforma';
+
+  @override
+  String get profileGateConfirmProfile => 'Confirmar perfil';
+
+  @override
+  String get profileGatePickRoleFirst => 'Escolha um perfil primeiro.';
+
+  @override
   String get actionRetry => 'Tentar novamente';
-
-  @override
-  String get dashExportCsvWebOnly =>
-      'Exportação CSV está disponível na versão Web.';
-
-  @override
-  String get dashExportPdfWebOnly =>
-      'Exportação PDF está disponível na versão Web.';
 
   @override
   String get dashLinkInstitutionForKpis =>
@@ -491,14 +521,14 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get dashSectorAveragesTitle => 'Médias por setor (concluídos)';
+  String get dashSectorAveragesTitle => 'Por setor (treinos da instituição)';
 
   @override
   String get dashNoSectorHistory => 'Sem histórico por setor.';
 
   @override
-  String dashSectorSubtitle(Object c, Object a) {
-    return 'Conclusões: $c · Média: $a';
+  String dashSectorSubtitle(int total, int done, int scored, String avg) {
+    return 'Inscrições: $total · Concluídas: $done · Com nota: $scored · Média: $avg';
   }
 
   @override
@@ -592,6 +622,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trainLifecycleFinished => 'Concluído';
 
   @override
+  String get trainLifecycleCancelled => 'Cancelado';
+
+  @override
   String get enrollmentStatusWaiting => 'Em espera';
 
   @override
@@ -676,6 +709,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get comandoParticipantsTitle => 'Participantes';
+
+  @override
+  String get comandoParticipantsSearchHint => 'Filtrar por nome ou e-mail';
+
+  @override
+  String get comandoParticipantsNoMatch =>
+      'Nenhum participante corresponde a este filtro.';
 
   @override
   String get comandoNoParticipants => 'Nenhum participante inscrito.';
@@ -865,6 +905,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get credBtnApprove => 'Aprovar';
+
+  @override
+  String get credBtnSuspend => 'Suspender';
+
+  @override
+  String get credBtnReactivateHomolog => 'Reactivar';
+
+  @override
+  String get credStatusSuspended => 'Suspenso';
 
   @override
   String get credBtnReject => 'Recusar';
@@ -1184,6 +1233,82 @@ class AppLocalizationsPt extends AppLocalizations {
   String get mfgNavHomologations => 'Homologações';
 
   @override
+  String get mfgNavAnalytics => 'Análises';
+
+  @override
+  String get mfgAnalyticsTitle => 'Análises agregadas';
+
+  @override
+  String get mfgAnalyticsIntro =>
+      'Filtre por instituição, equipamento ligado ao treino ou período de criação dos treinos. Dados agregados, sem identificação individual (LGPD).';
+
+  @override
+  String get mfgAnalyticsFilterInstitution => 'Instituição';
+
+  @override
+  String get mfgAnalyticsFilterEquipment => 'Equipamento (no treino)';
+
+  @override
+  String get mfgAnalyticsDateFrom => 'Treinos criados desde (AAAA-MM-DD)';
+
+  @override
+  String get mfgAnalyticsDateTo => 'Treinos criados até (AAAA-MM-DD)';
+
+  @override
+  String get mfgAnalyticsApply => 'Aplicar filtros';
+
+  @override
+  String get mfgAnalyticsReset => 'Limpar';
+
+  @override
+  String get mfgAnalyticsAll => 'Todas/os';
+
+  @override
+  String get mfgAnalyticsSectionInstitutions => 'Por instituição';
+
+  @override
+  String get mfgAnalyticsSectionEquipment => 'Por equipamento';
+
+  @override
+  String get mfgAnalyticsEmpty => 'Sem dados para estes filtros.';
+
+  @override
+  String get mfgAnalyticsLoading => 'A carregar…';
+
+  @override
+  String mfgAnalyticsBreakdownSubtitle(
+    int trainings,
+    int enr,
+    int done,
+    String rate,
+    String avg,
+  ) {
+    return '$trainings treinos · inscr.: $enr · concl.: $done · taxa: $rate · média: $avg';
+  }
+
+  @override
+  String get mfgAnalyticsSectionMonthlyTrend => 'Tendência mensal (combinada)';
+
+  @override
+  String get mfgAnalyticsMonthlyTrendIntro =>
+      'Mesmo eixo temporal (AAAA-MM): inscrições por COALESCE(joined_at, created_at) e conclusões por completed_at (UTC). Barras normalizadas ao máximo de cada métrica.';
+
+  @override
+  String get mfgAnalyticsMonthlyTrendEmpty =>
+      'Sem dados mensais no período filtrado.';
+
+  @override
+  String get mfgAnalyticsTrendLegendEnroll => 'Inscrições';
+
+  @override
+  String get mfgAnalyticsTrendLegendComplete => 'Concluídas';
+
+  @override
+  String mfgHomologRequestedAt(String date) {
+    return 'Registado: $date';
+  }
+
+  @override
   String get mfgHomologEmpty =>
       'Nenhum pedido de credenciamento neste momento.';
 
@@ -1200,6 +1325,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get mfgHomologFilterRejected => 'Recusados';
 
   @override
+  String get mfgHomologFilterSuspended => 'Suspensos';
+
+  @override
   String get mfgSnackHomologUpdated => 'Pedido de homologação atualizado.';
 
   @override
@@ -1214,6 +1342,16 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get mfgDashSummaryIntro =>
       'Treinos e inscrições ligados a este fabricante — dados agregados (LGPD).';
+
+  @override
+  String get mfgDashMonthlyTrendTitle => 'Evolução recente (mensal)';
+
+  @override
+  String get mfgDashMonthlyTrendIntro =>
+      'Até os últimos 6 meses com dados: inscrições vs. conclusões (mesma lógica que em Análises).';
+
+  @override
+  String get mfgDashOpenAnalytics => 'Abrir análises';
 
   @override
   String get mfgSnackValidationRequested =>
@@ -1398,6 +1536,20 @@ class AppLocalizationsPt extends AppLocalizations {
       'PDF ou imagem até 12 MB. O servidor usa o disco configurado (local ou S3 via FILESYSTEM_DISK); envie manuais ou anexos para homologação.';
 
   @override
+  String get mfgOpsSearchHint =>
+      'Pesquisar épocas, prémios e documentos enviados';
+
+  @override
+  String get mfgOpsServerFilterHint =>
+      'Filtro no servidor; os resultados actualizam pouco depois de parar de escrever.';
+
+  @override
+  String get mfgOpsSublistNoMatch => 'Sem resultados neste bloco.';
+
+  @override
+  String get mfgOpsLoadMore => 'Carregar mais';
+
+  @override
   String get mfgDocKindOptional => 'Tipo (opcional)';
 
   @override
@@ -1436,6 +1588,44 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get mfgTemplatesEmpty => 'Nenhum template ainda. Crie um acima.';
+
+  @override
+  String get mfgTplSearchHint => 'Pesquisar título do template';
+
+  @override
+  String get mfgTplFilterStatusLabel => 'Estado do template';
+
+  @override
+  String get mfgTplSortLabel => 'Ordenar lista';
+
+  @override
+  String get mfgTplSortUpdated => 'Actualizados recentemente';
+
+  @override
+  String get mfgTplSortTitleAsc => 'Título (A–Z)';
+
+  @override
+  String get mfgTplSortTitleDesc => 'Título (Z–A)';
+
+  @override
+  String get mfgTplSortStatus => 'Por estado';
+
+  @override
+  String mfgTplRowUpdatedAt(String date) {
+    return 'Actualizado: $date';
+  }
+
+  @override
+  String mfgTplListResultCount(Object count) {
+    return '$count template(s) listado(s) (até 80).';
+  }
+
+  @override
+  String get mfgTplClearFilters => 'Limpar filtros';
+
+  @override
+  String get mfgTplNoMatches =>
+      'Nenhum template corresponde aos filtros actuais.';
 
   @override
   String get mfgTrainingFallbackTitle => 'Treino';
@@ -1534,6 +1724,27 @@ class AppLocalizationsPt extends AppLocalizations {
   String get mfgEquipWizardSubmit => 'Guardar';
 
   @override
+  String get mfgEquipErrInvalidInteger =>
+      'Use números inteiros nos campos numéricos opcionais.';
+
+  @override
+  String get mfgEquipErrHoursRange => 'Horas de treino: entre 1 e 999.';
+
+  @override
+  String get mfgEquipErrPassRange => 'Nota mínima (%): entre 40 e 100.';
+
+  @override
+  String get mfgEquipErrCertMonthsRange =>
+      'Validade do certificado (meses): entre 1 e 240.';
+
+  @override
+  String get mfgEquipErrReassessRange => 'Reavaliação (dias): entre 1 e 365.';
+
+  @override
+  String get mfgEquipErrQuantityRange =>
+      'Quantidade: pelo menos 1 se preenchida.';
+
+  @override
   String get mfgEquipFieldFirmware => 'Firmware (versão)';
 
   @override
@@ -1563,6 +1774,25 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get mfgEquipDefaultsTitle => 'Pré-definições de treino (opcional)';
+
+  @override
+  String get mfgEquipDefaultsRangeHint =>
+      'Se preencher: horas 1–999, nota 40–100 %, certificado 1–240 meses, reavaliação 1–365 dias, quantidade ≥ 1.';
+
+  @override
+  String get mfgEquipHelperHours => 'Opcional · inteiro · 1–999';
+
+  @override
+  String get mfgEquipHelperPass => 'Opcional · inteiro · 40–100';
+
+  @override
+  String get mfgEquipHelperCertMonths => 'Opcional · inteiro · 1–240';
+
+  @override
+  String get mfgEquipHelperReassess => 'Opcional · inteiro · 1–365';
+
+  @override
+  String get mfgEquipHelperQuantity => 'Opcional · inteiro · ≥ 1';
 
   @override
   String get mfgEquipDefaultTrainingHours => 'Horas de treino';
@@ -1625,6 +1855,26 @@ class AppLocalizationsPt extends AppLocalizations {
   String mfgEquipTemplatesCount(Object count) {
     return '$count template(s) oficial(is)';
   }
+
+  @override
+  String get mfgEquipSortLabel => 'Ordenar lista';
+
+  @override
+  String get mfgEquipSortName => 'Nome (A–Z)';
+
+  @override
+  String get mfgEquipSortUpdated => 'Actualizados recentemente';
+
+  @override
+  String get mfgEquipSortTemplates => 'Mais templates oficiais';
+
+  @override
+  String mfgEquipListResultCount(Object count) {
+    return '$count modelo(s) listado(s) (até 200).';
+  }
+
+  @override
+  String get mfgEquipClearFilters => 'Limpar filtros';
 
   @override
   String get mfgEquipSnackPartialUpload =>
@@ -1793,6 +2043,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Li e concordo com o tratamento dos meus dados pessoais conforme a Política de Privacidade do App²cation.';
 
   @override
+  String get trnLgpdAfterConsentHint =>
+      'Depois de continuar, pode exportar os seus dados ou pedir exclusão da conta a qualquer momento no menu Privacidade (ícone de escudo) no cabeçalho.';
+
+  @override
   String get trnBtnContinue => 'Continuar';
 
   @override
@@ -1803,6 +2057,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trnFieldInstitutionOptional => 'Instituição (opcional)';
+
+  @override
+  String get trnInstitutionNone => 'Sem instituição';
+
+  @override
+  String get trnProfileInstitutionHint =>
+      'Vincular um hospital desbloqueia o parque de equipamentos da instituição para pedidos de treino e pode ser exigido pela política da sua unidade.';
 
   @override
   String get trnFieldSectorTeam => 'Setor / equipe *';
@@ -1900,10 +2161,29 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trnJoinIntro => 'Use o código fornecido pelo instrutor.';
 
   @override
+  String get trnJoinIntroDetail =>
+      'O instrutor partilha o código ou hash depois de ser convidado (e-mail, aplicação ou presencial). Pode colar a partir de uma mensagem; espaços são ignorados e maiúsculas/minúsculas não importam.';
+
+  @override
+  String get trnJoinAccessCodeHint => 'Cole o código enviado pelo instrutor';
+
+  @override
+  String get trnJoinHashKeepTyping =>
+      'A maioria dos códigos tem 12 caracteres — continue a escrever ou cole o código completo.';
+
+  @override
+  String get trnJoinHashFormatOk =>
+      'O formato parece válido. Toque em confirmar para entrar.';
+
+  @override
   String get trnFieldAccessCode => 'Código de acesso';
 
   @override
   String get trnBtnConfirmJoin => 'Confirmar entrada';
+
+  @override
+  String get trnJoinOfflineHint =>
+      'A aplicação não consegue contactar o servidor. Verifique a ligação antes de confirmar a entrada.';
 
   @override
   String get trnWaitingRoomTitle => 'Sala de espera';
@@ -1920,10 +2200,17 @@ class AppLocalizationsPt extends AppLocalizations {
       'O instrutor iniciará a sessão em breve. Mantenha esta janela aberta para entrar automaticamente na sala virtual.';
 
   @override
+  String get trnWaitingOfflineHint =>
+      'Não há ligação à API. Quando a rede voltar, puxe para actualizar ou toque em «Actualizar estado» para sincronizar assim que o instrutor iniciar.';
+
+  @override
   String get trnWaitingStatusChip => 'Status: sala de espera ativa';
 
   @override
   String get trnWaitingTestConnection => 'Testar conexão e periféricos';
+
+  @override
+  String get trnWaitingCheckNow => 'Actualizar estado';
 
   @override
   String get trnWaitingPingOk => 'Ligação ao servidor OK.';
@@ -1934,6 +2221,9 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get trnWaitingPrivacyNote =>
       'Câmara e microfone permanecem desativados por defeito nesta versão.';
+
+  @override
+  String get trnHeaderProfileStep => 'Perfil e instituição';
 
   @override
   String get trnHeaderWaitingInstructor => 'Aguardando instrutor';
@@ -2009,6 +2299,29 @@ class AppLocalizationsPt extends AppLocalizations {
       'Está em recuperação: conclua as questões indicadas pelo instrutor.';
 
   @override
+  String trnResultInstitution(Object name) {
+    return 'Instituição: $name';
+  }
+
+  @override
+  String get trnResultRefresh => 'Actualizar estado';
+
+  @override
+  String get trnResultCertificateHint =>
+      'Se o instrutor acabou de encerrar o treino, actualize — o certificado pode demorar alguns segundos a aparecer.';
+
+  @override
+  String get trnResultCertificateDownload => 'Certificado (PDF)';
+
+  @override
+  String get trnResultFollowUpIntro =>
+      'Quando a data prevista abrir, toque em Responder para preencher o breve questionário.';
+
+  @override
+  String get trnResultOfflineHint =>
+      'Sem ligação ao servidor. Pode actualizar quando a rede voltar; o certificado (PDF) e o questionário de seguimento só funcionam online.';
+
+  @override
   String get trnBtnJoinAnother => 'Entrar em outro treinamento';
 
   @override
@@ -2060,6 +2373,27 @@ class AppLocalizationsPt extends AppLocalizations {
       'Adicione pelo menos uma pergunta com 2+ opções.';
 
   @override
+  String get mfgTplErrQuestionNeedTwoOptions =>
+      'Cada pergunta com enunciado precisa de pelo menos duas opções preenchidas.';
+
+  @override
+  String get mfgTplErrCorrectMustHaveLabel =>
+      'A opção marcada como correta tem de ter texto.';
+
+  @override
+  String get mfgTplBtnAddOption => 'Opção';
+
+  @override
+  String get mfgTplRemoveOptionTooltip => 'Remover opção';
+
+  @override
+  String get mfgTplMaxOptionsSnack => 'No máximo 12 opções por pergunta.';
+
+  @override
+  String get mfgTplOptionsCountHint =>
+      '2–12 opções; linhas vazias são ignoradas ao guardar.';
+
+  @override
   String mfgTplQuestionNumber(Object n) {
     return 'Pergunta $n';
   }
@@ -2080,6 +2414,70 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get mfgTplOfficialBlockTitle => 'Conteúdo oficial';
+
+  @override
+  String get mfgTplReloadTooltip => 'Recarregar do servidor';
+
+  @override
+  String get mfgTplRefreshHint =>
+      'Puxe para baixo para recarregar do servidor. Alterações não guardadas no formulário serão substituídas.';
+
+  @override
+  String get mfgTplMoveUpTooltip => 'Subir pergunta';
+
+  @override
+  String get mfgTplMoveDownTooltip => 'Descer pergunta';
+
+  @override
+  String get mfgTplDiscardTitle => 'Descartar alterações?';
+
+  @override
+  String get mfgTplDiscardBody =>
+      'Tem edições não guardadas. Sair sem guardar?';
+
+  @override
+  String get mfgTplKeepEditing => 'Continuar a editar';
+
+  @override
+  String get mfgTplDiscardLeave => 'Sair sem guardar';
+
+  @override
+  String get mfgTplSectionBlocks => 'Secções do questionário';
+
+  @override
+  String get mfgTplFieldBlockTitle => 'Título da secção';
+
+  @override
+  String get mfgTplBtnAddBlock => 'Adicionar secção';
+
+  @override
+  String get mfgTplRemoveBlockTooltip =>
+      'Remover secção e unir perguntas à secção acima';
+
+  @override
+  String mfgTplBlockDefaultTitle(int n) {
+    return 'Secção $n';
+  }
+
+  @override
+  String get mfgTplViewEdit => 'Editar';
+
+  @override
+  String get mfgTplViewPreview => 'Pré-visualizar';
+
+  @override
+  String get mfgTplPreviewBanner =>
+      'Pré-visualização ao estilo treinando: sem respostas gravadas e sem destacar a opção correcta.';
+
+  @override
+  String get mfgTplPreviewEmpty =>
+      'Nenhuma pergunta com enunciado para mostrar. Volte a Editar e preencha pelo menos um enunciado.';
+
+  @override
+  String get mfgTplMoveBlockUpTooltip => 'Subir secção';
+
+  @override
+  String get mfgTplMoveBlockDownTooltip => 'Descer secção';
 
   @override
   String get fluxPanelTraineeTitle => 'Fluxo do treinando';
