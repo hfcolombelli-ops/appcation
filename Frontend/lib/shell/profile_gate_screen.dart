@@ -25,6 +25,14 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
   final TextEditingController _mfgCnpj = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await appAuth.restore();
+    });
+  }
+
+  @override
   void dispose() {
     _mfgName.dispose();
     _mfgCnpj.dispose();
@@ -59,6 +67,14 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
       );
     } on ApiException catch (e) {
       if (!mounted) return;
+      if (e.statusCode == 403) {
+        await appAuth.restore();
+        if (!mounted) return;
+        if (!appAuth.needsProfileGate) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.profileGateProfileAlreadySetSync)));
+          return;
+        }
+      }
       final msg = e.message.trim().isNotEmpty ? e.message : l.errApiConnection;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } catch (_) {

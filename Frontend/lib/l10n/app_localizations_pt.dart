@@ -507,6 +507,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get profileGatePickRoleFirst => 'Escolha um perfil primeiro.';
 
   @override
+  String get profileGateProfileAlreadySetSync =>
+      'Perfil já definido no servidor. A sincronizar…';
+
+  @override
   String get loginGoogleTriageHint =>
       'Depois de entrar com o Google, escolhe o teu perfil em dois passos (tipo de conta e, se necessário, dados da empresa).';
 

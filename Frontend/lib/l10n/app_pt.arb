@@ -174,6 +174,7 @@
   "profileGateChooseRole": "Perfil na plataforma",
   "profileGateConfirmProfile": "Confirmar perfil",
   "profileGatePickRoleFirst": "Escolha um perfil primeiro.",
+  "profileGateProfileAlreadySetSync": "Perfil já definido no servidor. A sincronizar…",
   "loginGoogleTriageHint": "Depois de entrar com o Google, escolhe o teu perfil em dois passos (tipo de conta e, se necessário, dados da empresa).",
   "profileTriageTitle": "Escolhe o teu perfil",
   "profileTriageSubtitle": "Selecciona o tipo de conta. No passo seguinte confirmas ou completas os dados para vincular a conta Google.",

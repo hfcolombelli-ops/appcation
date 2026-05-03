@@ -998,6 +998,12 @@ abstract class AppLocalizations {
   /// **'Escolha um perfil primeiro.'**
   String get profileGatePickRoleFirst;
 
+  /// No description provided for @profileGateProfileAlreadySetSync.
+  ///
+  /// In pt, this message translates to:
+  /// **'Perfil já definido no servidor. A sincronizar…'**
+  String get profileGateProfileAlreadySetSync;
+
   /// No description provided for @loginGoogleTriageHint.
   ///
   /// In pt, this message translates to:
