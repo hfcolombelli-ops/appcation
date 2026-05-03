@@ -18,7 +18,6 @@ import '../services/production_api.dart';
 import '../services/training_reverb_listener.dart';
 import '../services/google_sign_in_helper.dart';
 import '../theme/clinical_precision_tokens.dart';
-import '../widgets/fluxo_premium_panel.dart';
 import '../widgets/version_badge.dart';
 
 Future<void> _downloadTraineeMyCertificatePdf({
@@ -830,40 +829,29 @@ class _TraineeShellState extends State<TraineeShell> {
                         onSubmit: _submitLgpdConsent,
                         onRefresh: _bootstrap,
                       )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.fromLTRB(16, 10, 16, 0),
-                            child: FluxoPremiumPanel(dense: false),
-                          ),
-                          Expanded(
-                            child: _loading && _step != 2 && _step != 3 && _step != 4
-                                ? const Center(child: CircularProgressIndicator())
-                                : _error != null && _profile == null
-                                    ? Center(
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(24),
-                                          child: Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text(_error!, textAlign: TextAlign.center),
-                                              const SizedBox(height: 12),
-                                              FilledButton(onPressed: _bootstrap, child: Text(AppLocalizations.of(context).actionRetry)),
-                                            ],
-                                          ),
-                                        ),
-                                      )
-                                    : AnimatedSwitcher(
-                                        duration: const Duration(milliseconds: 220),
-                                        child: KeyedSubtree(
-                                          key: ValueKey(_step),
-                                          child: _stepBody(),
-                                        ),
-                                      ),
-                          ),
-                        ],
-                      ),
+                    : _loading && _step != 2 && _step != 3 && _step != 4
+                        ? const Center(child: CircularProgressIndicator())
+                        : _error != null && _profile == null
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(_error!, textAlign: TextAlign.center),
+                                      const SizedBox(height: 12),
+                                      FilledButton(onPressed: _bootstrap, child: Text(AppLocalizations.of(context).actionRetry)),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 220),
+                                child: KeyedSubtree(
+                                  key: ValueKey(_step),
+                                  child: _stepBody(),
+                                ),
+                              ),
               ),
             ],
           ),

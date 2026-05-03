@@ -5,7 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../l10n/error_snacks.dart';
 import '../services/api_client.dart';
 
-/// Painel opcional de orientação por perfil (treinando, instrutor, gestor, fabricante).
+/// Painel opcional de orientação por perfil (instrutor, gestor, fabricante — não treinando).
 /// Resumo da jornada na plataforma — não substitui regras no backend.
 class FluxoPremiumPanel extends StatefulWidget {
   const FluxoPremiumPanel({super.key, this.dense = false});
@@ -249,33 +249,8 @@ class _FluxoSpec {
 _FluxoSpec? _fluxoSpecForRole(String role, AppLocalizations l) {
   switch (role) {
     case 'trainee':
-      return _FluxoSpec(
-        title: l.fluxPanelTraineeTitle,
-        subtitle: l.fluxPanelTraineeSubtitle,
-        steps: [
-          _FluxoStep(
-            label: l.fluxPanelTraineeS1Label,
-            detail: l.fluxPanelTraineeS1Detail,
-          ),
-          _FluxoStep(
-            label: l.fluxPanelTraineeS2Label,
-            detail: l.fluxPanelTraineeS2Detail,
-          ),
-          _FluxoStep(
-            label: l.fluxPanelTraineeS3Label,
-            detail: l.fluxPanelTraineeS3Detail,
-          ),
-          _FluxoStep(
-            label: l.fluxPanelTraineeS4Label,
-            detail: l.fluxPanelTraineeS4Detail,
-          ),
-          _FluxoStep(
-            label: l.fluxPanelTraineeS5Label,
-            detail: l.fluxPanelTraineeS5Detail,
-            roadmap: false,
-          ),
-        ],
-      );
+      // Painel de «jornada» removido do UX treinando (produto não usa este bloco).
+      return null;
     case 'instructor':
       return _FluxoSpec(
         title: l.fluxPanelInstructorTitle,
