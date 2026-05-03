@@ -35,6 +35,72 @@ class AppLocalizationsEn extends AppLocalizations {
       'Use Google or your institutional email and password.';
 
   @override
+  String get loginUrsSecurePortalSubtitle => 'Secure portal access';
+
+  @override
+  String get loginSectionLoginTitle => 'Login';
+
+  @override
+  String get loginInstitutionalCredentialsTitle => 'Credentials (email)';
+
+  @override
+  String get loginFieldIdentifier => 'Identifier';
+
+  @override
+  String get loginFieldIdentifierHint =>
+      'CPF, CRM, CNPJ, or institutional email';
+
+  @override
+  String get loginIdentityPatient => 'Profile: trainee (valid CPF)';
+
+  @override
+  String get loginIdentityInstitution =>
+      'Profile: institution / manufacturer (CNPJ)';
+
+  @override
+  String get loginIdentityDoctor => 'Profile: instructor (CRM)';
+
+  @override
+  String get loginIdentitySystem => 'Internal account (alphanumeric login)';
+
+  @override
+  String get loginIdentityEmail => 'Institutional email';
+
+  @override
+  String get loginIdentityUnknown =>
+      'Unrecognized identifier — use a valid email or Google';
+
+  @override
+  String get loginForgotPassword => 'Forgot password';
+
+  @override
+  String get loginNoAccountPrefix => 'No account?';
+
+  @override
+  String get loginNoAccountAction => 'Create account';
+
+  @override
+  String get loginUrsHeroTagline =>
+      'Connecting care and technology in real time';
+
+  @override
+  String get loginEmptyIdentifierPassword => 'Identifier or password is empty.';
+
+  @override
+  String get loginIdentifierInvalidClient =>
+      'Invalid identifier. Use a valid CPF, CRM, CNPJ, admin login, or email.';
+
+  @override
+  String get loginPasswordRequiresEmail =>
+      'Password sign-in requires your account email (or use Continue with Google).';
+
+  @override
+  String get loginShowPassword => 'Show password';
+
+  @override
+  String get loginHidePassword => 'Hide password';
+
+  @override
   String get loginNavQuestions => 'Questions?';
 
   @override

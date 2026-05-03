@@ -38,6 +38,7 @@ class User extends Authenticatable
     public function toApiArray(): array
     {
         $data = $this->toArray();
+        $data['role'] = $this->role;
         $email = strtolower(trim((string) $this->email));
         $data['can_review_manufacturers'] = $email !== ''
             && in_array($email, config('manufacturer.reviewer_emails', []), true);

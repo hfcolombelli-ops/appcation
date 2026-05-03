@@ -83,11 +83,22 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            // Compatível com clientes antigos (`email`) e fluxo tipo URS (`identifier`).
+            'email' => ['required_without:identifier', 'nullable', 'email', 'max:190'],
+            'identifier' => ['required_without:email', 'nullable', 'string', 'max:190'],
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::where('email', $credentials['email'])->first();
+        $raw = $credentials['email'] ?? $credentials['identifier'] ?? '';
+        $email = strtolower(trim((string) $raw));
+        if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return response()->json([
+                'message' => 'Utilize um e-mail institucional válido no campo identificador (ou fluxo Google).',
+                'errors' => ['identifier' => ['O identificador deve ser um e-mail válido para este portal.']],
+            ], 422);
+        }
+
+        $user = User::where('email', $email)->first();
 
         if (! $user || $user->password === null || ! Hash::check($credentials['password'], $user->password)) {
             return response()->json(['message' => 'Credenciais inválidas.'], 422);

@@ -35,6 +35,73 @@ class AppLocalizationsPt extends AppLocalizations {
       'Use o Google ou o e-mail e senha da sua instituição.';
 
   @override
+  String get loginUrsSecurePortalSubtitle => 'Acesso seguro ao portal';
+
+  @override
+  String get loginSectionLoginTitle => 'Login';
+
+  @override
+  String get loginInstitutionalCredentialsTitle => 'Credenciais (e-mail)';
+
+  @override
+  String get loginFieldIdentifier => 'Identificador';
+
+  @override
+  String get loginFieldIdentifierHint =>
+      'CPF, CRM, CNPJ ou e-mail da instituição';
+
+  @override
+  String get loginIdentityPatient => 'Perfil: treinando (CPF válido)';
+
+  @override
+  String get loginIdentityInstitution =>
+      'Perfil: instituição / fabricante (CNPJ)';
+
+  @override
+  String get loginIdentityDoctor => 'Perfil: instrutor (CRM)';
+
+  @override
+  String get loginIdentitySystem => 'Conta interna (login alfanumérico)';
+
+  @override
+  String get loginIdentityEmail => 'E-mail institucional';
+
+  @override
+  String get loginIdentityUnknown =>
+      'Identificador não reconhecido — use e-mail válido ou Google';
+
+  @override
+  String get loginForgotPassword => 'Esqueci minha senha';
+
+  @override
+  String get loginNoAccountPrefix => 'Não tem conta?';
+
+  @override
+  String get loginNoAccountAction => 'Criar conta';
+
+  @override
+  String get loginUrsHeroTagline =>
+      'Conectando cuidado e tecnologia em tempo real';
+
+  @override
+  String get loginEmptyIdentifierPassword =>
+      'Identificador ou senha em branco.';
+
+  @override
+  String get loginIdentifierInvalidClient =>
+      'Identificador inválido. Use CPF, CRM, CNPJ válido, login administrativo ou e-mail.';
+
+  @override
+  String get loginPasswordRequiresEmail =>
+      'Para entrar com senha neste portal, use o e-mail da sua conta (ou Continuar com Google).';
+
+  @override
+  String get loginShowPassword => 'Mostrar senha';
+
+  @override
+  String get loginHidePassword => 'Ocultar senha';
+
+  @override
   String get loginNavQuestions => 'Dúvidas?';
 
   @override

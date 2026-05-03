@@ -146,6 +146,126 @@ abstract class AppLocalizations {
   /// **'Use o Google ou o e-mail e senha da sua instituição.'**
   String get loginCardSignInLead;
 
+  /// No description provided for @loginUrsSecurePortalSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Acesso seguro ao portal'**
+  String get loginUrsSecurePortalSubtitle;
+
+  /// No description provided for @loginSectionLoginTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Login'**
+  String get loginSectionLoginTitle;
+
+  /// No description provided for @loginInstitutionalCredentialsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Credenciais (e-mail)'**
+  String get loginInstitutionalCredentialsTitle;
+
+  /// No description provided for @loginFieldIdentifier.
+  ///
+  /// In pt, this message translates to:
+  /// **'Identificador'**
+  String get loginFieldIdentifier;
+
+  /// No description provided for @loginFieldIdentifierHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'CPF, CRM, CNPJ ou e-mail da instituição'**
+  String get loginFieldIdentifierHint;
+
+  /// No description provided for @loginIdentityPatient.
+  ///
+  /// In pt, this message translates to:
+  /// **'Perfil: treinando (CPF válido)'**
+  String get loginIdentityPatient;
+
+  /// No description provided for @loginIdentityInstitution.
+  ///
+  /// In pt, this message translates to:
+  /// **'Perfil: instituição / fabricante (CNPJ)'**
+  String get loginIdentityInstitution;
+
+  /// No description provided for @loginIdentityDoctor.
+  ///
+  /// In pt, this message translates to:
+  /// **'Perfil: instrutor (CRM)'**
+  String get loginIdentityDoctor;
+
+  /// No description provided for @loginIdentitySystem.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conta interna (login alfanumérico)'**
+  String get loginIdentitySystem;
+
+  /// No description provided for @loginIdentityEmail.
+  ///
+  /// In pt, this message translates to:
+  /// **'E-mail institucional'**
+  String get loginIdentityEmail;
+
+  /// No description provided for @loginIdentityUnknown.
+  ///
+  /// In pt, this message translates to:
+  /// **'Identificador não reconhecido — use e-mail válido ou Google'**
+  String get loginIdentityUnknown;
+
+  /// No description provided for @loginForgotPassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esqueci minha senha'**
+  String get loginForgotPassword;
+
+  /// No description provided for @loginNoAccountPrefix.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não tem conta?'**
+  String get loginNoAccountPrefix;
+
+  /// No description provided for @loginNoAccountAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar conta'**
+  String get loginNoAccountAction;
+
+  /// No description provided for @loginUrsHeroTagline.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conectando cuidado e tecnologia em tempo real'**
+  String get loginUrsHeroTagline;
+
+  /// No description provided for @loginEmptyIdentifierPassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Identificador ou senha em branco.'**
+  String get loginEmptyIdentifierPassword;
+
+  /// No description provided for @loginIdentifierInvalidClient.
+  ///
+  /// In pt, this message translates to:
+  /// **'Identificador inválido. Use CPF, CRM, CNPJ válido, login administrativo ou e-mail.'**
+  String get loginIdentifierInvalidClient;
+
+  /// No description provided for @loginPasswordRequiresEmail.
+  ///
+  /// In pt, this message translates to:
+  /// **'Para entrar com senha neste portal, use o e-mail da sua conta (ou Continuar com Google).'**
+  String get loginPasswordRequiresEmail;
+
+  /// No description provided for @loginShowPassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mostrar senha'**
+  String get loginShowPassword;
+
+  /// No description provided for @loginHidePassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ocultar senha'**
+  String get loginHidePassword;
+
   /// No description provided for @loginNavQuestions.
   ///
   /// In pt, this message translates to:

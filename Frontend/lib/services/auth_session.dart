@@ -71,9 +71,9 @@ class AuthSession extends ChangeNotifier {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(String identifierOrEmail, String password) async {
     final data = await _api.postJson('/api/auth/login', {
-      'email': email.trim(),
+      'identifier': identifierOrEmail.trim(),
       'password': password,
     });
     final t = data['token'] as String?;
@@ -148,7 +148,14 @@ class AuthSession extends ChangeNotifier {
       throw ApiException('', 500, reason: LocalizedApiReason.authInvalidGoogleLoginResponse);
     }
     _token = t;
-    _user = u;
+    _user = Map<String, dynamic>.from(u);
+    // Garantir `role` null da BD (evita default DB / serialização) antes da triagem.
+    try {
+      final me = await _api.getJson('/api/auth/me', token: _token);
+      _user = Map<String, dynamic>.from(me);
+    } catch (_) {
+      // mantém payload do POST se /me falhar
+    }
     await _persist();
     notifyListeners();
   }

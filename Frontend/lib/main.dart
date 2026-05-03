@@ -17,6 +17,7 @@ import 'shell/instructor_shell.dart';
 import 'shell/manufacturer_shell.dart';
 import 'shell/profile_gate_screen.dart';
 import 'shell/trainee_shell.dart';
+import 'login/login_identity_parser.dart';
 import 'widgets/official_google_login_slot.dart';
 import 'widgets/version_badge.dart';
 
@@ -170,11 +171,13 @@ class AppShell extends StatelessWidget {
     required this.child,
     super.key,
     this.showAppBar = true,
+    this.showVersionBadge = true,
   });
 
   final String title;
   final Widget child;
   final bool showAppBar;
+  final bool showVersionBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -183,7 +186,7 @@ class AppShell extends StatelessWidget {
       body: Stack(
         children: [
           SafeArea(child: child),
-          const Positioned(left: 16, bottom: 16, child: VersionBadge()),
+          if (showVersionBadge) const Positioned(left: 16, bottom: 16, child: VersionBadge()),
         ],
       ),
     );
@@ -226,8 +229,36 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   String? _errorRegister;
   String? _errorRegisterManufacturer;
 
+  bool _obscurePassword = true;
+  LoginIdentityType _previewType = LoginIdentityType.unknown;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailLogin.addListener(_onIdentifierChanged);
+    _previewType = parseLoginIdentity(_emailLogin.text);
+  }
+
+  void _onIdentifierChanged() {
+    final raw = _emailLogin.text;
+    final normalized = normalizeIdentifierInput(raw);
+    final next = normalized.contains('@') ? normalized : normalized.toUpperCase();
+    if (next != raw) {
+      _emailLogin.value = TextEditingValue(
+        text: next,
+        selection: TextSelection.collapsed(offset: next.length),
+      );
+      return;
+    }
+    final parsed = parseLoginIdentity(next);
+    if (parsed != _previewType && mounted) {
+      setState(() => _previewType = parsed);
+    }
+  }
+
   @override
   void dispose() {
+    _emailLogin.removeListener(_onIdentifierChanged);
     _emailLogin.dispose();
     _passwordLogin.dispose();
     _nameRegister.dispose();
@@ -239,6 +270,22 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   }
 
   Future<void> _submitLogin() async {
+    final s = AppLocalizations.of(context);
+    final id = _emailLogin.text.trim();
+    final pass = _passwordLogin.text;
+    if (id.isEmpty || pass.isEmpty) {
+      _snack(s.loginEmptyIdentifierPassword);
+      return;
+    }
+    final typ = parseLoginIdentity(id);
+    if (typ == LoginIdentityType.unknown) {
+      _snack(s.loginIdentifierInvalidClient);
+      return;
+    }
+    if (typ != LoginIdentityType.email) {
+      _snack(s.loginPasswordRequiresEmail);
+      return;
+    }
     setState(() {
       _errorLogin = null;
       _errorRegister = null;
@@ -246,7 +293,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     if (!(_formLogin.currentState?.validate() ?? false)) return;
     setState(() => _loadingLogin = true);
     try {
-      await appAuth.login(_emailLogin.text, _passwordLogin.text);
+      await appAuth.login(id, pass);
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _errorLogin = localizedApiMessage(AppLocalizations.of(context), e));
@@ -403,135 +450,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   static const _loginLogoUrl =
       'https://lh3.googleusercontent.com/aida/ADBb0uiBfLRiTNXO08j1P2IZWvshAg7Z9Cov-vEofM75n72DNP2GySWtw6G4jCFgDxrk5P41_SrvHlHfRfnovqLb-MHUJek6pEbWNdhDTeFq1SRfs8CEhqWds7APs33Meva5ib0gL8d5XtzADnwgs_bNsz2_fuLC1XlMqg9jWCaREZBjWGWMDmFajYRN3L4QAeEcmGKaWH1438zk9Q2hfrdT4lEzD7poZuProyJ_AJgjV1loVF22d9PH2WVm';
 
-  /// Ecrãs largos: coluna de marca (estilo portais clínicos) + cartão de credenciais à direita.
-  static const double _loginSplitBreakpoint = 920;
-
-  /// Painel esquerdo em gradiente (referência tipo portais de telemedicina) com Google à direita no cartão.
-  Widget _buildLoginBrandingSide(BuildContext context, TextTheme tt, AppLocalizations s) {
-    final register = _phase == _AuthPhase.register;
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0A1628),
-            Color(0xFF152A45),
-            Color(0xFF0A5566),
-          ],
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(28, 24, 28, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      _loginLogoUrl,
-                      height: 44,
-                      errorBuilder: (_, _, _) => const Icon(Icons.medical_information_rounded, size: 40, color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      s.loginBrandTitle,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 22,
-                        letterSpacing: -0.5,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                s.loginTagline,
-                style: TextStyle(
-                  fontSize: 13,
-                  height: 1.35,
-                  color: Colors.white.withValues(alpha: 0.88),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 28),
-              if (register) ...[
-                Text(
-                  s.actionCreateAccount,
-                  style: tt.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.45,
-                    height: 1.15,
-                    fontSize: 26,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  s.registerSubtitle,
-                  style: tt.bodyLarge?.copyWith(color: Colors.white.withValues(alpha: 0.9), height: 1.45),
-                ),
-              ] else ...[
-                Text(
-                  s.loginAccessHeroTitle,
-                  style: tt.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                    height: 1.12,
-                    fontSize: 28,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  s.loginAccessHeroSubtitle,
-                  style: tt.bodyLarge?.copyWith(color: Colors.white.withValues(alpha: 0.9), height: 1.45),
-                ),
-              ],
-              const Spacer(),
-              if (register)
-                TextButton.icon(
-                  onPressed: _backToEntry,
-                  icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
-                  label: Text(s.loginNavHaveAccount, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                )
-              else
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    TextButton(
-                      onPressed: () => _snack(s.loginFooterSoon),
-                      child: Text(s.loginNavQuestions, style: TextStyle(color: Colors.white.withValues(alpha: 0.92))),
-                    ),
-                    Text('·', style: TextStyle(color: Colors.white.withValues(alpha: 0.45))),
-                    FilledButton(
-                      onPressed: _openRegisterCard,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF0A1628),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ClinicalPrecisionRadii.button)),
-                      ),
-                      child: Text(s.loginNavStartNow),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildLoginTopBar(AppLocalizations s) {
     return Material(
       color: ClinicalPrecisionColors.surfaceContainerLowest,
@@ -678,210 +596,208 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       key: const ValueKey('login-universal'),
       title: s.loginShellTitle,
       showAppBar: false,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = constraints.maxWidth >= _loginSplitBreakpoint;
-          return ColoredBox(
-            color: ClinicalPrecisionColors.surface,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (!wide) _buildLoginTopBar(s),
-                Expanded(
-                  child: wide
-                      ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(flex: 46, child: _buildLoginBrandingSide(context, tt, s)),
-                            Expanded(
-                              flex: 54,
-                              child: Material(
-                                color: ClinicalPrecisionColors.surface,
-                                child: Align(
-                                  alignment: Alignment.topCenter,
-                                  child: SingleChildScrollView(
-                                    padding: const EdgeInsets.fromLTRB(24, 28, 32, 32),
-                                    child: AnimatedSwitcher(
-                                      duration: const Duration(milliseconds: 320),
-                                      switchInCurve: Curves.easeOutCubic,
-                                      switchOutCurve: Curves.easeInCubic,
-                                      transitionBuilder: (child, anim) => FadeTransition(
-                                        opacity: anim,
-                                        child: SlideTransition(
-                                          position: Tween<Offset>(begin: const Offset(0.03, 0), end: Offset.zero).animate(anim),
-                                          child: child,
-                                        ),
-                                      ),
-                                      child: _phase == _AuthPhase.entry
-                                          ? _buildEntryCard(context, tt, s, wideLayout: true, key: const ValueKey('card-entry-wide'))
-                                          : _buildRegisterCard(context, tt, s, wideLayout: true, key: const ValueKey('card-register-wide')),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      : Align(
-                          alignment: Alignment.topCenter,
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 320),
-                              switchInCurve: Curves.easeOutCubic,
-                              switchOutCurve: Curves.easeInCubic,
-                              transitionBuilder: (child, anim) => FadeTransition(
-                                opacity: anim,
-                                child: SlideTransition(
-                                  position: Tween<Offset>(begin: const Offset(0.04, 0), end: Offset.zero).animate(anim),
-                                  child: child,
-                                ),
-                              ),
-                              child: _phase == _AuthPhase.entry
-                                  ? _buildEntryCard(context, tt, s, wideLayout: false, key: const ValueKey('card-entry'))
-                                  : _buildRegisterCard(context, tt, s, wideLayout: false, key: const ValueKey('card-register')),
-                            ),
-                          ),
-                        ),
+      showVersionBadge: false,
+      child: ColoredBox(
+        color: const Color(0xFFEDEFF2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_phase == _AuthPhase.register) _buildLoginTopBar(s),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 280),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, anim) => FadeTransition(
+                  opacity: anim,
+                  child: SlideTransition(
+                    position: Tween<Offset>(begin: const Offset(0, 0.02), end: Offset.zero).animate(anim),
+                    child: child,
+                  ),
                 ),
-                _buildLoginFooter(s),
-              ],
+                child: _phase == _AuthPhase.entry
+                    ? _buildUrsEntryLayout(context, tt, s, key: const ValueKey('urs-entry'))
+                    : _buildRegisterCard(context, tt, s, key: const ValueKey('card-register')),
+              ),
             ),
-          );
-        },
+            _buildLoginFooter(s),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildEntryRoleLinks(AppLocalizations s, {required bool alignStart}) {
-    return Wrap(
-      alignment: alignStart ? WrapAlignment.start : WrapAlignment.center,
-      spacing: 4,
-      runSpacing: 4,
-      children: [
-        TextButton(
-          onPressed: _loadingGoogle
-              ? null
-              : () {
-                  setState(() {
-                    _setAuthTrack(_AuthDocumentTrack.cnpj);
-                  });
-                },
-          child: Text(s.loginIamManufacturer),
-        ),
-        Text('·', style: TextStyle(color: Colors.blueGrey.shade400)),
-        TextButton(
-          onPressed: _loadingGoogle ? null : () => _snack(s.loginInstitutionFootnote),
-          child: Text(s.loginIamInstitution),
-        ),
-        Text('·', style: TextStyle(color: Colors.blueGrey.shade400)),
-        TextButton(
-          onPressed: _loadingGoogle
-              ? null
-              : () {
-                  setState(() {
-                    _setAuthTrack(_AuthDocumentTrack.cpf);
-                    _registerAccountType = 'instructor';
-                  });
-                },
-          child: Text(s.loginIamInstructorLink),
-        ),
-      ],
+  static const _ursMobileBreakpoint = 600.0;
+  static const _ursPrimaryBlue = Color(0xFF1032FC);
+  static const _ursTertiaryNavy = Color(0xFF0E3554);
+  static const _ursGradientMobile = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [_ursTertiaryNavy, _ursPrimaryBlue],
+  );
+
+  String _loginIdentityPreviewLabel(AppLocalizations s) {
+    return switch (_previewType) {
+      LoginIdentityType.patientCpf => s.loginIdentityPatient,
+      LoginIdentityType.institutionCnpj => s.loginIdentityInstitution,
+      LoginIdentityType.doctorCrm => s.loginIdentityDoctor,
+      LoginIdentityType.systemAccount => s.loginIdentitySystem,
+      LoginIdentityType.email => s.loginIdentityEmail,
+      LoginIdentityType.unknown => s.loginIdentityUnknown,
+    };
+  }
+
+  Widget _buildUrsEntryLayout(BuildContext context, TextTheme tt, AppLocalizations s, {Key? key}) {
+    return LayoutBuilder(
+      key: key,
+      builder: (context, constraints) {
+        final mobile = constraints.maxWidth < _ursMobileBreakpoint;
+        if (mobile) {
+          return DecoratedBox(
+            decoration: const BoxDecoration(gradient: _ursGradientMobile),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 460),
+                    child: _buildUrsLoginCard(context, tt, s),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 5,
+              child: ColoredBox(
+                color: Colors.white,
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 28),
+                    child: Center(
+                      child: SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 460),
+                          child: _buildUrsLoginCard(context, tt, s),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 7,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          _ursTertiaryNavy,
+                          _ursPrimaryBlue.withValues(alpha: 0.85),
+                        ],
+                      ),
+                    ),
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.12),
+                          _ursTertiaryNavy.withValues(alpha: 0.08),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Icon(Icons.health_and_safety_outlined, size: 120, color: Colors.white.withValues(alpha: 0.2)),
+                  ),
+                  SafeArea(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+                        child: Text(
+                          s.loginUrsHeroTagline,
+                          textAlign: TextAlign.center,
+                          style: tt.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildEntryCard(BuildContext context, TextTheme tt, AppLocalizations s, {Key? key, bool wideLayout = false}) {
-    final heroTitleStyle = tt.headlineMedium?.copyWith(
-      fontSize: 30,
-      fontWeight: FontWeight.w800,
-      letterSpacing: -0.6,
-      height: 1.15,
-      color: ClinicalPrecisionColors.primaryContainer,
-    );
-    final heroSubStyle = tt.bodyLarge?.copyWith(
-      fontSize: 17,
-      height: 1.45,
-      color: ClinicalPrecisionColors.onPrimaryContainer,
-    );
-
-    return Column(
-      key: key,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        if (!wideLayout) ...[
-          Text(s.loginAccessHeroTitle, textAlign: TextAlign.center, style: heroTitleStyle),
-          const SizedBox(height: 10),
-          Text(s.loginAccessHeroSubtitle, textAlign: TextAlign.center, style: heroSubStyle),
-          const SizedBox(height: 18),
-          _buildEntryRoleLinks(s, alignStart: false),
-          const SizedBox(height: 22),
-        ],
-        Container(
-          width: double.infinity,
-          constraints: BoxConstraints(maxWidth: wideLayout ? 460 : 520),
-          decoration: BoxDecoration(
-            color: ClinicalPrecisionColors.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(ClinicalPrecisionRadii.cardHero),
-            border: Border.all(color: ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.35)),
-            boxShadow: ClinicalPrecisionShadows.loginCard,
+  Widget _buildUrsLoginCard(BuildContext context, TextTheme tt, AppLocalizations s) {
+    const cardRadius = 18.0;
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 460),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(cardRadius),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1A1A1C1C),
+            blurRadius: 14,
+            offset: Offset(0, 6),
           ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-            if (wideLayout) ...[
-              Text(
-                s.loginCardSignInHeadline,
-                textAlign: TextAlign.start,
-                style: tt.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: ClinicalPrecisionColors.primaryContainer,
-                  letterSpacing: -0.35,
+        ],
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: _ursPrimaryBlue.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
+                child: Icon(Icons.health_and_safety_outlined, color: _ursPrimaryBlue, size: 28),
               ),
-              const SizedBox(height: 8),
-              Text(
-                s.loginCardSignInLead,
-                textAlign: TextAlign.start,
-                style: tt.bodyMedium?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.4),
-              ),
-              const SizedBox(height: 18),
-              _buildEntryRoleLinks(s, alignStart: true),
-              const SizedBox(height: 22),
-            ],
-            SegmentedButton<_AuthDocumentTrack>(
-              segments: [
-                ButtonSegment<_AuthDocumentTrack>(
-                  value: _AuthDocumentTrack.cpf,
-                  label: Text(s.authTrackCpfLabel),
-                  icon: const Icon(Icons.person_outline, size: 18),
-                ),
-                ButtonSegment<_AuthDocumentTrack>(
-                  value: _AuthDocumentTrack.cnpj,
-                  label: Text(s.authTrackCnpjLabel),
-                  icon: const Icon(Icons.business_outlined, size: 18),
-                ),
-              ],
-              selected: {_authTrack},
-              onSelectionChanged: (Set<_AuthDocumentTrack> next) {
-                if (next.isEmpty) return;
-                _setAuthTrack(next.first);
-              },
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
-              s.authTrackSegmentSubtitle,
-              textAlign: wideLayout ? TextAlign.start : TextAlign.center,
-              style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280), height: 1.35),
+              s.loginBrandTitle,
+              textAlign: TextAlign.center,
+              style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: ClinicalPrecisionColors.onSurface),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 6),
             Text(
-              s.loginGoogleTriageHint,
-              textAlign: wideLayout ? TextAlign.start : TextAlign.center,
-              style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280), height: 1.4),
+              s.loginUrsSecurePortalSubtitle,
+              textAlign: TextAlign.center,
+              style: tt.bodySmall?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.35),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 20),
+            Text(
+              s.loginSectionLoginTitle,
+              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: ClinicalPrecisionColors.onSurface),
+            ),
+            const SizedBox(height: 12),
             OfficialGoogleLoginSlot(
               loading: _loadingGoogle,
               onWebGoogleToken: _onWebGoogleIdToken,
@@ -892,18 +808,29 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 onPressed: _loadingGoogle ? null : _submitGoogle,
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 8),
+            Text(
+              s.loginGoogleTriageHint,
+              textAlign: TextAlign.center,
+              style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280), height: 1.35),
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
                 const Expanded(child: Divider(height: 1, color: Color(0xFFDCE0E5))),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(s.loginOrEmail, style: tt.labelMedium?.copyWith(color: const Color(0xFF76777D))),
                 ),
                 const Expanded(child: Divider(height: 1, color: Color(0xFFDCE0E5))),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+            Text(
+              s.loginInstitutionalCredentialsTitle,
+              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: ClinicalPrecisionColors.onSurface),
+            ),
+            const SizedBox(height: 10),
             Form(
               key: _formLogin,
               child: Column(
@@ -911,26 +838,39 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 children: [
                   TextFormField(
                     controller: _emailLogin,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
+                    keyboardType: TextInputType.text,
+                    textCapitalization: TextCapitalization.none,
+                    autofillHints: const [AutofillHints.username],
                     decoration: InputDecoration(
-                      labelText: s.fieldEmail,
+                      labelText: s.loginFieldIdentifier,
+                      hintText: s.loginFieldIdentifierHint,
+                      prefixIcon: const Icon(Icons.person_outline, size: 22),
                       isDense: true,
                     ),
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return s.valEmailRequired;
-                      if (!v.contains('@')) return s.valEmailInvalid;
                       return null;
                     },
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
+                  Text(
+                    _loginIdentityPreviewLabel(s),
+                    style: tt.labelMedium?.copyWith(color: const Color(0xFF5C6370), height: 1.3),
+                  ),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _passwordLogin,
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     autofillHints: const [AutofillHints.password],
                     decoration: InputDecoration(
                       labelText: s.fieldPassword,
+                      prefixIcon: const Icon(Icons.lock_outline, size: 22),
                       isDense: true,
+                      suffixIcon: IconButton(
+                        tooltip: _obscurePassword ? s.loginShowPassword : s.loginHidePassword,
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                      ),
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) return s.valPasswordRequired;
@@ -938,15 +878,23 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                     },
                   ),
                   if (_errorLogin != null) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Text(_errorLogin!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13)),
                   ],
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => _snack(s.loginFooterSoon),
+                      child: Text(s.loginForgotPassword),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   FilledButton(
                     key: const ValueKey('login-submit'),
                     onPressed: _loadingLogin ? null : _submitLogin,
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF131B2E),
+                      backgroundColor: _ursPrimaryBlue,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -962,75 +910,84 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 14),
             Text(
               s.loginOrgHint,
               textAlign: TextAlign.center,
               style: tt.bodySmall?.copyWith(color: const Color(0xFF8E9099), height: 1.35),
             ),
-            const SizedBox(height: 18),
-            OutlinedButton.icon(
-              onPressed: _openRegisterCard,
-              icon: const Icon(Icons.person_add_outlined, size: 20),
-              label: Text(s.actionCreateAccount),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF00677D),
-                side: const BorderSide(color: Color(0xFF00677D)),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            const SizedBox(height: 14),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: _ursPrimaryBlue.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(s.loginNoAccountPrefix, style: tt.bodyMedium?.copyWith(color: ClinicalPrecisionColors.onSurface)),
+                    TextButton(
+                      onPressed: _openRegisterCard,
+                      child: Text(s.loginNoAccountAction, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                    Text('·', style: TextStyle(color: Colors.grey.shade500)),
+                    TextButton(
+                      onPressed: () => _snack(s.loginFooterSoon),
+                      child: Text(s.loginNavQuestions, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              AppVersion.current,
+              textAlign: TextAlign.center,
+              style: tt.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: ClinicalPrecisionColors.onSurfaceVariant,
               ),
             ),
             if (kDebugMode) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
               Text(
                 s.loginDebugApiLine(AppConfig.apiBaseUrl),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
               ),
             ],
-              ],
-            ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildRegisterCard(BuildContext context, TextTheme tt, AppLocalizations s, {Key? key, bool wideLayout = false}) {
-    final heroTitleStyle = tt.headlineSmall?.copyWith(
-      fontWeight: FontWeight.w800,
-      letterSpacing: -0.5,
-      color: ClinicalPrecisionColors.primaryContainer,
-    );
-    return Column(
+  Widget _buildRegisterCard(BuildContext context, TextTheme tt, AppLocalizations s, {Key? key}) {
+    return Align(
       key: key,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        if (!wideLayout) ...[
-          Text(s.actionCreateAccount, textAlign: TextAlign.center, style: heroTitleStyle),
-          const SizedBox(height: 8),
-          Text(
-            s.registerSubtitle,
-            textAlign: TextAlign.center,
-            style: tt.bodyMedium?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.35),
-          ),
-          const SizedBox(height: 22),
-        ],
-        Container(
-          width: double.infinity,
-          constraints: BoxConstraints(maxWidth: wideLayout ? 520 : 560),
-          decoration: BoxDecoration(
-            color: ClinicalPrecisionColors.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(ClinicalPrecisionRadii.cardHero),
-            border: Border.all(color: ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.35)),
-            boxShadow: ClinicalPrecisionShadows.loginCard,
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-            if (!wideLayout)
+      alignment: Alignment.topCenter,
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(maxWidth: 420),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE1E4E8)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.07),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               Row(
                 children: [
                   IconButton(
@@ -1047,37 +1004,39 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                     ),
                   ),
                 ],
-              )
-            else
-              const SizedBox(height: 4),
-            SizedBox(height: wideLayout ? 14 : 12),
-            SegmentedButton<_AuthDocumentTrack>(
-              segments: [
-                ButtonSegment<_AuthDocumentTrack>(
-                  value: _AuthDocumentTrack.cpf,
-                  label: Text(s.authTrackCpfLabel),
-                  icon: const Icon(Icons.person_outline, size: 18),
-                ),
-                ButtonSegment<_AuthDocumentTrack>(
-                  value: _AuthDocumentTrack.cnpj,
-                  label: Text(s.authTrackCnpjLabel),
-                  icon: const Icon(Icons.business_outlined, size: 18),
-                ),
-              ],
-              selected: {_authTrack},
-              onSelectionChanged: (Set<_AuthDocumentTrack> next) {
-                if (next.isEmpty) return;
-                _setAuthTrack(next.first);
-              },
-            ),
-            const SizedBox(height: 8),
-            Text(
-              s.authTrackSegmentSubtitle,
-              textAlign: TextAlign.start,
-              style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280), height: 1.35),
-            ),
-            const SizedBox(height: 16),
-            if (_authTrack == _AuthDocumentTrack.cpf) ...[
+              ),
+              Text(
+                s.registerSubtitle,
+                style: tt.bodyMedium?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.35),
+              ),
+              const SizedBox(height: 16),
+              SegmentedButton<_AuthDocumentTrack>(
+                segments: [
+                  ButtonSegment<_AuthDocumentTrack>(
+                    value: _AuthDocumentTrack.cpf,
+                    label: Text(s.authTrackCpfLabel),
+                    icon: const Icon(Icons.person_outline, size: 18),
+                  ),
+                  ButtonSegment<_AuthDocumentTrack>(
+                    value: _AuthDocumentTrack.cnpj,
+                    label: Text(s.authTrackCnpjLabel),
+                    icon: const Icon(Icons.business_outlined, size: 18),
+                  ),
+                ],
+                selected: {_authTrack},
+                onSelectionChanged: (Set<_AuthDocumentTrack> next) {
+                  if (next.isEmpty) return;
+                  _setAuthTrack(next.first);
+                },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                s.authTrackSegmentSubtitle,
+                textAlign: TextAlign.center,
+                style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280), height: 1.35),
+              ),
+              const SizedBox(height: 16),
+              if (_authTrack == _AuthDocumentTrack.cpf) ...[
               Text(
                 s.registerAccountTypeTitleCpf,
                 style: tt.labelLarge?.copyWith(fontWeight: FontWeight.w600),
@@ -1214,11 +1173,10 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 ],
               ),
             ),
-              ],
-            ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
