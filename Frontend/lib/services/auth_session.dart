@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
@@ -120,17 +120,13 @@ class AuthSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loginWithGoogle({
+  /// Troca um ID token Google já obtido no cliente por sessão Sanctum (Web: botão GIS; mobile: após `authenticate`).
+  Future<void> loginWithGoogleIdToken(
+    String idToken, {
     String role = 'trainee',
     String? manufacturerName,
     String? manufacturerCnpj,
-    bool forceAccountPicker = true,
   }) async {
-    final idToken = await obtainGoogleIdToken(forceAccountPicker: forceAccountPicker);
-    if (idToken == null) {
-      throw ApiException('', 400, reason: LocalizedApiReason.authGoogleCancelled);
-    }
-
     final body = <String, dynamic>{
       'id_token': idToken,
       if (role != 'trainee') 'role': role,
@@ -152,6 +148,28 @@ class AuthSession extends ChangeNotifier {
     _user = u;
     await _persist();
     notifyListeners();
+  }
+
+  Future<void> loginWithGoogle(
+    BuildContext context, {
+    String role = 'trainee',
+    String? manufacturerName,
+    String? manufacturerCnpj,
+    bool forceAccountPicker = true,
+  }) async {
+    final idToken = await obtainGoogleIdToken(
+      context: context,
+      forceAccountPicker: forceAccountPicker,
+    );
+    if (idToken == null) {
+      throw ApiException('', 400, reason: LocalizedApiReason.authGoogleCancelled);
+    }
+    await loginWithGoogleIdToken(
+      idToken,
+      role: role,
+      manufacturerName: manufacturerName,
+      manufacturerCnpj: manufacturerCnpj,
+    );
   }
 
   /// Digesto semanal de resumo agregado (gestor / fabricante).

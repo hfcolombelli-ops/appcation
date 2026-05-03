@@ -772,7 +772,7 @@ class _TraineeShellState extends State<TraineeShell> {
       );
       if (ok != true || !mounted) return;
       if (googleLinked) {
-        final idToken = await obtainGoogleIdToken(forceAccountPicker: true);
+        final idToken = await obtainGoogleIdToken(context: context, forceAccountPicker: true);
         if (idToken == null) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).trnSnackCancelled)));

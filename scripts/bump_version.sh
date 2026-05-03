@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Política App²cation (produto visível no badge):
-#   - Baseline de lançamento: 1.0.0+n (ex.: 1.0.0+1).
-#   - Cada evolução (commit de entrega): incrementa o MINOR em 1 — equivale a +0,1 na leitura «1.0 → 1.1 → …».
-#   - MINOR máximo 99; ao passar, incrementa MAJOR e MINOR volta a 0.
-#   - PATCH fica 0 em cada bump (mantém x.y.0 legível).
-#   - BUILD (+n) incrementa sempre (único por artefacto nas lojas / rastreio).
+# Política App²cation (produto visível no badge = só «1.x», sem terceiro dígito nem +build):
+#   - Baseline: 1.0.0+1 no pubspec → badge «V 1.0» (gerado por sync_app_version_from_pubspec.sh).
+#   - Cada entrega: MINOR +1 (leitura 1.0 → 1.1 → … → 1.99); PATCH fica 0; BUILD (+n) +1.
+#   - MINOR > 99: MAJOR +1, MINOR 0.
+#
+# Pubspec mantém MAJOR.MINOR.0+BUILD (exigência Flutter); o utilizador vê só V MAJOR.MINOR.
 #
 # Ex.: 1.0.0+1 → 1.1.0+2 → … → 1.99.0+100 → 2.0.0+101
 #

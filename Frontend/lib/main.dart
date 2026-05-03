@@ -5,6 +5,7 @@ import 'l10n/api_exception_localizations.dart';
 import 'l10n/app_localizations.dart';
 import 'l10n/google_sign_in_localizations.dart';
 import 'services/google_sign_in_errors.dart';
+import 'app_navigator.dart';
 import 'app_state.dart';
 import 'app_version.dart';
 import 'config.dart';
@@ -16,6 +17,7 @@ import 'shell/instructor_shell.dart';
 import 'shell/manufacturer_shell.dart';
 import 'shell/profile_gate_screen.dart';
 import 'shell/trainee_shell.dart';
+import 'widgets/official_google_login_slot.dart';
 import 'widgets/version_badge.dart';
 
 Future<void> main() async {
@@ -42,6 +44,7 @@ class MyApp extends StatelessWidget {
       animation: appAuth,
       builder: (context, _) {
         return MaterialApp(
+      navigatorKey: appNavigatorKey,
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -354,13 +357,19 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       _errorRegister = null;
       _errorRegisterManufacturer = null;
     });
+    final s = AppLocalizations.of(context);
     if (AppConfig.googleWebClientId.trim().isEmpty) {
-      _snack(AppLocalizations.of(context).errGoogleClientId);
+      _snack(s.errGoogleClientId);
+      return;
+    }
+    if (_googleRole == 'manufacturer_admin' && _mfgNameGoogle.text.trim().isEmpty) {
+      _snack(s.errMfgNameBeforeGoogle);
       return;
     }
     setState(() => _loadingGoogle = true);
     try {
       await appAuth.loginWithGoogle(
+        context,
         role: _googleRole,
         manufacturerName: _mfgNameGoogle.text.trim().isEmpty ? null : _mfgNameGoogle.text.trim(),
         manufacturerCnpj: _mfgCnpjGoogle.text.trim().isEmpty ? null : _mfgCnpjGoogle.text.trim(),
@@ -371,6 +380,42 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     } on GoogleSignInFailure catch (e) {
       if (!mounted) return;
       _snack(localizedGoogleSignInFailure(AppLocalizations.of(context), e));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _errorLogin = AppLocalizations.of(context).errApiConnection);
+    } finally {
+      if (mounted) setState(() => _loadingGoogle = false);
+    }
+  }
+
+  /// Web: token vindo do botão GIS oficial (sem `authenticate`).
+  Future<void> _onWebGoogleIdToken(String idToken) async {
+    if (!mounted) return;
+    final s = AppLocalizations.of(context);
+    setState(() {
+      _errorLogin = null;
+      _errorRegister = null;
+      _errorRegisterManufacturer = null;
+    });
+    if (AppConfig.googleWebClientId.trim().isEmpty) {
+      _snack(s.errGoogleClientId);
+      return;
+    }
+    if (_googleRole == 'manufacturer_admin' && _mfgNameGoogle.text.trim().isEmpty) {
+      _snack(s.errMfgNameBeforeGoogle);
+      return;
+    }
+    setState(() => _loadingGoogle = true);
+    try {
+      await appAuth.loginWithGoogleIdToken(
+        idToken,
+        role: _googleRole,
+        manufacturerName: _mfgNameGoogle.text.trim().isEmpty ? null : _mfgNameGoogle.text.trim(),
+        manufacturerCnpj: _mfgCnpjGoogle.text.trim().isEmpty ? null : _mfgCnpjGoogle.text.trim(),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _errorLogin = localizedApiMessage(AppLocalizations.of(context), e));
     } catch (_) {
       if (!mounted) return;
       setState(() => _errorLogin = AppLocalizations.of(context).errApiConnection);
@@ -709,11 +754,15 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            _primaryButton(
-              context,
-              label: _loadingGoogle ? s.googleConnecting : s.googleContinue,
-              icon: Icons.login_rounded,
-              onPressed: _loadingGoogle ? null : _submitGoogle,
+            OfficialGoogleLoginSlot(
+              loading: _loadingGoogle,
+              onWebGoogleToken: _onWebGoogleIdToken,
+              fallback: _primaryButton(
+                context,
+                label: _loadingGoogle ? s.googleConnecting : s.googleContinue,
+                icon: Icons.login_rounded,
+                onPressed: _loadingGoogle ? null : _submitGoogle,
+              ),
             ),
             const SizedBox(height: 22),
             Row(

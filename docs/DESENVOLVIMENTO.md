@@ -19,7 +19,7 @@ Se o código divergir do fluxograma sem decisão explícita, trata-se de **dívi
 3. **Contrato antes da pintura** — Campos novos ou estados novos: primeiro modelo/API ou contrato JSON estável; depois UI.
 4. **Sem texto cru na UI** — Novas cópias em `app_pt.arb` / `app_en.arb` e `flutter gen-l10n`.
 5. **Chrome partilhado** — Miúdos dos shells: [`Frontend/lib/theme/instructor_page_chrome.dart`](../Frontend/lib/theme/instructor_page_chrome.dart) (`instructorShellScaffold`, `instructorShellCard`). Refinar pixel-perfect **depois** da funcionalidade.
-6. **Versão visível** — Baseline de produto `1.0.0+1` no `Frontend/pubspec.yaml`. Em cada entrega, `./scripts/bump_version.sh` incrementa o **minor** em 1 (leitura «1.0 → 1.1 → …» até 99 no segundo dígito; ao ultrapassar, sobe o **major** e o minor volta a 0), fixa **patch** em 0 e incrementa **build** (+n). O script regista também `app_version.dart`. Incluir estes ficheiros no commit da entrega.
+6. **Versão visível** — No `pubspec` usa-se `MAJOR.MINOR.0+BUILD` (ex.: `1.0.0+1`). O badge na app mostra só **`V MAJOR.MINOR`** (ex.: `V 1.0`, `V 1.1`, até `V 1.99`), sem «1.x.0» nem `+build`. Em cada entrega, `./scripts/bump_version.sh` incrementa **minor**, patch 0, build +1; ao passar 99 no minor, sobe o major. Incluir `pubspec.yaml` e `app_version.dart` no commit.
 
 ## 3. Perfis técnicos (mapeamento IAM)
 
@@ -110,12 +110,12 @@ Para cada entrega (idealmente 1 PR ou série pequena coerente):
 3. **Frontend**: UI + estado + chamadas `ProductionApi`; tokens/chrome existentes.
 4. **l10n** PT/EN + `flutter gen-l10n`.
 5. **Actualizar** `screen_catalog_map.dart` (comentário por ID: implementado / parcial).
-6. **`./scripts/bump_version.sh`** quando a alteração for visível ao utilizador-final (mantém a política da secção 2).
+6. **`./scripts/bump_version.sh`** quando a alteração for visível ao utilizador-final (política da secção 2: produto `V 1.x` no badge).
 7. **Analisar**: `dart analyze`; PHP/tests conforme CI do repo.
 
 ## 6. Convenções rápidas
 
-- **Versão Flutter:** `MAJOR.MINOR.PATCH+BUILD` no `pubspec.yaml`; badge usa `AppVersion.current` (gerado — não editar `app_version.dart` à mão).
+- **Versão Flutter:** `MAJOR.MINOR.0+BUILD` no `pubspec.yaml`; badge `AppVersion.current` = `V MAJOR.MINOR` apenas (gerado — não editar à mão).
 - **API:** Controllers em `Backend/app/Http/Controllers/Api/`; respeitar roles e policies existentes.
 - **Flutter:** Shells em `Frontend/lib/shell/`; evitar ficheiros monolíticos novos enormes — extrair widgets quando a fatia crescer.
 - **Dropdowns Flutter recentes:** `DropdownButtonFormField` com `initialValue` + `ValueKey` quando o estado controlado mudar (evitar deprecações).

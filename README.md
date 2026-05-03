@@ -9,7 +9,7 @@ Monorepo do sistema App²cation com:
 
 ## Versionamento (obrigatório em cada commit)
 
-A **única fonte de verdade** é `Frontend/pubspec.yaml` (`version: x.y.z+n`). O badge na UI vem de `Frontend/lib/app_version.dart`, **gerado** a partir do pubspec (não editar o número à mão).
+A **única fonte de verdade** é `Frontend/pubspec.yaml` (`version: MAJOR.MINOR.0+BUILD`). O badge na UI mostra só **`V MAJOR.MINOR`** (ex.: `V 1.3`), gerado em `Frontend/lib/app_version.dart` pelo script de sync (não editar à mão).
 
 1. **Uma vez por clone**, ativar o hook Git (bloqueia commit se a versão não subir):
 
