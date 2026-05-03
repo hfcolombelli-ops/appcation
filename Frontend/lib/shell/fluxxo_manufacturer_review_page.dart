@@ -30,19 +30,25 @@ class _FluxxoManufacturerReviewPageState extends State<FluxxoManufacturerReviewP
     _reload();
   }
 
-  Future<void> _reload() async {
+  /// [silent] evita ecrã de loading completo (ex.: pull-to-refresh com lista já visível).
+  Future<void> _reload({bool silent = false}) async {
     final t = appAuth.token;
     if (t == null) return;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    } else if (mounted) {
+      setState(() => _error = null);
+    }
     try {
       final list = await widget.api.manufacturerReviewQueue(t);
       if (mounted) {
         setState(() {
           _rows = list;
           _loading = false;
+          _error = null;
         });
       }
     } on ApiException catch (e) {
@@ -93,62 +99,92 @@ class _FluxxoManufacturerReviewPageState extends State<FluxxoManufacturerReviewP
     }
     if (_error != null) {
       return instructorShellScaffold(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(_error!, textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                FilledButton(onPressed: _reload, child: Text(l.actionRetry)),
-              ],
-            ),
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return RefreshIndicator(
+              onRefresh: () => _reload(silent: true),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: constraints.maxHeight,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_error!, textAlign: TextAlign.center),
+                          const SizedBox(height: 12),
+                          FilledButton(onPressed: () => _reload(), child: Text(l.actionRetry)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       );
     }
     if (_rows.isEmpty) {
       return instructorShellScaffold(
-        child: Center(
-          child: Text(
-            l.fluxRevEmpty,
-            style: const TextStyle(color: Color(0xFF45464D)),
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return RefreshIndicator(
+              onRefresh: () => _reload(silent: true),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: constraints.maxHeight,
+                  child: Center(
+                    child: Text(
+                      l.fluxRevEmpty,
+                      style: const TextStyle(color: Color(0xFF45464D)),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       );
     }
     return instructorShellScaffold(
-      child: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-        Text(
-          l.fluxRevQueueTitle,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          l.fluxRevIntro,
-          style: const TextStyle(color: Color(0xFF45464D)),
-        ),
-        const SizedBox(height: 20),
-        ..._rows.expand((row) {
-          final id = _parseId(row['id']);
-          if (id == null) {
-            return <Widget>[];
-          }
-          return [
-            _ReviewCard(
-              row: row,
-              busy: _busy.contains(id),
-              onApprove: () => _decide(id, 'active'),
-              onReject: () => _decide(id, 'rejected'),
-              onInfo: () => _decide(id, 'pending_info'),
+      child: RefreshIndicator(
+        onRefresh: () => _reload(silent: true),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(24),
+          children: [
+            Text(
+              l.fluxRevQueueTitle,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22),
             ),
-          ];
-        }),
-      ],
-    ),
+            const SizedBox(height: 8),
+            Text(
+              l.fluxRevIntro,
+              style: const TextStyle(color: Color(0xFF45464D)),
+            ),
+            const SizedBox(height: 20),
+            ..._rows.expand((row) {
+              final id = _parseId(row['id']);
+              if (id == null) {
+                return <Widget>[];
+              }
+              return [
+                _ReviewCard(
+                  row: row,
+                  busy: _busy.contains(id),
+                  onApprove: () => _decide(id, 'active'),
+                  onReject: () => _decide(id, 'rejected'),
+                  onInfo: () => _decide(id, 'pending_info'),
+                ),
+              ];
+            }),
+          ],
+        ),
+      ),
     );
   }
 

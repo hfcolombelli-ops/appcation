@@ -950,6 +950,24 @@ abstract class AppLocalizations {
   /// **'Dados agregados — sem identificação individual (LGPD).'**
   String get dashInstitutionLgpdNote;
 
+  /// No description provided for @dashInstitutionAlertPendingTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pedidos por rever'**
+  String get dashInstitutionAlertPendingTitle;
+
+  /// No description provided for @dashInstitutionAlertPendingBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Existem {count} pedido(s) pendente(s) na fila. Abra o quadro para rever e agendar.'**
+  String dashInstitutionAlertPendingBody(int count);
+
+  /// No description provided for @dashInstitutionShortcutsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Áreas do gestor'**
+  String get dashInstitutionShortcutsTitle;
+
   /// No description provided for @dashExportCsv.
   ///
   /// In pt, this message translates to:
@@ -2506,6 +2524,18 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Abrir análises'**
   String get mfgDashOpenAnalytics;
+
+  /// No description provided for @mfgDashSummaryUnavailableTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resumo agregado indisponível'**
+  String get mfgDashSummaryUnavailableTitle;
+
+  /// No description provided for @mfgDashSummaryUnavailableBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível carregar o resumo neste momento. Tente novamente ou abra Análises.'**
+  String get mfgDashSummaryUnavailableBody;
 
   /// No description provided for @mfgSnackValidationRequested.
   ///

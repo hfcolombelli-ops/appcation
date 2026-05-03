@@ -48,27 +48,56 @@ Objetivo: TRE-ACC-01 → TRE-RES-01 fiéis ao catálogo (copy, passos, feedback 
 - Trabalhar por **step** no `TraineeShell` (`_step`), alinhado aos IDs `tre*` em `screen_catalog_map.dart`.
 - **TRE-SAL-01** (`_WaitingPanel`): polling 3 s mantém-se; **pull-to-refresh** + botão «Actualizar estado» / «Refresh status» chamam `_bootstrap()` para sincronizar assim que o instrutor iniciar (útil em web e ligações lentas); **faixa offline** quando o *health* da API falha (copy PT/EN).
 - **TRE-QUES-01** (`_QuestionnairePanel` / `_OptionTile`): opções com **Semantics** (`button`, `selected`, `excludeSemantics`); enunciado com **Semantics** (progresso + texto); caixa de feedback **liveRegion**; **Confirmar** desactivado sem opção seleccionada + **Tooltip** com a mesma copy do snack (`trnSnackPickOption`).
-- **TRE-ACC-01** (`_JoinPanel`): copy + **`trnJoinIntroDetail`** / **`trnJoinAccessCodeHint`**; **validação visual** do código (`maxLength` 64, `FilteringTextInputFormatter` alfanumérico + hífen, contador `n/64`, helper «continuar a escrever» vs «formato válido», ícone tag/check); `joinTraining` normaliza trim + minúsculas antes do POST; **bloqueio + aviso** se API offline.
+- **TRE-ACC-01** (`_JoinPanel`): copy + **`trnJoinIntroDetail`** / **`trnJoinAccessCodeHint`**; **validação visual** do código (`maxLength` 64, `FilteringTextInputFormatter` alfanumérico + hífen, contador `n/64`, helper «continuar a escrever» vs «formato válido», ícone tag/check); `joinTraining` normaliza trim + minúsculas antes do POST; **bloqueio + aviso** se API offline; **pull-to-refresh** (`RefreshIndicator` + `AlwaysScrollableScrollPhysics`) chama **`_bootstrap()`** para re-sincronizar o fluxo.
 - **TRE-RES-01** (`_ResultPanel`): instituição; refresh/pull + **`/api/me/certificates`** + PDF + hint; **`/api/me/follow-up-assessments`** filtrado (inscrição/treino, `pending`) com **Responder** → `showTraineeFollowUpAssessmentDialog` (partilhado com o perfil **TRE-CON**); **faixa offline** (`trnResultOfflineHint`); **PDF** e **Responder** desactivados sem API + **Tooltip** com a mesma copy.
-- **TRE-CON-01** (`_ProfilePanel` + `_LgpdConsentPanel`): **fechado (MVP+)** — pré-registo alinhado ao catálogo: passo visível no cabeçalho; instituição opcional explícita («sem instituição», sem pré-seleccionar primeiro hospital ao carregar lista); copy de apoio; lembrete pós-consentimento LGPD (exportar / excluir via menu).
+- **TRE-CON-01** (`_ProfilePanel` + `_LgpdConsentPanel`): **fechado (MVP+)** — pré-registo alinhado ao catálogo: passo visível no cabeçalho; instituição opcional explícita («sem instituição», sem pré-seleccionar primeiro hospital ao carregar lista); copy de apoio; lembrete pós-consentimento LGPD (exportar / excluir via menu); no **perfil** (`_ProfilePanel`), **pull-to-refresh** chama **`_bootstrap()`** e **`_reloadExtras()`** (certificados, follow-ups, pedidos, opções); no **LGPD** (`_LgpdConsentPanel`), **pull-to-refresh** chama **`_bootstrap()`** (re-verifica consentimento / estado da conta).
 - **DoD:** Happy path + erro/rede; l10n; actualizar comentários no map se algo ficar parcial.
 
 ### Fase 2 — Fluxo Application (3)
 
 Objetivo: APP-DASH-01, APP-TRE-01, APP-SAL-01 estáveis; **APP-SAL-02** (pós-encerramento: tabela de resultados, repescagem explícita &lt; 7.0, encerramento definitivo / certificados) como fatia dedicada.
 
-- Sala de comando (**APP-SAL-01**) e **Resultados** (**APP-SAL-02**): filtro local de participantes (nome/e-mail, debounce); APP-SAL-02 permanece rota dedicada `/instructor/resultados`. **APP-SAL-01:** *health* periódico + estado API na barra do shell; faixa offline + bloqueio de comandos de sessão / repescagem quando a API falha (`comandoOfflineHint`). **APP-SAL-02 / APP-DASH-01 / APP-TRE-01:** mesma origem `_InstructorApiReachability`; faixa + `instrOfflineHint` onde aplicável; desactivar export / encerrar / gravar treino / certificados em PDF offline.
+- Sala de comando (**APP-SAL-01**) e **Resultados** (**APP-SAL-02**): filtro local de participantes (nome/e-mail, debounce); APP-SAL-02 permanece rota dedicada `/instructor/resultados`; na **`_PostTrainingResultsPage`**, **pull-to-refresh** na área de participantes (e quando ainda não há treino seleccionado, no corpo vazio) chama **`_refreshTrainings()`** (inclui **`await _loadMonitor()`** após actualizar a lista). **APP-SAL-01** (`_ComandoPage`): *health* periódico + estado API na barra do shell; faixa `comandoOfflineHint` + bloqueio de comandos de sessão / repescagem offline; **pull-to-refresh** no cartão de participantes + **`_refreshTrainings()`** com **`await _loadMonitor()`** (alinhado ao ícone de actualizar). **APP-SAL-02 / APP-DASH-01 / APP-TRE-01:** mesma origem `_InstructorApiReachability`; faixa + `instrOfflineHint` onde aplicável; desactivar export / encerrar / gravar treino / certificados em PDF offline.
+- **Revisão Fluxxo** (`/instructor/revisao-fluxxo`, **`FluxxoManufacturerReviewPage`**): **pull-to-refresh** com **`RefreshIndicator`** + **`AlwaysScrollableScrollPhysics`** na lista, no estado de **erro** e na **fila vazia**; recarga **`_reload(silent: true)`** para não substituir o ecrã pelo loading inicial.
+- **APP-TRE-01** (`/instructor/treinamento`, **`_TreinamentoPage`**): **pull-to-refresh** no formulário (`RefreshIndicator` + **`AlwaysScrollableScrollPhysics`**) chama **`_reloadTreinamentoPage()`** — **`Future.wait`** de **`_loadInstitutions()`** e **`_loadOfficialTemplates()`** (sem interferir no **`_loading`** dos botões gravar/criar).
+- **APP-DASH-01** (`_DashboardPage`): vista instrutor com KPIs — **`AlwaysScrollableScrollPhysics`** no **`ListView`** de sucesso; **erro** de carga e **estado de loading** (spinner antes do primeiro agregado, instrutor ou gestor) com **pull-to-refresh** → **`_load()`**.
 - **DoD:** Fluxo Mermaid GA7→GA10 coberto sem dead-ends; API testada com treino `finished` ou estado equivalente. Credenciamento + pedidos/parque/endorsements gestor: estado API (`_InstructorApiReachability`) + `instrOfflineHint` em acções que persistem na API.
 
 ### Fase 3 — Fluxo Instituição (2)
 
 Objetivo: INS-DASH-01 / INS-PAR-01; **INS-SOL-01 Kanban** (três colunas + agendamento em lote); INS-APP-01; INS-REL-01 incremental.
 
+- INS-DASH-01: cartão de **alerta** quando `pending_training_requests` &gt; 0 com CTA para o quadro de pedidos (`/institution/pedidos`), mantendo o destaque correcto no menu lateral (`navigateInShell`).
+
+- INS-DASH-01: **atalhos** permanentes (Pedidos · Parque · Endossos) e, quando não há agregado por equipamento, **CTA** para o parque técnico.
+
+- INS-PAR-01: pesquisa com **debounce** (450 ms, só com API online) + **CTAs** no catálogo vazio (Endossos) e no parque sem unidades (Pedidos).
+
+- INS-APP-01 (endossos): **pull-to-refresh** na lista com **`_reload(silent: true)`** (sem substituir o ecrã pelo loading); **erro** e **loading** inicial também puxáveis; cabeçalho + faixa offline com fila vazia; **CTA** para o parque técnico quando não há fabricantes na fila.
+
+- INS-SOL-01 (pedidos / Kanban): **pull-to-refresh** com **`_reload(silent: true)`**; **erro** e **loading** inicial também puxáveis; após actualizar pedido **`_reload(silent: true)`** para não interromper o Kanban; lista vazia com atalhos **Parque** e **Endossos** (`navigateInShell`).
+
+- INS-REL-01 (relatório por setor no dashboard): **pull-to-refresh** fiável (`AlwaysScrollableScrollPhysics`); cartão **sem histórico por setor** com atalhos **Pedidos** e **Parque**.
+
+- **Credenciamento** (`/instructor/credenciamento`, `_CredenciamentoPage`): **pull-to-refresh** + scroll sempre puxável; dropdowns de pedido instituição/fabricante **desactivados** offline (além de botões e filas já existentes).
+
 - **DoD:** Gestor consegue fluxo FI6→FI9 no diagrama com UX próxima do catálogo.
 
 ### Fase 4 — Fluxo Fabricante (1)
 
 Objetivo: FAB-DASH-01 evoluído; FAB-HOM-01/02 (fila + suspender/reactivar); FAB-ANA-01 por etapas (filtros → tabelas → visualizações avançadas).
+
+- Alcance API no `ManufacturerShell`: *health* periódico (~20 s), chip API na barra, faixa `instrOfflineHint`, desactivação de acções que falam com a API (incl. export CSV/PDF, homologação, validação, filtros/pesquisa com debounce coerente) quando offline — alinhado ao padrão da área instrutor.
+
+- FAB-HOM (fila no `ManufacturerShell`): lista filtrada **vazia** com CTA **Início** (`navigateToMfgTab(0)`); navegação lateral centralizada em `navigateToMfgTab`.
+
+- FAB-ANA-01 (análises): secções **por instituição** / **por equipamento** vazias e **tendência mensal** sem dados com atalhos **Início** e **Produtos** (`navigateToMfgTab`).
+
+- FAB-OPS-01 (operações): blocos épocas / prémios / documentos **vazios** sem pesquisa activa com atalhos **Início** e **Produtos**; com filtro de pesquisa sem resultados mantém-se só `mfgOpsSublistNoMatch`.
+
+- FAB-TRE-01 / FAB-EQP-01 (Produtos): listas **templates** / **equipamentos** vazias sem filtros «sujos» com atalhos **Início** e **Operações**; com filtros sem resultados só copy (`mfgTplNoMatches` / `mfgOpsSublistNoMatch`).
+
+- FAB-DASH-01: se o fabricante está **active** mas o **resumo agregado** não carregou (`dashboard-summary` em falha), cartão **indisponível** com **Tentar novamente** e **Abrir análises**; CTA mensal no dashboard usa `navigateToMfgTab(5)`; enquanto **`pending_validation`**, ecrã dedicado `ManufacturerPendingApprovalScreen` com **pull-to-refresh** (`RefreshIndicator` + scroll sempre puxável) que chama **`_reload()`** para detectar aprovação sem fechar sessão; **`pending_info` / `rejected`**: `ManufacturerOnboardingWizard` com o mesmo padrão de pull → **`_reload()`**, re-hidratação dos campos a partir do perfil API e recarga da lista de documentos.
 
 - **DoD:** Documentação “parcial” no `ScreenCatalogMap` só até à próxima fatia; não deixar IDs marcados como não implementados sem plano.
 
@@ -109,8 +138,8 @@ _Registar aqui ou remover quando fechadas._
 - FAB-TRE-01: **fechado (MVP+)** — `GET /api/trainings?templates_only=1` com `search` (título, máx. 120), `status` (incl. `cancelled`), `sort`, limite 80; Flutter `ManufacturerShell` Produtos: chips estado, ordenação, contagem, limpar, debounce na pesquisa + recarga parcial só da lista, linha «Actualizado/Updated», `localizedTrainingLifecycleStatus` para cancelado.
 - FAB-TRE-02: **fechado (MVP+)** — `ManufacturerTemplateEditorScreen`: vários blocos (título + perguntas), reordenar secções/perguntas, modo Editar/Pré-visualizar, 2–12 opções, `PopScope`, refresh; API GET ordena por bloco + `training_block`; testes API (GET vazio, POST com 6 opções).
 - FAB-OPS-01: **fechado (MVP+)** — Operações: `GET /api/manufacturer/{documents|seasons|prizes}?search=` (LIKE, máx. 120) + paginação `{ items, meta }`; Flutter: debounce, «Carregar mais», recarga parcial; trim 120 no cliente; testes de pesquisa em documentos / prémios / épocas.
-- “Sem perfil” no diagrama: **fechado (MVP+)** — `ProfileGateScreen` (`CORE-PROFILE-GATE`): conta + role da API; **«Actualizar sessão»** → `GET /api/auth/me`; **definir perfil (uma vez)** → `PATCH /api/me/role` (só se o `role` actual **não** for um dos mapeados na app) com treinando / instrutor / fabricante + campos de fabricante quando necessário; `VersionBadge`. **Em aberto:** alteração de `role` por utilizador já com perfil válido (continua só suporte / admin).
+- “Sem perfil” no diagrama: **fechado (MVP+)** — `ProfileGateScreen` (`CORE-PROFILE-GATE`): conta + role da API; **«Actualizar sessão»** e **pull-to-refresh** (`RefreshIndicator` + `AlwaysScrollableScrollPhysics` no scroll) → `restore()` / `GET /api/auth/me`; **definir perfil (uma vez)** → `PATCH /api/me/role` (só se o `role` actual **não** for um dos mapeados na app) com treinando / instrutor / fabricante + campos de fabricante quando necessário; `VersionBadge`. **Em aberto:** alteração de `role` por utilizador já com perfil válido (continua só suporte / admin).
 
 ---
 
-**Próximo passo imediato sugerido:** **Fase 3** (Instituição — INS-DASH refinamentos, INS-REL incremental, etc.) ou refinamentos UX transversais. **Credenciamento** (`/instructor/credenciamento`) e rotas **INS-PAR-01 / INS-SOL-01 / endorsements** partilham `_InstructorApiReachability` + `instrOfflineHint` onde há escrita na API. **APP-SAL-01/02**, **APP-DASH-01**, **APP-TRE-01**, **TRE-RES-01**, **TRE-QUES-01**, **TRE-ACC/TRE-SAL**, **TRE-CON-01** (MVP+), **FAB-HOM-01/02**, MVP+ fabricante no mapa e gate «Sem perfil» estão fechados (MVP+).
+**Próximo passo imediato sugerido:** **Fase 4** (fabricante — novas fatias FAB-*) ou **refinos transversais** (ex.: mais telas com `RefreshIndicator` + `AlwaysScrollableScrollPhysics`). **Credenciamento** (`/instructor/credenciamento`): `RefreshIndicator` + dropdowns de pedido instituição/fabricante **offline** além de botões e filas. Rotas **INS-*** (dashboard, parque, endossos, pedidos, relatório por setor) com UX de navegação e refresh alinhados. **APP-SAL-01/02**, **APP-DASH-01**, **APP-TRE-01**, **TRE-RES-01**, **TRE-QUES-01**, **TRE-ACC/TRE-SAL**, **TRE-CON-01** (MVP+), **FAB-HOM-01/02**, MVP+ fabricante no mapa, **ManufacturerShell** com alcance API no shell, e gate «Sem perfil» estão fechados (MVP+).

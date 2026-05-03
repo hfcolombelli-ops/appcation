@@ -478,6 +478,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'Aggregated data — no individual identification (GDPR/LGPD).';
 
   @override
+  String get dashInstitutionAlertPendingTitle => 'Requests to review';
+
+  @override
+  String dashInstitutionAlertPendingBody(int count) {
+    return 'There are $count pending training request(s) in the queue. Open the board to review and schedule.';
+  }
+
+  @override
+  String get dashInstitutionShortcutsTitle => 'Manager areas';
+
+  @override
   String get dashExportCsv => 'Export CSV';
 
   @override
@@ -1353,6 +1364,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mfgDashOpenAnalytics => 'Open analytics';
+
+  @override
+  String get mfgDashSummaryUnavailableTitle => 'Aggregated summary unavailable';
+
+  @override
+  String get mfgDashSummaryUnavailableBody =>
+      'Could not load the summary right now. Try again or open Analytics.';
 
   @override
   String get mfgSnackValidationRequested =>

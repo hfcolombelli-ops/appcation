@@ -6,6 +6,7 @@ use App\Models\Enrollment;
 use App\Models\Equipment;
 use App\Models\Institution;
 use App\Models\Manufacturer;
+use App\Models\TraineeProfile;
 use App\Models\Training;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,6 +56,17 @@ class FluxxoInstitutionDashboardKpiTest extends TestCase
         $u1 = User::factory()->create(['role' => 'trainee']);
         $u2 = User::factory()->create(['role' => 'trainee']);
 
+        TraineeProfile::query()->create([
+            'user_id' => $u1->id,
+            'institution_id' => $inst->id,
+            'sector' => 'UCI',
+        ]);
+        TraineeProfile::query()->create([
+            'user_id' => $u2->id,
+            'institution_id' => $inst->id,
+            'sector' => 'CCU',
+        ]);
+
         Enrollment::query()->create([
             'training_id' => $tr->id,
             'user_id' => $u1->id,
@@ -86,6 +98,17 @@ class FluxxoInstitutionDashboardKpiTest extends TestCase
         $res->assertJsonCount(1, 'aggregated_by_equipment');
         $this->assertSame('Vent V1', $res->json('aggregated_by_equipment.0.label'));
 
+        $res->assertJsonCount(2, 'aggregated_by_sector');
+        $bySector = collect($res->json('aggregated_by_sector'))->keyBy('sector');
+        $this->assertSame(1, $bySector->get('CCU')['total_enrollments']);
+        $this->assertSame(0, $bySector->get('CCU')['completed_count']);
+        $this->assertSame(0, $bySector->get('CCU')['completions']);
+        $this->assertNull($bySector->get('CCU')['avg_score']);
+        $this->assertSame(1, $bySector->get('UCI')['total_enrollments']);
+        $this->assertSame(1, $bySector->get('UCI')['completed_count']);
+        $this->assertSame(1, $bySector->get('UCI')['completions']);
+        $this->assertEquals(80.0, (float) $bySector->get('UCI')['avg_score']);
+
         $csv = $this->withToken($token)
             ->get('/api/institution/dashboard-summary/export.csv');
         $csv->assertOk();
@@ -93,6 +116,9 @@ class FluxxoInstitutionDashboardKpiTest extends TestCase
         $this->assertStringContainsString('Relatório agregado', $csv->getContent());
         $this->assertStringContainsString('Vent', $csv->getContent());
         $this->assertStringContainsString('Por equipamento', $csv->getContent());
+        $this->assertStringContainsString('Com nota', $csv->getContent());
+        $this->assertStringContainsString('CCU', $csv->getContent());
+        $this->assertStringContainsString('UCI', $csv->getContent());
 
         $pdf = $this->withToken($token)->get('/api/institution/dashboard-summary/export.pdf');
         $pdf->assertOk();

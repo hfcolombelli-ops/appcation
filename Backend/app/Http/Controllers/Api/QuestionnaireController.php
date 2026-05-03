@@ -8,6 +8,7 @@ use App\Models\Enrollment;
 use App\Models\Question;
 use App\Models\QuestionOption;
 use App\Models\Training;
+use App\Models\TrainingBlock;
 use App\Support\FollowUpScheduler;
 use App\Support\TrainingSession;
 use Illuminate\Http\Request;
@@ -68,6 +69,9 @@ class QuestionnaireController extends Controller
 
         $questions = $questionsQuery
             ->with([
+                'trainingBlock' => static function ($q) {
+                    $q->select('id', 'training_id', 'title', 'sort_order');
+                },
                 'options' => function ($q) use ($user) {
                     $cols = ['id', 'question_id', 'label', 'sort_order'];
                     if ($user->role !== 'trainee') {
@@ -76,7 +80,13 @@ class QuestionnaireController extends Controller
                     $q->select($cols);
                 },
             ])
-            ->orderBy('sort_order')
+            ->orderBy(
+                TrainingBlock::query()
+                    ->select('sort_order')
+                    ->whereColumn('training_blocks.id', 'questions.training_block_id')
+                    ->limit(1)
+            )
+            ->orderBy('questions.sort_order')
             ->get();
 
         return response()->json($questions);

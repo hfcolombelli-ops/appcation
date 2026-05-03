@@ -43,7 +43,8 @@ class FluxxoManufacturerDocumentsTest extends TestCase
         $this->withToken($token)
             ->getJson('/api/manufacturer/documents')
             ->assertOk()
-            ->assertJsonCount(0);
+            ->assertJsonCount(0, 'items')
+            ->assertJsonPath('meta.total', 0);
 
         $file = UploadedFile::fake()->create('manual.pdf', 120, 'application/pdf');
 
@@ -63,7 +64,8 @@ class FluxxoManufacturerDocumentsTest extends TestCase
         $this->withToken($token)
             ->getJson('/api/manufacturer/documents')
             ->assertOk()
-            ->assertJsonCount(1);
+            ->assertJsonCount(1, 'items')
+            ->assertJsonPath('meta.total', 1);
 
         $this->withToken($token)
             ->get("/api/manufacturer/documents/{$id}/download")
@@ -100,5 +102,58 @@ class FluxxoManufacturerDocumentsTest extends TestCase
         $this->withToken($tokenB)
             ->get("/api/manufacturer/documents/{$doc->id}/download")
             ->assertNotFound();
+    }
+
+    public function test_documents_index_search_filters_by_filename_or_notes(): void
+    {
+        Storage::fake('local');
+        [, $token, $m] = $this->manufacturerAdminWithToken();
+
+        $f1 = UploadedFile::fake()->create('alpha.pdf', 50, 'application/pdf');
+        $this->withToken($token)->post('/api/manufacturer/documents', [
+            'file' => $f1,
+            'document_kind' => 'other',
+            'notes' => 'primeiro lote',
+        ])->assertCreated();
+
+        $f2 = UploadedFile::fake()->create('beta.pdf', 50, 'application/pdf');
+        $this->withToken($token)->post('/api/manufacturer/documents', [
+            'file' => $f2,
+            'document_kind' => 'other',
+            'notes' => 'outro texto',
+        ])->assertCreated();
+
+        $this->withToken($token)
+            ->getJson('/api/manufacturer/documents?search=alpha')
+            ->assertOk()
+            ->assertJsonCount(1, 'items')
+            ->assertJsonFragment(['original_filename' => 'alpha.pdf']);
+
+        $this->withToken($token)
+            ->getJson('/api/manufacturer/documents?search=primeiro')
+            ->assertOk()
+            ->assertJsonCount(1, 'items');
+
+        $this->withToken($token)
+            ->getJson('/api/manufacturer/documents?search=')
+            ->assertOk()
+            ->assertJsonCount(2, 'items');
+    }
+
+    public function test_documents_index_rejects_search_too_long(): void
+    {
+        [, $token] = $this->manufacturerAdminWithToken();
+        $long = str_repeat('x', 121);
+        $this->withToken($token)
+            ->getJson('/api/manufacturer/documents?search='.urlencode($long))
+            ->assertStatus(422);
+    }
+
+    public function test_documents_index_rejects_per_page_over_max(): void
+    {
+        [, $token] = $this->manufacturerAdminWithToken();
+        $this->withToken($token)
+            ->getJson('/api/manufacturer/documents?per_page=99')
+            ->assertStatus(422);
     }
 }

@@ -23,13 +23,41 @@ class ManufacturerSeasonController extends Controller
             return $r;
         }
 
-        $rows = Season::query()
-            ->where('manufacturer_id', $user->manufacturer_id)
-            ->orderByDesc('starts_at')
-            ->limit(80)
-            ->get();
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
 
-        return response()->json($rows);
+        $page = max(1, (int) ($validated['page'] ?? 1));
+        $perPage = min(50, max(1, (int) ($validated['per_page'] ?? 20)));
+
+        $q = Season::query()
+            ->where('manufacturer_id', $user->manufacturer_id);
+
+        if ($request->filled('search')) {
+            $raw = trim((string) $request->query('search'));
+            $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], mb_strtolower($raw)).'%';
+            $q->where(function ($w) use ($term) {
+                $w->whereRaw('LOWER(name) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(COALESCE(notes, "")) LIKE ?', [$term])
+                    ->orWhereRaw('CAST(target_trainings AS TEXT) LIKE ?', [$term]);
+            });
+        }
+
+        $paginator = $q
+            ->orderByDesc('starts_at')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'items' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => max(1, $paginator->lastPage()),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
     }
 
     public function store(Request $request, SeasonLeaderboardService $leaderboardService)

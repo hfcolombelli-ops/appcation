@@ -171,6 +171,16 @@
   },
   "dashInstitutionKpisTitle": "Indicadores da instituição",
   "dashInstitutionLgpdNote": "Dados agregados — sem identificação individual (LGPD).",
+  "dashInstitutionAlertPendingTitle": "Pedidos por rever",
+  "dashInstitutionAlertPendingBody": "Existem {count} pedido(s) pendente(s) na fila. Abra o quadro para rever e agendar.",
+  "@dashInstitutionAlertPendingBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashInstitutionShortcutsTitle": "Áreas do gestor",
   "dashExportCsv": "Exportar CSV",
   "dashExportPdf": "Exportar PDF",
   "dashKpiPendingRequests": "Pedidos pendentes",
@@ -605,6 +615,8 @@
   "mfgDashMonthlyTrendTitle": "Evolução recente (mensal)",
   "mfgDashMonthlyTrendIntro": "Até os últimos 6 meses com dados: inscrições vs. conclusões (mesma lógica que em Análises).",
   "mfgDashOpenAnalytics": "Abrir análises",
+  "mfgDashSummaryUnavailableTitle": "Resumo agregado indisponível",
+  "mfgDashSummaryUnavailableBody": "Não foi possível carregar o resumo neste momento. Tente novamente ou abra Análises.",
   "mfgSnackValidationRequested": "Pedido de validação enviado. A nossa equipa irá analisar.",
   "mfgSeasonNewTitle": "Nova temporada",
   "mfgFieldName": "Nome",

@@ -17,7 +17,8 @@
   <h1>App²cation — relatório agregado (fabricante)</h1>
   <p class="muted">Fabricante: <strong>{{ $manufacturerName }}</strong><br>
     Gerado em (UTC): {{ $generatedAt->toIso8601String() }}<br>
-    Dados agregados — sem identificação de participantes (LGPD).</p>
+    Dados agregados — sem identificação de participantes (LGPD).@if(!empty($filterCaption))<br>
+    <strong>Filtros:</strong> {{ $filterCaption }}@endif</p>
 
   @php
     $cs = $data['completion_summary'] ?? [];
@@ -87,6 +88,30 @@
         </tr>
       @empty
         <tr><td colspan="6">Sem dados por equipamento.</td></tr>
+      @endforelse
+    </tbody>
+  </table>
+
+  <h2>Tendência mensal combinada (UTC)</h2>
+  <p class="muted">Inscrições: COALESCE(joined_at, created_at). Conclusões: completed_at.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Mês (AAAA-MM)</th>
+        <th>Inscrições</th>
+        <th>Concluídas</th>
+      </tr>
+    </thead>
+    <tbody>
+      @forelse(($data['monthly_trend'] ?? []) as $row)
+        @php $r = is_array($row) ? $row : (array) $row; @endphp
+        <tr>
+          <td>{{ $r['period'] ?? '—' }}</td>
+          <td>{{ $r['enrollment_count'] ?? '—' }}</td>
+          <td>{{ $r['completed_count'] ?? '—' }}</td>
+        </tr>
+      @empty
+        <tr><td colspan="3">Sem dados mensais agregados.</td></tr>
       @endforelse
     </tbody>
   </table>

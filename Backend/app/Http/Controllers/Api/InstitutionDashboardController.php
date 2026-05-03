@@ -71,13 +71,15 @@ class InstitutionDashboardController extends Controller
         fputcsv($out, [], ';');
 
         fputcsv($out, ['Por setor'], ';');
-        fputcsv($out, ['Setor', 'Média notas', 'Conclusões'], ';');
+        fputcsv($out, ['Setor', 'Inscrições', 'Concluídas', 'Com nota', 'Média notas'], ';');
         foreach ($data['aggregated_by_sector'] as $row) {
             $r = (array) $row;
             fputcsv($out, [
                 (string) ($r['sector'] ?? ''),
-                isset($r['avg_score']) ? (string) $r['avg_score'] : '',
-                isset($r['completions']) ? (string) $r['completions'] : '',
+                (string) ($r['total_enrollments'] ?? ''),
+                (string) ($r['completed_count'] ?? ''),
+                (string) ($r['completions'] ?? ''),
+                isset($r['avg_score']) && $r['avg_score'] !== null ? (string) $r['avg_score'] : '',
             ], ';');
         }
         fputcsv($out, [], ';');

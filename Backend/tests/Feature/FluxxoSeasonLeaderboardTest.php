@@ -80,4 +80,45 @@ class FluxxoSeasonLeaderboardTest extends TestCase
             ->assertOk()
             ->assertJsonPath('0.points', 1);
     }
+
+    public function test_manufacturer_seasons_index_search_filters_by_name_or_notes(): void
+    {
+        $manufacturer = Manufacturer::query()->create([
+            'name' => 'Fab SeasonSearch '.Str::random(6),
+            'slug' => 'fab-ss-'.Str::lower(Str::random(6)),
+            'status' => 'active',
+        ]);
+
+        $admin = User::factory()->create([
+            'role' => 'manufacturer_admin',
+            'manufacturer_id' => $manufacturer->id,
+        ]);
+
+        $token = $admin->createToken('m')->plainTextToken;
+
+        $this->withToken($token)->postJson('/api/manufacturer/seasons', [
+            'name' => 'Época Verão',
+            'starts_at' => now()->subMonth()->toDateString(),
+            'ends_at' => now()->addMonth()->toDateString(),
+            'notes' => 'primeira vaga',
+        ])->assertCreated();
+
+        $this->withToken($token)->postJson('/api/manufacturer/seasons', [
+            'name' => 'Inverno',
+            'starts_at' => now()->subMonths(2)->toDateString(),
+            'ends_at' => now()->subMonth()->toDateString(),
+            'notes' => null,
+        ])->assertCreated();
+
+        $this->withToken($token)
+            ->getJson('/api/manufacturer/seasons?search=verão')
+            ->assertOk()
+            ->assertJsonCount(1, 'items')
+            ->assertJsonFragment(['name' => 'Época Verão']);
+
+        $this->withToken($token)
+            ->getJson('/api/manufacturer/seasons?search=primeira')
+            ->assertOk()
+            ->assertJsonCount(1, 'items');
+    }
 }

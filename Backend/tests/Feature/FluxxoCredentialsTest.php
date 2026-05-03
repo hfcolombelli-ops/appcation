@@ -100,6 +100,47 @@ class FluxxoCredentialsTest extends TestCase
             ->assertOk()
             ->assertJsonPath('status', 'approved')
             ->assertJsonPath('fee_paid', true);
+
+        $queueAfter = $this->getJson('/api/credentials/manufacturer/queue');
+        $queueAfter->assertOk();
+        $queueAfter->assertJsonCount(1);
+        $queueAfter->assertJsonPath('0.status', 'approved');
+    }
+
+    public function test_manufacturer_queue_returns_all_statuses_ordered(): void
+    {
+        $suffix = Str::lower(Str::random(6));
+        $mfg = Manufacturer::query()->create([
+            'name' => 'Fab Q '.$suffix,
+            'slug' => 'fab-q-'.$suffix,
+            'status' => 'active',
+            'validation_status' => 'active',
+        ]);
+
+        $iPending = User::factory()->create(['role' => 'instructor']);
+        $iRejected = User::factory()->create(['role' => 'instructor']);
+
+        ManufacturerInstructor::query()->create([
+            'manufacturer_id' => $mfg->id,
+            'instructor_id' => $iRejected->id,
+            'status' => 'rejected',
+        ]);
+
+        $mAdmin = User::factory()->create([
+            'role' => 'manufacturer_admin',
+            'manufacturer_id' => $mfg->id,
+        ]);
+
+        Sanctum::actingAs($iPending);
+        $this->postJson('/api/credentials/manufacturer', ['manufacturer_id' => $mfg->id])->assertCreated();
+
+        Sanctum::actingAs($mAdmin);
+
+        $queue = $this->getJson('/api/credentials/manufacturer/queue');
+        $queue->assertOk();
+        $queue->assertJsonCount(2);
+        $this->assertSame('pending', $queue->json('0.status'));
+        $this->assertSame('rejected', $queue->json('1.status'));
     }
 
     public function test_gestor_endorses_manufacturer_request_for_approved_instructor(): void
@@ -259,5 +300,102 @@ class FluxxoCredentialsTest extends TestCase
         ])
             ->assertOk()
             ->assertJsonPath('status', 'approved');
+    }
+
+    public function test_manufacturer_cannot_suspend_pending_homologation(): void
+    {
+        $suffix = Str::lower(Str::random(6));
+        $mfg = Manufacturer::query()->create([
+            'name' => 'Fab Sus '.$suffix,
+            'slug' => 'fab-sus-'.$suffix,
+            'status' => 'active',
+            'validation_status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+
+        $mi = ManufacturerInstructor::query()->create([
+            'manufacturer_id' => $mfg->id,
+            'instructor_id' => $instructor->id,
+            'status' => 'pending',
+        ]);
+
+        $mAdmin = User::factory()->create([
+            'role' => 'manufacturer_admin',
+            'manufacturer_id' => $mfg->id,
+        ]);
+
+        Sanctum::actingAs($mAdmin);
+
+        $this->patchJson("/api/credentials/manufacturer/{$mi->id}", ['status' => 'suspended'])
+            ->assertStatus(422);
+    }
+
+    public function test_manufacturer_suspend_approved_then_reactivate_preserves_fee_paid(): void
+    {
+        $suffix = Str::lower(Str::random(6));
+        $mfg = Manufacturer::query()->create([
+            'name' => 'Fab Re '.$suffix,
+            'slug' => 'fab-re-'.$suffix,
+            'status' => 'active',
+            'validation_status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+
+        $mi = ManufacturerInstructor::query()->create([
+            'manufacturer_id' => $mfg->id,
+            'instructor_id' => $instructor->id,
+            'status' => 'approved',
+            'fee_paid' => true,
+        ]);
+
+        $mAdmin = User::factory()->create([
+            'role' => 'manufacturer_admin',
+            'manufacturer_id' => $mfg->id,
+        ]);
+
+        Sanctum::actingAs($mAdmin);
+
+        $this->patchJson("/api/credentials/manufacturer/{$mi->id}", ['status' => 'suspended'])
+            ->assertOk()
+            ->assertJsonPath('status', 'suspended')
+            ->assertJsonPath('fee_paid', true);
+
+        $this->patchJson("/api/credentials/manufacturer/{$mi->id}", ['status' => 'approved'])
+            ->assertOk()
+            ->assertJsonPath('status', 'approved')
+            ->assertJsonPath('fee_paid', true);
+    }
+
+    public function test_manufacturer_cannot_approve_from_rejected(): void
+    {
+        $suffix = Str::lower(Str::random(6));
+        $mfg = Manufacturer::query()->create([
+            'name' => 'Fab Rj '.$suffix,
+            'slug' => 'fab-rj-'.$suffix,
+            'status' => 'active',
+            'validation_status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+
+        $mi = ManufacturerInstructor::query()->create([
+            'manufacturer_id' => $mfg->id,
+            'instructor_id' => $instructor->id,
+            'status' => 'rejected',
+        ]);
+
+        $mAdmin = User::factory()->create([
+            'role' => 'manufacturer_admin',
+            'manufacturer_id' => $mfg->id,
+        ]);
+
+        Sanctum::actingAs($mAdmin);
+
+        $this->patchJson("/api/credentials/manufacturer/{$mi->id}", [
+            'status' => 'approved',
+            'fee_paid' => true,
+        ])->assertStatus(422);
     }
 }

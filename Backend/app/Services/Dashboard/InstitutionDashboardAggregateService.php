@@ -12,16 +12,33 @@ class InstitutionDashboardAggregateService
      */
     public function aggregate(int $institutionId): array
     {
-        $bySector = DB::table('enrollments as e')
-            ->join('users as u', 'u.id', '=', 'e.user_id')
-            ->join('trainee_profiles as tp', 'tp.user_id', '=', 'u.id')
-            ->where('tp.institution_id', $institutionId)
-            ->where('e.status', 'completed')
-            ->whereNotNull('e.score')
-            ->groupBy('tp.sector')
-            ->selectRaw('tp.sector, ROUND(AVG(e.score), 2) as avg_score, COUNT(*) as completions')
-            ->orderBy('tp.sector')
+        $bySectorRows = DB::table('enrollments as e')
+            ->join('trainings as t', 't.id', '=', 'e.training_id')
+            ->leftJoin('trainee_profiles as tp', function ($join) use ($institutionId) {
+                $join->on('tp.user_id', '=', 'e.user_id')
+                    ->where('tp.institution_id', '=', $institutionId);
+            })
+            ->where('t.institution_id', $institutionId)
+            ->groupBy(DB::raw("COALESCE(NULLIF(TRIM(tp.sector), ''), '(sem setor)')"))
+            ->selectRaw('
+                COALESCE(NULLIF(TRIM(tp.sector), \'\'), \'(sem setor)\') as sector,
+                COUNT(*) as total_enrollments,
+                SUM(CASE WHEN e.status = \'completed\' THEN 1 ELSE 0 END) as completed_count,
+                SUM(CASE WHEN e.status = \'completed\' AND e.score IS NOT NULL THEN 1 ELSE 0 END) as completions_scored,
+                ROUND(AVG(CASE WHEN e.status = \'completed\' AND e.score IS NOT NULL THEN e.score END), 2) as avg_score
+            ')
+            ->orderBy('sector')
             ->get();
+
+        $aggregatedBySector = $bySectorRows->map(function ($row) {
+            return [
+                'sector' => (string) $row->sector,
+                'total_enrollments' => (int) $row->total_enrollments,
+                'completed_count' => (int) $row->completed_count,
+                'completions' => (int) $row->completions_scored,
+                'avg_score' => $row->avg_score !== null ? (float) $row->avg_score : null,
+            ];
+        })->values();
 
         $pendingRequests = TrainingRequest::query()
             ->where('institution_id', $institutionId)
@@ -98,7 +115,7 @@ class InstitutionDashboardAggregateService
         })->values();
 
         return [
-            'aggregated_by_sector' => $bySector,
+            'aggregated_by_sector' => $aggregatedBySector,
             'pending_training_requests' => $pendingRequests,
             'completion_summary' => [
                 'total_enrollments' => $totalEnrollments,

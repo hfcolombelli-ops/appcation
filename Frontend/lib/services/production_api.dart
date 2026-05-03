@@ -4,6 +4,39 @@ import 'package:http/http.dart' as http;
 
 import 'api_client.dart';
 
+/// Resposta paginada de índices do fabricante (`items` + `meta` na API).
+class ManufacturerOperationsIndexPage {
+  const ManufacturerOperationsIndexPage({
+    this.items = const <Map<String, dynamic>>[],
+    this.hasMore = false,
+  });
+
+  final List<Map<String, dynamic>> items;
+  final bool hasMore;
+}
+
+ManufacturerOperationsIndexPage _parseManufacturerOperationsIndex(Map<String, dynamic> root) {
+  final raw = root['items'];
+  final items = <Map<String, dynamic>>[];
+  if (raw is List) {
+    for (final e in raw) {
+      if (e is Map) {
+        items.add(Map<String, dynamic>.from(e));
+      }
+    }
+  }
+  final meta = root['meta'];
+  var hasMore = false;
+  if (meta is Map) {
+    final cur = meta['current_page'];
+    final last = meta['last_page'];
+    final curI = cur is int ? cur : int.tryParse(cur?.toString() ?? '') ?? 1;
+    final lastI = last is int ? last : int.tryParse(last?.toString() ?? '') ?? 1;
+    hasMore = curI < lastI;
+  }
+  return ManufacturerOperationsIndexPage(items: items, hasMore: hasMore);
+}
+
 /// Chamadas à API Laravel usadas no fluxo real (produção).
 class ProductionApi {
   ProductionApi(this._http);
@@ -58,8 +91,26 @@ class ProductionApi {
   Future<Map<String, dynamic>> createTraining(String token, Map<String, dynamic> body) =>
       _http.postJson('/api/trainings', body, token: token);
 
-  Future<List<Map<String, dynamic>>> manufacturerTemplates(String token) async {
-    final r = await _http.getJsonList('/api/trainings?templates_only=1', token: token);
+  Future<List<Map<String, dynamic>>> manufacturerTemplates(
+    String token, {
+    String? search,
+    String? status,
+    String? sort,
+  }) async {
+    final parts = <String>['templates_only=1'];
+    if (search != null && search.trim().isNotEmpty) {
+      final s = search.trim();
+      final clipped = s.length > 120 ? s.substring(0, 120) : s;
+      parts.add('search=${Uri.encodeQueryComponent(clipped)}');
+    }
+    if (status != null && status.isNotEmpty) {
+      parts.add('status=${Uri.encodeQueryComponent(status)}');
+    }
+    if (sort != null && sort.isNotEmpty) {
+      parts.add('sort=${Uri.encodeQueryComponent(sort)}');
+    }
+    final q = '?${parts.join('&')}';
+    final r = await _http.getJsonList('/api/trainings$q', token: token);
     return r.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
@@ -350,8 +401,10 @@ class ProductionApi {
   Future<Map<String, dynamic>> putTraineeProfile(String token, Map<String, dynamic> body) =>
       _http.putJson('/api/me/trainee-profile', body, token: token);
 
-  Future<Map<String, dynamic>> joinTraining(String token, String joinHash) =>
-      _http.postJson('/api/enrollments/join', {'join_hash': joinHash.trim()}, token: token);
+  Future<Map<String, dynamic>> joinTraining(String token, String joinHash) {
+    final normalized = joinHash.trim().replaceAll(RegExp(r'\s+'), '').toLowerCase();
+    return _http.postJson('/api/enrollments/join', {'join_hash': normalized}, token: token);
+  }
 
   Future<Map<String, dynamic>> getEnrollment(String token, int id) =>
       _http.getJson('/api/enrollments/$id', token: token);
@@ -393,21 +446,42 @@ class ProductionApi {
   Future<Map<String, dynamic>> manufacturerProfile(String token) =>
       _http.getJson('/api/manufacturer/profile', token: token);
 
-  Future<Map<String, dynamic>> manufacturerDashboardSummary(String token) =>
-      _http.getJson('/api/manufacturer/dashboard-summary', token: token);
+  Future<Map<String, dynamic>> manufacturerDashboardSummary(
+    String token, {
+    Map<String, String>? query,
+  }) =>
+      _http.getJson('/api/manufacturer/dashboard-summary', token: token, query: query);
 
-  Future<Uint8List> manufacturerDashboardExportCsv(String token) =>
-      _http.getBytes('/api/manufacturer/dashboard-summary/export.csv', token: token);
+  Future<Uint8List> manufacturerDashboardExportCsv(
+    String token, {
+    Map<String, String>? query,
+  }) =>
+      _http.getBytes('/api/manufacturer/dashboard-summary/export.csv', token: token, query: query);
 
-  Future<Uint8List> manufacturerDashboardExportPdf(String token) =>
-      _http.getBytes('/api/manufacturer/dashboard-summary/export.pdf', token: token);
+  Future<Uint8List> manufacturerDashboardExportPdf(
+    String token, {
+    Map<String, String>? query,
+  }) =>
+      _http.getBytes('/api/manufacturer/dashboard-summary/export.pdf', token: token, query: query);
 
   Future<Map<String, dynamic>> updateManufacturerProfile(String token, Map<String, dynamic> body) =>
       _http.putJson('/api/manufacturer/profile', body, token: token);
 
-  Future<List<Map<String, dynamic>>> manufacturerSeasons(String token) async {
-    final r = await _http.getJsonList('/api/manufacturer/seasons', token: token);
-    return r.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  Future<ManufacturerOperationsIndexPage> manufacturerSeasons(
+    String token, {
+    String? search,
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    final parts = <String>[
+      'page=$page',
+      'per_page=$perPage',
+    ];
+    if (search != null && search.trim().isNotEmpty) {
+      parts.add('search=${Uri.encodeQueryComponent(search.trim())}');
+    }
+    final r = await _http.getJson('/api/manufacturer/seasons?${parts.join('&')}', token: token);
+    return _parseManufacturerOperationsIndex(Map<String, dynamic>.from(r));
   }
 
   Future<Map<String, dynamic>> createManufacturerSeason(
@@ -439,9 +513,21 @@ class ProductionApi {
   Future<void> deleteManufacturerSeason(String token, int seasonId) =>
       _http.delete('/api/manufacturer/seasons/$seasonId', token: token);
 
-  Future<List<Map<String, dynamic>>> manufacturerPrizes(String token) async {
-    final r = await _http.getJsonList('/api/manufacturer/prizes', token: token);
-    return r.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  Future<ManufacturerOperationsIndexPage> manufacturerPrizes(
+    String token, {
+    String? search,
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    final parts = <String>[
+      'page=$page',
+      'per_page=$perPage',
+    ];
+    if (search != null && search.trim().isNotEmpty) {
+      parts.add('search=${Uri.encodeQueryComponent(search.trim())}');
+    }
+    final r = await _http.getJson('/api/manufacturer/prizes?${parts.join('&')}', token: token);
+    return _parseManufacturerOperationsIndex(Map<String, dynamic>.from(r));
   }
 
   Future<Map<String, dynamic>> createManufacturerPrize(
@@ -508,16 +594,22 @@ class ProductionApi {
     String? category,
     String? search,
     String? status,
+    String? sort,
   }) async {
     final parts = <String>[];
     if (category != null && category.isNotEmpty) {
       parts.add('category=${Uri.encodeQueryComponent(category)}');
     }
     if (search != null && search.trim().isNotEmpty) {
-      parts.add('search=${Uri.encodeQueryComponent(search.trim())}');
+      final s = search.trim();
+      final clipped = s.length > 120 ? s.substring(0, 120) : s;
+      parts.add('search=${Uri.encodeQueryComponent(clipped)}');
     }
     if (status != null && status.isNotEmpty) {
       parts.add('status=${Uri.encodeQueryComponent(status)}');
+    }
+    if (sort != null && sort.isNotEmpty) {
+      parts.add('sort=${Uri.encodeQueryComponent(sort)}');
     }
     final q = parts.isEmpty ? '' : '?${parts.join('&')}';
     final r = await _http.getJsonList('/api/manufacturer/equipment$q', token: token);
@@ -609,9 +701,21 @@ class ProductionApi {
   Future<void> deleteManufacturerEquipment(String token, int id) =>
       _http.delete('/api/manufacturer/equipment/$id', token: token);
 
-  Future<List<Map<String, dynamic>>> listManufacturerDocuments(String token) async {
-    final r = await _http.getJsonList('/api/manufacturer/documents', token: token);
-    return r.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  Future<ManufacturerOperationsIndexPage> listManufacturerDocuments(
+    String token, {
+    String? search,
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    final parts = <String>[
+      'page=$page',
+      'per_page=$perPage',
+    ];
+    if (search != null && search.trim().isNotEmpty) {
+      parts.add('search=${Uri.encodeQueryComponent(search.trim())}');
+    }
+    final r = await _http.getJson('/api/manufacturer/documents?${parts.join('&')}', token: token);
+    return _parseManufacturerOperationsIndex(Map<String, dynamic>.from(r));
   }
 
   Future<Map<String, dynamic>> uploadManufacturerDocument(

@@ -13,6 +13,8 @@ String localizedTrainingLifecycleStatus(AppLocalizations l, String? raw) {
       return l.trainLifecycleInProgress;
     case 'finished':
       return l.trainLifecycleFinished;
+    case 'cancelled':
+      return l.trainLifecycleCancelled;
     default:
       return s;
   }
@@ -86,7 +88,7 @@ String localizedManufacturerValidationStatus(AppLocalizations l, String? raw) {
   }
 }
 
-/// Credential queue / endorsement (`pending`, `approved`, `rejected`).
+/// Credential queue / endorsement (`pending`, `approved`, `rejected`, `suspended`).
 String localizedCredentialQueueStatus(AppLocalizations l, String? raw) {
   final s = raw?.trim();
   if (s == null || s.isEmpty) return l.trainReqDashNone;
@@ -97,6 +99,8 @@ String localizedCredentialQueueStatus(AppLocalizations l, String? raw) {
       return l.credStatusApproved;
     case 'rejected':
       return l.credStatusRejected;
+    case 'suspended':
+      return l.credStatusSuspended;
     default:
       return s;
   }

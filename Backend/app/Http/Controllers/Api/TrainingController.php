@@ -40,13 +40,48 @@ class TrainingController extends Controller
                 return $r;
             }
 
-            return Training::query()
+            $q = Training::query()
                 ->where('manufacturer_id', $user->manufacturer_id)
                 ->where('is_official_template', true)
-                ->with('institution:id,name')
-                ->latest()
-                ->limit(80)
-                ->get();
+                ->with('institution:id,name');
+
+            if ($request->filled('status')) {
+                $st = (string) $request->query('status');
+                if (! in_array($st, ['draft', 'scheduled', 'in_progress', 'finished', 'cancelled'], true)) {
+                    return response()->json(['message' => 'Estado inválido.'], 422);
+                }
+                $q->where('status', $st);
+            }
+
+            if ($request->has('search')) {
+                $rawSearch = trim((string) $request->query('search', ''));
+                if (strlen($rawSearch) > 120) {
+                    return response()->json(['message' => 'Pesquisa demasiado longa.'], 422);
+                }
+            }
+
+            if ($request->filled('search')) {
+                $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], mb_strtolower(trim((string) $request->query('search')))).'%';
+                $q->whereRaw('LOWER(title) LIKE ?', [$term]);
+            }
+
+            $sort = (string) ($request->query('sort') ?? 'updated_desc');
+            if ($sort === '') {
+                $sort = 'updated_desc';
+            }
+            $allowedSorts = ['updated_desc', 'title_asc', 'title_desc', 'status_asc'];
+            if (! in_array($sort, $allowedSorts, true)) {
+                return response()->json(['message' => 'Ordenação inválida.'], 422);
+            }
+
+            match ($sort) {
+                'title_asc' => $q->orderBy('title')->orderBy('id'),
+                'title_desc' => $q->orderByDesc('title')->orderByDesc('id'),
+                'status_asc' => $q->orderBy('status')->orderBy('title')->orderBy('id'),
+                default => $q->orderByDesc('updated_at')->orderByDesc('id'),
+            };
+
+            return $q->limit(80)->get();
         }
 
         if (in_array($user->role, ['instructor', 'institution_admin', 'manufacturer_admin'], true)) {

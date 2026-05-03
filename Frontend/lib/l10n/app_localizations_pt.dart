@@ -481,6 +481,17 @@ class AppLocalizationsPt extends AppLocalizations {
       'Dados agregados — sem identificação individual (LGPD).';
 
   @override
+  String get dashInstitutionAlertPendingTitle => 'Pedidos por rever';
+
+  @override
+  String dashInstitutionAlertPendingBody(int count) {
+    return 'Existem $count pedido(s) pendente(s) na fila. Abra o quadro para rever e agendar.';
+  }
+
+  @override
+  String get dashInstitutionShortcutsTitle => 'Áreas do gestor';
+
+  @override
   String get dashExportCsv => 'Exportar CSV';
 
   @override
@@ -1360,6 +1371,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get mfgDashOpenAnalytics => 'Abrir análises';
+
+  @override
+  String get mfgDashSummaryUnavailableTitle => 'Resumo agregado indisponível';
+
+  @override
+  String get mfgDashSummaryUnavailableBody =>
+      'Não foi possível carregar o resumo neste momento. Tente novamente ou abra Análises.';
 
   @override
   String get mfgSnackValidationRequested =>

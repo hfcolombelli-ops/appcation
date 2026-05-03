@@ -171,6 +171,16 @@
   },
   "dashInstitutionKpisTitle": "Institution indicators",
   "dashInstitutionLgpdNote": "Aggregated data — no individual identification (GDPR/LGPD).",
+  "dashInstitutionAlertPendingTitle": "Requests to review",
+  "dashInstitutionAlertPendingBody": "There are {count} pending training request(s) in the queue. Open the board to review and schedule.",
+  "@dashInstitutionAlertPendingBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashInstitutionShortcutsTitle": "Manager areas",
   "dashExportCsv": "Export CSV",
   "dashExportPdf": "Export PDF",
   "dashKpiPendingRequests": "Pending requests",
@@ -605,6 +615,8 @@
   "mfgDashMonthlyTrendTitle": "Recent trend (monthly)",
   "mfgDashMonthlyTrendIntro": "Up to the last 6 months with data: enrollments vs. completions (same logic as Analytics).",
   "mfgDashOpenAnalytics": "Open analytics",
+  "mfgDashSummaryUnavailableTitle": "Aggregated summary unavailable",
+  "mfgDashSummaryUnavailableBody": "Could not load the summary right now. Try again or open Analytics.",
   "mfgSnackValidationRequested": "Validation request sent. Our team will review it.",
   "mfgSeasonNewTitle": "New season",
   "mfgFieldName": "Name",

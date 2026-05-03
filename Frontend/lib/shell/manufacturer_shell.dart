@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -19,6 +20,34 @@ import 'manufacturer_onboarding_wizard.dart';
 import 'manufacturer_pending_approval_screen.dart';
 import 'manufacturer_template_editor.dart';
 
+const int _kMfgOpsPerPage = 20;
+
+Widget _mfgInstrOfflineBanner(AppLocalizations l) {
+  return DecoratedBox(
+    decoration: BoxDecoration(
+      color: const Color(0xFFFFF1F2),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFFECACA)),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.wifi_off_rounded, color: Color(0xFFB91C1C), size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              l.instrOfflineHint,
+              style: const TextStyle(fontSize: 13.5, height: 1.4, color: Color(0xFF7F1D1D)),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 Color _mfgCredentialChipColor(String? s) {
   switch (s) {
     case 'approved':
@@ -27,6 +56,8 @@ Color _mfgCredentialChipColor(String? s) {
       return const Color(0xFFFFF7ED);
     case 'rejected':
       return const Color(0xFFFFF1F2);
+    case 'suspended':
+      return const Color(0xFFF1F5FF);
     default:
       return const Color(0xFFF4F6F8);
   }
@@ -43,18 +74,37 @@ class ManufacturerShell extends StatefulWidget {
 class _ManufacturerShellState extends State<ManufacturerShell> {
   final _api = ProductionApi(ApiClient());
 
+  Timer? _healthTimer;
+  bool _apiOnline = true;
+
   bool _loading = true;
   String? _error;
   Map<String, dynamic>? _manufacturer;
   List<Map<String, dynamic>> _equipment = [];
   List<Map<String, dynamic>> _templates = [];
+
+  /// Pesquisa na lista de templates (título).
+  final _templatesSearchCtrl = TextEditingController();
+
+  /// Filtro de estado na lista de templates (`null` = todos).
+  String? _templatesStatusFilter;
+
+  /// Ordenação da lista de templates (`updated_desc` | `title_asc` | `title_desc` | `status_asc`).
+  String _templatesSort = 'updated_desc';
   List<Map<String, dynamic>> _documents = [];
   List<Map<String, dynamic>> _seasons = [];
   List<Map<String, dynamic>> _prizes = [];
+  int _opsDocsPage = 1;
+  int _opsSeasonsPage = 1;
+  int _opsPrizesPage = 1;
+  bool _opsDocsHasMore = false;
+  bool _opsSeasonsHasMore = false;
+  bool _opsPrizesHasMore = false;
+  bool _opsPagingBusy = false;
   List<Map<String, dynamic>> _categoryCatalog = [];
   Map<String, dynamic>? _dashboardSummary;
 
-  /// Secção principal (menu lateral): 0 Início, 1 Empresa, 2 Produtos, 3 Operações, 4 Homologações.
+  /// Secção principal (menu lateral): 0 Início, 1 Empresa, 2 Produtos, 3 Operações, 4 Homologações, 5 Análises.
   int _mfgNavIndex = 0;
 
   final ScrollController _mfgScrollController = ScrollController();
@@ -68,11 +118,21 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
   /// Filtro de estado na lista (`null` = todos).
   String? _equipmentStatusFilter;
 
+  /// Ordenação da lista (`name_asc` | `updated_desc` | `templates_desc`).
+  String _equipmentSort = 'name_asc';
+
   /// Pedidos de credenciamento de instrutores (Applications).
   List<Map<String, dynamic>> _credentialQueue = [];
 
   /// Filtro local na lista de homologações: `null` = todos.
   String? _homologStatusFilter;
+
+  int? _analyticsInstitutionId;
+  int? _analyticsEquipmentId;
+  final _analyticsFromCtrl = TextEditingController();
+  final _analyticsToCtrl = TextEditingController();
+  Map<String, dynamic>? _analyticsSummary;
+  bool _analyticsLoading = false;
 
   final _name = TextEditingController();
   final _supportEmail = TextEditingController();
@@ -81,23 +141,62 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
   final _docKind = TextEditingController();
   final _docNotes = TextEditingController();
 
+  /// Pesquisa (épocas, prémios, documentos) na secção Operações — API com debounce.
+  final _operationsSearchCtrl = TextEditingController();
+  Timer? _operationsSearchDebounce;
+
+  /// Pesquisa na lista de templates (Produtos) — recarga parcial com debounce.
+  Timer? _templatesSearchDebounce;
+
+  /// Pesquisa no catálogo de equipamentos — recarga parcial com debounce.
+  Timer? _equipmentSearchDebounce;
+
   @override
   void initState() {
     super.initState();
+    _healthTimer = Timer.periodic(const Duration(seconds: 20), (_) async {
+      try {
+        await _api.health();
+        if (mounted) setState(() => _apiOnline = true);
+      } catch (_) {
+        if (mounted) setState(() => _apiOnline = false);
+      }
+    });
     _reload();
   }
 
   @override
   void dispose() {
+    _healthTimer?.cancel();
     _name.dispose();
     _supportEmail.dispose();
     _cnpj.dispose();
     _equipmentSearchCtrl.dispose();
+    _templatesSearchCtrl.dispose();
     _templateTitle.dispose();
     _docKind.dispose();
     _docNotes.dispose();
+    _operationsSearchDebounce?.cancel();
+    _operationsSearchCtrl.dispose();
+    _templatesSearchDebounce?.cancel();
+    _equipmentSearchDebounce?.cancel();
+    _analyticsFromCtrl.dispose();
+    _analyticsToCtrl.dispose();
     _mfgScrollController.dispose();
     super.dispose();
+  }
+
+  /// Navegação lateral (ex.: CTA na lista vazia de homologações) mantendo scroll no topo.
+  void navigateToMfgTab(int index) {
+    setState(() {
+      _mfgNavIndex = index;
+      if (_mfgScrollController.hasClients) {
+        _mfgScrollController.jumpTo(0);
+      }
+    });
+    if (index == 5 && _manufacturer?['validation_status']?.toString() == 'active') {
+      unawaited(_loadAnalytics());
+    }
   }
 
   Future<void> _reload() async {
@@ -117,9 +216,15 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
       var cats = _categoryCatalog;
       List<Map<String, dynamic>> list = [];
       List<Map<String, dynamic>> templates = [];
-      final docs = await _api.listManufacturerDocuments(t);
+      final opsSearch = _operationsSearchCtrl.text.trim().isEmpty ? null : _operationsSearchCtrl.text.trim();
+      var docsRes = const ManufacturerOperationsIndexPage();
+      try {
+        docsRes = await _api.listManufacturerDocuments(t, search: opsSearch, page: 1, perPage: _kMfgOpsPerPage);
+      } catch (_) {}
       List<Map<String, dynamic>> seasons = [];
       List<Map<String, dynamic>> prizes = [];
+      var seasonsHasMore = false;
+      var prizesHasMore = false;
 
       if (operational) {
         try {
@@ -138,26 +243,38 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
           list = await _api.manufacturerEquipmentList(
             t,
             category: _equipmentCategoryFilter,
-            search: _equipmentSearchCtrl.text.trim().isEmpty ? null : _equipmentSearchCtrl.text.trim(),
+            search: _equipmentSearchParam,
             status: _equipmentStatusFilter,
+            sort: _equipmentSort,
           );
         } catch (_) {
           list = [];
         }
         try {
-          templates = await _api.manufacturerTemplates(t);
+          templates = await _api.manufacturerTemplates(
+            t,
+            search: _templatesSearchParam,
+            status: _templatesStatusFilter,
+            sort: _templatesSort,
+          );
         } catch (_) {
           templates = [];
         }
         try {
-          seasons = await _api.manufacturerSeasons(t);
+          final sr = await _api.manufacturerSeasons(t, search: opsSearch, page: 1, perPage: _kMfgOpsPerPage);
+          seasons = sr.items;
+          seasonsHasMore = sr.hasMore;
         } catch (_) {
           seasons = [];
+          seasonsHasMore = false;
         }
         try {
-          prizes = await _api.manufacturerPrizes(t);
+          final pr = await _api.manufacturerPrizes(t, search: opsSearch, page: 1, perPage: _kMfgOpsPerPage);
+          prizes = pr.items;
+          prizesHasMore = pr.hasMore;
         } catch (_) {
           prizes = [];
+          prizesHasMore = false;
         }
       } else {
         dash = null;
@@ -165,6 +282,8 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
         templates = [];
         seasons = [];
         prizes = [];
+        seasonsHasMore = false;
+        prizesHasMore = false;
       }
 
       List<Map<String, dynamic>> credQueue = [];
@@ -182,15 +301,24 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
         _categoryCatalog = cats;
         _equipment = list;
         _templates = templates;
-        _documents = docs;
+        _documents = docsRes.items;
+        _opsDocsHasMore = docsRes.hasMore;
+        _opsDocsPage = 1;
         _seasons = seasons;
+        _opsSeasonsHasMore = seasonsHasMore;
+        _opsSeasonsPage = 1;
         _prizes = prizes;
+        _opsPrizesHasMore = prizesHasMore;
+        _opsPrizesPage = 1;
         _credentialQueue = credQueue;
         _name.text = m['name']?.toString() ?? '';
         _supportEmail.text = m['support_email']?.toString() ?? '';
         _cnpj.text = m['cnpj']?.toString() ?? '';
         _loading = false;
       });
+      if (mounted && _mfgNavIndex == 5 && m['validation_status']?.toString() == 'active') {
+        unawaited(_loadAnalytics());
+      }
     } on ApiException catch (e) {
       if (mounted) {
         setState(() {
@@ -206,6 +334,50 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
         });
       }
     }
+  }
+
+  List<DropdownMenuItem<int?>> _mfgAnalyticsInstitutionItems(AppLocalizations l) {
+    final list = (_dashboardSummary?['aggregated_by_institution'] as List<dynamic>?) ?? [];
+    final items = <DropdownMenuItem<int?>>[
+      DropdownMenuItem<int?>(value: null, child: Text(l.mfgAnalyticsAll)),
+    ];
+    for (final raw in list) {
+      final m = Map<String, dynamic>.from(raw as Map);
+      final id = m['institution_id'];
+      if (id == null) {
+        continue;
+      }
+      final iid = id is int ? id : (id as num).toInt();
+      items.add(
+        DropdownMenuItem<int?>(
+          value: iid,
+          child: Text(m['label']?.toString() ?? '$iid'),
+        ),
+      );
+    }
+    return items;
+  }
+
+  List<DropdownMenuItem<int?>> _mfgAnalyticsEquipmentItems(AppLocalizations l) {
+    final list = (_dashboardSummary?['aggregated_by_equipment'] as List<dynamic>?) ?? [];
+    final items = <DropdownMenuItem<int?>>[
+      DropdownMenuItem<int?>(value: null, child: Text(l.mfgAnalyticsAll)),
+    ];
+    for (final raw in list) {
+      final m = Map<String, dynamic>.from(raw as Map);
+      final id = m['equipment_id'];
+      if (id == null) {
+        continue;
+      }
+      final eid = id is int ? id : (id as num).toInt();
+      items.add(
+        DropdownMenuItem<int?>(
+          value: eid,
+          child: Text(m['label']?.toString() ?? '$eid'),
+        ),
+      );
+    }
+    return items;
   }
 
   int? _parseTrainingId(dynamic v) {
@@ -229,16 +401,9 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
   Future<void> _exportManufacturerDashboardCsv() async {
     final t = appAuth.token;
     if (t == null) return;
-    if (!downloadBytesSupported) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).dashExportCsvWebOnly)),
-        );
-      }
-      return;
-    }
     try {
-      final bytes = await _api.manufacturerDashboardExportCsv(t);
+      final q = _mfgNavIndex == 5 ? _manufacturerAnalyticsQuery() : null;
+      final bytes = await _api.manufacturerDashboardExportCsv(t, query: q);
       if (!mounted) return;
       final stamp = DateTime.now().toUtc().toIso8601String().replaceAll(':', '-');
       final l = AppLocalizations.of(context);
@@ -253,16 +418,9 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
   Future<void> _exportManufacturerDashboardPdf() async {
     final t = appAuth.token;
     if (t == null) return;
-    if (!downloadBytesSupported) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).dashExportPdfWebOnly)),
-        );
-      }
-      return;
-    }
     try {
-      final bytes = await _api.manufacturerDashboardExportPdf(t);
+      final q = _mfgNavIndex == 5 ? _manufacturerAnalyticsQuery() : null;
+      final bytes = await _api.manufacturerDashboardExportPdf(t, query: q);
       if (!mounted) return;
       final stamp = DateTime.now().toUtc().toIso8601String().replaceAll(':', '-');
       final l = AppLocalizations.of(context);
@@ -272,6 +430,189 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
     } catch (_) {
       if (mounted) context.showErrApiConnectionSnack();
     }
+  }
+
+  Map<String, String>? _manufacturerAnalyticsQuery() {
+    final q = <String, String>{};
+    if (_analyticsInstitutionId != null) {
+      q['institution_id'] = '${_analyticsInstitutionId!}';
+    }
+    if (_analyticsEquipmentId != null) {
+      q['equipment_id'] = '${_analyticsEquipmentId!}';
+    }
+    final from = _analyticsFromCtrl.text.trim();
+    final to = _analyticsToCtrl.text.trim();
+    if (from.isNotEmpty) {
+      q['training_created_from'] = from;
+    }
+    if (to.isNotEmpty) {
+      q['training_created_to'] = to;
+    }
+    return q.isEmpty ? null : q;
+  }
+
+  Future<void> _loadAnalytics() async {
+    final t = appAuth.token;
+    if (t == null) return;
+    if (_manufacturer?['validation_status']?.toString() != 'active') return;
+    setState(() => _analyticsLoading = true);
+    try {
+      final data = await _api.manufacturerDashboardSummary(t, query: _manufacturerAnalyticsQuery());
+      if (!mounted) return;
+      setState(() {
+        _analyticsSummary = data;
+        _analyticsLoading = false;
+      });
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _analyticsLoading = false);
+        context.showLocalizedApiExceptionSnack(e);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _analyticsLoading = false);
+        context.showErrApiConnectionSnack();
+      }
+    }
+  }
+
+  void _resetAnalyticsFilters() {
+    setState(() {
+      _analyticsInstitutionId = null;
+      _analyticsEquipmentId = null;
+      _analyticsFromCtrl.clear();
+      _analyticsToCtrl.clear();
+    });
+    unawaited(_loadAnalytics());
+  }
+
+  String _analyticsBreakdownSubtitle(AppLocalizations l, Map<String, dynamic> row) {
+    final trainings = (row['trainings_count'] as num?)?.toInt() ?? 0;
+    final enr = (row['total_enrollments'] as num?)?.toInt() ?? 0;
+    final done = (row['completed_count'] as num?)?.toInt() ?? 0;
+    final rateRaw = row['completion_rate_percent'];
+    final rate = rateRaw == null ? l.trainReqDashNone : '$rateRaw%';
+    final avgRaw = row['avg_score'];
+    final avg = avgRaw == null ? l.trainReqDashNone : avgRaw.toString();
+    return l.mfgAnalyticsBreakdownSubtitle(trainings, enr, done, rate, avg);
+  }
+
+  /// Últimos [maxMonths] períodos de `monthly_trend` (a API devolve meses ordenados).
+  List<dynamic> _tailMonthlyTrendPreview(List<dynamic> series, int maxMonths) {
+    if (series.isEmpty) {
+      return const [];
+    }
+    if (series.length <= maxMonths) {
+      return List<dynamic>.from(series);
+    }
+    return series.sublist(series.length - maxMonths);
+  }
+
+  Widget _buildMonthlyTrendCombined(AppLocalizations l, List<dynamic> rawTrend) {
+    if (rawTrend.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l.mfgAnalyticsMonthlyTrendEmpty,
+              style: const TextStyle(color: Color(0xFF45464D), fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => navigateToMfgTab(0),
+                  icon: const Icon(Icons.home_outlined, size: 18),
+                  label: Text(l.mfgNavHome),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => navigateToMfgTab(2),
+                  icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                  label: Text(l.mfgNavProducts),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+    final rows = rawTrend.map((e) => Map<String, dynamic>.from(e)).toList();
+    var maxE = 0;
+    var maxC = 0;
+    for (final r in rows) {
+      maxE = math.max(maxE, (r['enrollment_count'] as num?)?.toInt() ?? 0);
+      maxC = math.max(maxC, (r['completed_count'] as num?)?.toInt() ?? 0);
+    }
+    final denE = maxE > 0 ? maxE : 1;
+    final denC = maxC > 0 ? maxC : 1;
+
+    Widget metricRow(String label, int value, int denom, Color color) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 100,
+              child: Text(label, style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B))),
+            ),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: value / denom,
+                  minHeight: 9,
+                  backgroundColor: const Color(0xFFE2E8F0),
+                  color: color,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 28,
+              child: Text(
+                '$value',
+                textAlign: TextAlign.end,
+                style: const TextStyle(fontSize: 13, color: Color(0xFF334155), fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < rows.length; i++) ...[
+          Text(
+            rows[i]['period']?.toString() ?? '',
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF0F172A)),
+          ),
+          metricRow(
+            l.mfgAnalyticsTrendLegendEnroll,
+            (rows[i]['enrollment_count'] as num?)?.toInt() ?? 0,
+            denE,
+            const Color(0xFF0369A1),
+          ),
+          metricRow(
+            l.mfgAnalyticsTrendLegendComplete,
+            (rows[i]['completed_count'] as num?)?.toInt() ?? 0,
+            denC,
+            const Color(0xFF0F766E),
+          ),
+          if (i < rows.length - 1)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Divider(height: 1),
+            ),
+        ],
+      ],
+    );
   }
 
   Future<void> _requestValidation() async {
@@ -595,12 +936,262 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
 
   void _setEquipmentCategoryFilter(String? categoryId) {
     setState(() => _equipmentCategoryFilter = categoryId);
-    _reload();
+    unawaited(_reloadEquipmentList());
   }
 
   void _setEquipmentStatusFilter(String? status) {
     setState(() => _equipmentStatusFilter = status);
-    _reload();
+    unawaited(_reloadEquipmentList());
+  }
+
+  bool get _equipmentFiltersDirty =>
+      _equipmentSearchCtrl.text.trim().isNotEmpty ||
+      _equipmentCategoryFilter != null ||
+      _equipmentStatusFilter != null ||
+      _equipmentSort != 'name_asc';
+
+  void _setEquipmentSort(String sort) {
+    if (_equipmentSort == sort) return;
+    setState(() => _equipmentSort = sort);
+    unawaited(_reloadEquipmentList());
+  }
+
+  bool get _equipmentSearchActive => _equipmentSearchCtrl.text.trim().isNotEmpty;
+
+  String? get _equipmentSearchParam {
+    final s = _equipmentSearchCtrl.text.trim();
+    if (s.isEmpty) return null;
+    return s.length > 120 ? s.substring(0, 120) : s;
+  }
+
+  Future<void> _reloadEquipmentList() async {
+    final t = appAuth.token;
+    if (t == null || !mounted) return;
+    if (_manufacturer?['validation_status']?.toString() != 'active') {
+      if (mounted) setState(() => _equipment = []);
+      return;
+    }
+    try {
+      final list = await _api.manufacturerEquipmentList(
+        t,
+        category: _equipmentCategoryFilter,
+        search: _equipmentSearchParam,
+        status: _equipmentStatusFilter,
+        sort: _equipmentSort,
+      );
+      if (!mounted) return;
+      setState(() => _equipment = list);
+    } catch (_) {
+      if (mounted) setState(() => _equipment = []);
+    }
+  }
+
+  void _scheduleEquipmentSearchReload() {
+    _equipmentSearchDebounce?.cancel();
+    _equipmentSearchDebounce = Timer(const Duration(milliseconds: 450), () {
+      if (!mounted || !_apiOnline) return;
+      unawaited(_reloadEquipmentList());
+    });
+  }
+
+  void _clearEquipmentFilters() {
+    _equipmentSearchDebounce?.cancel();
+    setState(() {
+      _equipmentSearchCtrl.clear();
+      _equipmentCategoryFilter = null;
+      _equipmentStatusFilter = null;
+      _equipmentSort = 'name_asc';
+    });
+    unawaited(_reloadEquipmentList());
+  }
+
+  bool get _templatesFiltersDirty =>
+      _templatesSearchCtrl.text.trim().isNotEmpty ||
+      _templatesStatusFilter != null ||
+      _templatesSort != 'updated_desc';
+
+  bool get _templatesSearchActive => _templatesSearchCtrl.text.trim().isNotEmpty;
+
+  String? get _templatesSearchParam {
+    final s = _templatesSearchCtrl.text.trim();
+    if (s.isEmpty) return null;
+    return s.length > 120 ? s.substring(0, 120) : s;
+  }
+
+  Future<void> _reloadTemplatesList() async {
+    final t = appAuth.token;
+    if (t == null || !mounted) return;
+    if (_manufacturer?['validation_status']?.toString() != 'active') {
+      if (mounted) setState(() => _templates = []);
+      return;
+    }
+    try {
+      final list = await _api.manufacturerTemplates(
+        t,
+        search: _templatesSearchParam,
+        status: _templatesStatusFilter,
+        sort: _templatesSort,
+      );
+      if (!mounted) return;
+      setState(() => _templates = list);
+    } catch (_) {
+      if (mounted) setState(() => _templates = []);
+    }
+  }
+
+  void _scheduleTemplatesSearchReload() {
+    _templatesSearchDebounce?.cancel();
+    _templatesSearchDebounce = Timer(const Duration(milliseconds: 450), () {
+      if (!mounted || !_apiOnline) return;
+      unawaited(_reloadTemplatesList());
+    });
+  }
+
+  void _setTemplatesStatusFilter(String? status) {
+    setState(() => _templatesStatusFilter = status);
+    unawaited(_reloadTemplatesList());
+  }
+
+  void _setTemplatesSort(String sort) {
+    if (_templatesSort == sort) return;
+    setState(() => _templatesSort = sort);
+    unawaited(_reloadTemplatesList());
+  }
+
+  void _clearTemplatesFilters() {
+    _templatesSearchDebounce?.cancel();
+    setState(() {
+      _templatesSearchCtrl.clear();
+      _templatesStatusFilter = null;
+      _templatesSort = 'updated_desc';
+    });
+    unawaited(_reloadTemplatesList());
+  }
+
+  bool get _operationsSearchActive => _operationsSearchCtrl.text.trim().isNotEmpty;
+
+  String? get _operationsSearchParam {
+    final s = _operationsSearchCtrl.text.trim();
+    if (s.isEmpty) return null;
+    return s.length > 120 ? s.substring(0, 120) : s;
+  }
+
+  Future<void> _reloadOperationsData() async {
+    final t = appAuth.token;
+    if (t == null || !mounted) return;
+    final vs = _manufacturer?['validation_status']?.toString();
+    final operational = vs == 'active';
+    final q = _operationsSearchParam;
+    try {
+      final docsRes = await _api.listManufacturerDocuments(t, search: q, page: 1, perPage: _kMfgOpsPerPage);
+      if (!mounted) return;
+      var seasons = <Map<String, dynamic>>[];
+      var prizes = <Map<String, dynamic>>[];
+      var seasonsHasMore = false;
+      var prizesHasMore = false;
+      if (operational) {
+        try {
+          final sr = await _api.manufacturerSeasons(t, search: q, page: 1, perPage: _kMfgOpsPerPage);
+          seasons = sr.items;
+          seasonsHasMore = sr.hasMore;
+        } catch (_) {}
+        try {
+          final pr = await _api.manufacturerPrizes(t, search: q, page: 1, perPage: _kMfgOpsPerPage);
+          prizes = pr.items;
+          prizesHasMore = pr.hasMore;
+        } catch (_) {}
+      }
+      if (!mounted) return;
+      setState(() {
+        _documents = docsRes.items;
+        _opsDocsHasMore = docsRes.hasMore;
+        _opsDocsPage = 1;
+        _seasons = seasons;
+        _opsSeasonsHasMore = seasonsHasMore;
+        _opsSeasonsPage = 1;
+        _prizes = prizes;
+        _opsPrizesHasMore = prizesHasMore;
+        _opsPrizesPage = 1;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _loadMoreSeasons() async {
+    if (!_opsSeasonsHasMore || _opsPagingBusy || _loading) return;
+    final t = appAuth.token;
+    if (t == null || _manufacturer?['validation_status']?.toString() != 'active') return;
+    final next = _opsSeasonsPage + 1;
+    final q = _operationsSearchParam;
+    setState(() => _opsPagingBusy = true);
+    try {
+      final res = await _api.manufacturerSeasons(t, search: q, page: next, perPage: _kMfgOpsPerPage);
+      if (!mounted) return;
+      setState(() {
+        _seasons = [..._seasons, ...res.items];
+        _opsSeasonsPage = next;
+        _opsSeasonsHasMore = res.hasMore;
+        _opsPagingBusy = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _opsPagingBusy = false);
+    }
+  }
+
+  Future<void> _loadMorePrizes() async {
+    if (!_opsPrizesHasMore || _opsPagingBusy || _loading) return;
+    final t = appAuth.token;
+    if (t == null || _manufacturer?['validation_status']?.toString() != 'active') return;
+    final next = _opsPrizesPage + 1;
+    final q = _operationsSearchParam;
+    setState(() => _opsPagingBusy = true);
+    try {
+      final res = await _api.manufacturerPrizes(t, search: q, page: next, perPage: _kMfgOpsPerPage);
+      if (!mounted) return;
+      setState(() {
+        _prizes = [..._prizes, ...res.items];
+        _opsPrizesPage = next;
+        _opsPrizesHasMore = res.hasMore;
+        _opsPagingBusy = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _opsPagingBusy = false);
+    }
+  }
+
+  Future<void> _loadMoreDocuments() async {
+    if (!_opsDocsHasMore || _opsPagingBusy || _loading) return;
+    final t = appAuth.token;
+    if (t == null) return;
+    final next = _opsDocsPage + 1;
+    final q = _operationsSearchParam;
+    setState(() => _opsPagingBusy = true);
+    try {
+      final res = await _api.listManufacturerDocuments(t, search: q, page: next, perPage: _kMfgOpsPerPage);
+      if (!mounted) return;
+      setState(() {
+        _documents = [..._documents, ...res.items];
+        _opsDocsPage = next;
+        _opsDocsHasMore = res.hasMore;
+        _opsPagingBusy = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _opsPagingBusy = false);
+    }
+  }
+
+  void _scheduleOperationsSearchReload() {
+    _operationsSearchDebounce?.cancel();
+    _operationsSearchDebounce = Timer(const Duration(milliseconds: 450), () {
+      if (!mounted || !_apiOnline) return;
+      unawaited(_reloadOperationsData());
+    });
+  }
+
+  void _clearOperationsSearch() {
+    _operationsSearchDebounce?.cancel();
+    _operationsSearchCtrl.clear();
+    setState(() {});
+    unawaited(_reloadOperationsData());
   }
 
   Future<void> _openEquipmentWizard({
@@ -662,13 +1253,29 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
     setState(() => _homologStatusFilter = status);
   }
 
-  Future<void> _decideHomologCredential(dynamic rowId, String status) async {
+  int _homologQueueCountForFilter(String? status) {
+    if (status == null) {
+      return _credentialQueue.length;
+    }
+    return _credentialQueue.where((r) => (r['status']?.toString() ?? '') == status).length;
+  }
+
+  Future<void> _decideHomologCredential(
+    dynamic rowId,
+    String status, {
+    bool setFeePaidOnApprove = true,
+  }) async {
     final t = appAuth.token;
     final id = rowId is int ? rowId : int.tryParse(rowId.toString());
     if (t == null || id == null) return;
     setState(() => _loading = true);
     try {
-      await _api.credentialManufacturerDecide(t, id, status: status, feePaid: status == 'approved');
+      await _api.credentialManufacturerDecide(
+        t,
+        id,
+        status: status,
+        feePaid: status == 'approved' ? (setFeePaidOnApprove ? true : null) : null,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).mfgSnackHomologUpdated)),
@@ -824,6 +1431,16 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
     }
   }
 
+  String _formatTemplateRowUpdated(AppLocalizations l, dynamic raw) {
+    if (raw == null) return '';
+    final d = DateTime.tryParse(raw.toString());
+    if (d == null) return '';
+    final x = d.toLocal();
+    final date =
+        '${x.year}-${x.month.toString().padLeft(2, '0')}-${x.day.toString().padLeft(2, '0')} ${x.hour.toString().padLeft(2, '0')}:${x.minute.toString().padLeft(2, '0')}';
+    return l.mfgTplRowUpdatedAt(date);
+  }
+
   Future<void> _createOfficialTemplate() async {
     final t = appAuth.token;
     if (t == null) return;
@@ -864,6 +1481,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
     final user = appAuth.user;
     final email = user?['email']?.toString() ?? '';
     final l = AppLocalizations.of(context);
+    final online = _apiOnline;
 
     if (_loading && _manufacturer == null) {
       return const Scaffold(
@@ -897,6 +1515,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
         manufacturer: _manufacturer!,
         onCompleted: _reload,
         onLogout: () => appAuth.logout(),
+        onShellRefresh: _reload,
       );
     }
 
@@ -905,6 +1524,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
         manufacturer: _manufacturer!,
         userEmail: email,
         onLogout: () => appAuth.logout(),
+        onRefresh: _reload,
       );
     }
 
@@ -936,6 +1556,33 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                             ],
                           ),
                         ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: online ? const Color(0xFFECFDF5) : const Color(0xFFFEE2E2),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                online ? Icons.cloud_done_outlined : Icons.cloud_off_outlined,
+                                size: 16,
+                                color: online ? const Color(0xFF047857) : const Color(0xFFB91C1C),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                online ? l.trnApiOk : l.trnApiOffline,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: online ? const Color(0xFF047857) : const Color(0xFF991B1B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
                         TextButton(onPressed: () => appAuth.logout(), child: Text(l.actionSignOut)),
                       ],
                     ),
@@ -948,14 +1595,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                             children: [
                               _MfgSideNav(
                                 selectedIndex: _mfgNavIndex,
-                                onSelect: (i) {
-                                  setState(() {
-                                    _mfgNavIndex = i;
-                                    if (_mfgScrollController.hasClients) {
-                                      _mfgScrollController.jumpTo(0);
-                                    }
-                                  });
-                                },
+                                onSelect: navigateToMfgTab,
                               ),
                               const VerticalDivider(width: 1, thickness: 1),
                               Expanded(
@@ -966,7 +1606,52 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                     physics: const AlwaysScrollableScrollPhysics(),
                                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
                                     children: [
+                                      if (!online) ...[
+                                        _mfgInstrOfflineBanner(l),
+                                        const SizedBox(height: 16),
+                                      ],
                                       if (_mfgNavIndex == 0) ...[
+                                if (_manufacturer?['validation_status']?.toString() == 'active' &&
+                                    _dashboardSummary == null &&
+                                    !_loading) ...[
+                                  Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          Text(
+                                            l.mfgDashSummaryUnavailableTitle,
+                                            style: Theme.of(context).textTheme.titleMedium,
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            l.mfgDashSummaryUnavailableBody,
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 8,
+                                            children: [
+                                              OutlinedButton.icon(
+                                                onPressed: !online ? null : () => unawaited(_reload()),
+                                                icon: const Icon(Icons.refresh_rounded, size: 20),
+                                                label: Text(l.actionRetry),
+                                              ),
+                                              OutlinedButton.icon(
+                                                onPressed: (_loading || !online) ? null : () => navigateToMfgTab(5),
+                                                icon: const Icon(Icons.analytics_outlined, size: 20),
+                                                label: Text(l.mfgDashOpenAnalytics),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
                                 if (_dashboardSummary != null) ...[
                                   Text(l.mfgDashSummaryTitle, style: Theme.of(context).textTheme.titleLarge),
                                   const SizedBox(height: 6),
@@ -1027,16 +1712,49 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                             runSpacing: 8,
                                             children: [
                                               OutlinedButton.icon(
-                                                onPressed: _loading ? null : () => unawaited(_exportManufacturerDashboardCsv()),
+                                                onPressed: (_loading || !online) ? null : () => unawaited(_exportManufacturerDashboardCsv()),
                                                 icon: const Icon(Icons.table_chart_outlined, size: 20),
                                                 label: Text(l.dashExportCsv),
                                               ),
                                               OutlinedButton.icon(
-                                                onPressed: _loading ? null : () => unawaited(_exportManufacturerDashboardPdf()),
+                                                onPressed: (_loading || !online) ? null : () => unawaited(_exportManufacturerDashboardPdf()),
                                                 icon: const Icon(Icons.picture_as_pdf_outlined, size: 20),
                                                 label: Text(l.dashExportPdf),
                                               ),
                                             ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(l.mfgDashMonthlyTrendTitle, style: Theme.of(context).textTheme.titleMedium),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            l.mfgDashMonthlyTrendIntro,
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          _buildMonthlyTrendCombined(
+                                            l,
+                                            _tailMonthlyTrendPreview(
+                                              (_dashboardSummary!['monthly_trend'] as List<dynamic>?) ?? const [],
+                                              6,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: TextButton.icon(
+                                              onPressed: (_loading || !online) ? null : () => navigateToMfgTab(5),
+                                              icon: const Icon(Icons.analytics_outlined, size: 20),
+                                              label: Text(l.mfgDashOpenAnalytics),
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -1060,7 +1778,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                           ),
                                           const SizedBox(height: 12),
                                           FilledButton.icon(
-                                            onPressed: _loading ? null : () => unawaited(_openEquipmentWizard()),
+                                            onPressed: (_loading || !online) ? null : () => unawaited(_openEquipmentWizard()),
                                             icon: const Icon(Icons.medical_services_outlined),
                                             label: Text(l.mfgDashNewEquipment),
                                           ),
@@ -1073,16 +1791,46 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                 if (_manufacturer != null) _ValidationStatusCard(
                                   manufacturer: _manufacturer!,
                                   loading: _loading,
+                                  apiOnline: online,
                                   onRequestValidation: _requestValidation,
                                 ),
                                 const SizedBox(height: 16),
                                       ],
                                       if (_mfgNavIndex == 3) ...[
+                                TextField(
+                                  controller: _operationsSearchCtrl,
+                                  onChanged: (_) {
+                                    setState(() {});
+                                    _scheduleOperationsSearchReload();
+                                  },
+                                  onSubmitted: (_) {
+                                    if (!online) return;
+                                    _operationsSearchDebounce?.cancel();
+                                    unawaited(_reloadOperationsData());
+                                  },
+                                  decoration: InputDecoration(
+                                    labelText: l.mfgOpsSearchHint,
+                                    suffixIcon: _operationsSearchActive
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear_rounded),
+                                            onPressed: (_loading || !online) ? null : _clearOperationsSearch,
+                                          )
+                                        : null,
+                                  ),
+                                ),
+                                if (_operationsSearchActive) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    l.mfgOpsServerFilterHint,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF64748B)),
+                                  ),
+                                ],
+                                const SizedBox(height: 16),
                                 Row(
                                   children: [
                                     Expanded(child: Text(l.mfgSeasonsSectionTitle, style: Theme.of(context).textTheme.titleLarge)),
                                     TextButton.icon(
-                                      onPressed: _loading ? null : _showCreateSeasonDialog,
+                                      onPressed: (_loading || !online) ? null : _showCreateSeasonDialog,
                                       icon: const Icon(Icons.add_rounded, size: 20),
                                       label: Text(l.mfgSeasonNewTitle),
                                     ),
@@ -1097,10 +1845,37 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                 if (_seasons.isEmpty)
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
-                                    child: Text(
-                                      l.mfgSeasonsEmpty,
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
-                                    ),
+                                    child: _operationsSearchActive
+                                        ? Text(
+                                            l.mfgOpsSublistNoMatch,
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                          )
+                                        : Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                l.mfgSeasonsEmpty,
+                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                              ),
+                                              const SizedBox(height: 12),
+                                              Wrap(
+                                                spacing: 8,
+                                                runSpacing: 8,
+                                                children: [
+                                                  OutlinedButton.icon(
+                                                    onPressed: () => navigateToMfgTab(0),
+                                                    icon: const Icon(Icons.home_outlined, size: 18),
+                                                    label: Text(l.mfgNavHome),
+                                                  ),
+                                                  OutlinedButton.icon(
+                                                    onPressed: () => navigateToMfgTab(2),
+                                                    icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                                                    label: Text(l.mfgNavProducts),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
                                   )
                                 else
                                   Card(
@@ -1119,7 +1894,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                                 IconButton(
                                                   tooltip: l.mfgTooltipViewLeaderboard,
                                                   icon: const Icon(Icons.leaderboard_outlined),
-                                                  onPressed: _loading
+                                                  onPressed: (_loading || !online)
                                                       ? null
                                                       : () {
                                                           final id = _parseTrainingId(s['id']);
@@ -1129,7 +1904,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                                 IconButton(
                                                   tooltip: l.mfgTooltipRecompute,
                                                   icon: const Icon(Icons.refresh_rounded),
-                                                  onPressed: _loading
+                                                  onPressed: (_loading || !online)
                                                       ? null
                                                       : () {
                                                           final id = _parseTrainingId(s['id']);
@@ -1142,12 +1917,23 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                       ],
                                     ),
                                   ),
+                                if (_opsSeasonsHasMore)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: OutlinedButton(
+                                        onPressed: _loading || _opsPagingBusy || !online ? null : () => unawaited(_loadMoreSeasons()),
+                                        child: Text(l.mfgOpsLoadMore),
+                                      ),
+                                    ),
+                                  ),
                                 const SizedBox(height: 16),
                                 Row(
                                   children: [
                                     Expanded(child: Text(l.mfgPrizesSectionTitle, style: Theme.of(context).textTheme.titleLarge)),
                                     TextButton.icon(
-                                      onPressed: _loading ? null : _showAddPrizeDialog,
+                                      onPressed: (_loading || !online) ? null : _showAddPrizeDialog,
                                       icon: const Icon(Icons.emoji_events_outlined, size: 20),
                                       label: Text(l.mfgBtnAdd),
                                     ),
@@ -1163,7 +1949,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
                                     child: Text(
-                                      l.mfgPrizesEmpty,
+                                      _operationsSearchActive ? l.mfgOpsSublistNoMatch : l.mfgPrizesEmpty,
                                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
                                     ),
                                   )
@@ -1184,7 +1970,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                             trailing: IconButton(
                                               tooltip: l.mfgBtnRemove,
                                               icon: const Icon(Icons.delete_outline_rounded),
-                                              onPressed: _loading
+                                              onPressed: (_loading || !online)
                                                   ? null
                                                   : () {
                                                       final id = _parseTrainingId(p['id']);
@@ -1193,6 +1979,17 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                             ),
                                           ),
                                       ],
+                                    ),
+                                  ),
+                                if (_opsPrizesHasMore)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: OutlinedButton(
+                                        onPressed: _loading || _opsPagingBusy || !online ? null : () => unawaited(_loadMorePrizes()),
+                                        child: Text(l.mfgOpsLoadMore),
+                                      ),
                                     ),
                                   ),
                                 const SizedBox(height: 16),
@@ -1220,7 +2017,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                 ),
                                 const SizedBox(height: 12),
                                 OutlinedButton.icon(
-                                  onPressed: _loading ? null : _pickAndUploadDocument,
+                                  onPressed: (_loading || !online) ? null : _pickAndUploadDocument,
                                   icon: const Icon(Icons.upload_file_outlined),
                                   label: Text(l.mfgBtnSendFile),
                                 ),
@@ -1228,12 +2025,39 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                 if (_documents.isEmpty)
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
-                                    child: Text(
-                                      l.mfgDocumentsEmpty,
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
-                                    ),
+                                    child: _operationsSearchActive
+                                        ? Text(
+                                            l.mfgOpsSublistNoMatch,
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                          )
+                                        : Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                l.mfgDocumentsEmpty,
+                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                              ),
+                                              const SizedBox(height: 12),
+                                              Wrap(
+                                                spacing: 8,
+                                                runSpacing: 8,
+                                                children: [
+                                                  OutlinedButton.icon(
+                                                    onPressed: () => navigateToMfgTab(0),
+                                                    icon: const Icon(Icons.home_outlined, size: 18),
+                                                    label: Text(l.mfgNavHome),
+                                                  ),
+                                                  OutlinedButton.icon(
+                                                    onPressed: () => navigateToMfgTab(2),
+                                                    icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                                                    label: Text(l.mfgNavProducts),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
                                   )
-                                else
+                                else ...[
                                   ..._documents.map((row) {
                                     final id = row['id'];
                                     final iid = id is int ? id : int.tryParse(id.toString());
@@ -1260,18 +2084,30 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                             IconButton(
                                               tooltip: l.mfgTooltipDownload,
                                               icon: const Icon(Icons.download_outlined),
-                                              onPressed: _loading || iid == null ? null : () => _downloadDocument(row),
+                                              onPressed: _loading || !online || iid == null ? null : () => _downloadDocument(row),
                                             ),
                                             IconButton(
                                               tooltip: l.mfgBtnRemove,
                                               icon: const Icon(Icons.delete_outline),
-                                              onPressed: _loading || iid == null ? null : () => _deleteDocument(iid),
+                                              onPressed: _loading || !online || iid == null ? null : () => _deleteDocument(iid),
                                             ),
                                           ],
                                         ),
                                       ),
                                     );
                                   }),
+                                  if (_opsDocsHasMore)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4, bottom: 8),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: OutlinedButton(
+                                          onPressed: _loading || _opsPagingBusy || !online ? null : () => unawaited(_loadMoreDocuments()),
+                                          child: Text(l.mfgOpsLoadMore),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                                       ],
                                       if (_mfgNavIndex == 1) ...[
                                 Text(l.mfgCompanySectionTitle, style: Theme.of(context).textTheme.titleLarge),
@@ -1293,7 +2129,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                 ),
                                 const SizedBox(height: 14),
                                 FilledButton(
-                                  onPressed: _loading ? null : _saveProfile,
+                                  onPressed: (_loading || !online) ? null : _saveProfile,
                                   child: Text(l.mfgBtnSaveProfile),
                                 ),
                                       ],
@@ -1319,32 +2155,48 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                     child: Row(
                                       children: [
                                         ChoiceChip(
-                                          label: Text(l.mfgHomologFilterAll),
+                                          label: Text('${l.mfgHomologFilterAll} (${_homologQueueCountForFilter(null)})'),
                                           selected: _homologStatusFilter == null,
-                                          onSelected: _loading ? null : (_) => _setHomologStatusFilter(null),
+                                          onSelected: (_loading || !online) ? null : (_) => _setHomologStatusFilter(null),
                                         ),
                                         Padding(
                                           padding: const EdgeInsets.only(left: 6),
                                           child: ChoiceChip(
-                                            label: Text(l.mfgHomologFilterPending),
+                                            label: Text(
+                                              '${l.mfgHomologFilterPending} (${_homologQueueCountForFilter('pending')})',
+                                            ),
                                             selected: _homologStatusFilter == 'pending',
-                                            onSelected: _loading ? null : (_) => _setHomologStatusFilter('pending'),
+                                            onSelected: (_loading || !online) ? null : (_) => _setHomologStatusFilter('pending'),
                                           ),
                                         ),
                                         Padding(
                                           padding: const EdgeInsets.only(left: 6),
                                           child: ChoiceChip(
-                                            label: Text(l.mfgHomologFilterApproved),
+                                            label: Text(
+                                              '${l.mfgHomologFilterApproved} (${_homologQueueCountForFilter('approved')})',
+                                            ),
                                             selected: _homologStatusFilter == 'approved',
-                                            onSelected: _loading ? null : (_) => _setHomologStatusFilter('approved'),
+                                            onSelected: (_loading || !online) ? null : (_) => _setHomologStatusFilter('approved'),
                                           ),
                                         ),
                                         Padding(
                                           padding: const EdgeInsets.only(left: 6),
                                           child: ChoiceChip(
-                                            label: Text(l.mfgHomologFilterRejected),
+                                            label: Text(
+                                              '${l.mfgHomologFilterRejected} (${_homologQueueCountForFilter('rejected')})',
+                                            ),
                                             selected: _homologStatusFilter == 'rejected',
-                                            onSelected: _loading ? null : (_) => _setHomologStatusFilter('rejected'),
+                                            onSelected: (_loading || !online) ? null : (_) => _setHomologStatusFilter('rejected'),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.only(left: 6),
+                                          child: ChoiceChip(
+                                            label: Text(
+                                              '${l.mfgHomologFilterSuspended} (${_homologQueueCountForFilter('suspended')})',
+                                            ),
+                                            selected: _homologStatusFilter == 'suspended',
+                                            onSelected: (_loading || !online) ? null : (_) => _setHomologStatusFilter('suspended'),
                                           ),
                                         ),
                                       ],
@@ -1362,7 +2214,31 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                       if (rows.isEmpty) {
                                         return Padding(
                                           padding: const EdgeInsets.symmetric(vertical: 24),
-                                          child: Center(child: Text(loc.mfgHomologEmpty)),
+                                          child: Center(
+                                            child: ConstrainedBox(
+                                              constraints: const BoxConstraints(maxWidth: 420),
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    loc.mfgHomologEmpty,
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(color: Color(0xFF64748B)),
+                                                  ),
+                                                  const SizedBox(height: 16),
+                                                  OutlinedButton.icon(
+                                                    onPressed: () {
+                                                      context
+                                                          .findAncestorStateOfType<_ManufacturerShellState>()
+                                                          ?.navigateToMfgTab(0);
+                                                    },
+                                                    icon: const Icon(Icons.home_outlined, size: 20),
+                                                    label: Text(loc.mfgNavHome),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
                                         );
                                       }
                                       return Column(
@@ -1381,7 +2257,9 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                                     ? (row['endorsed_by_institution'] as Map)['name']?.toString() ?? ''
                                                     : null;
                                                 final rowId = row['id'];
-                                                final canDecide = st == 'pending';
+                                                final canApproveReject = st == 'pending';
+                                                final canSuspend = st == 'approved';
+                                                final canReactivate = st == 'suspended';
                                                 return Card(
                                                   margin: const EdgeInsets.only(bottom: 10),
                                                   child: Padding(
@@ -1411,6 +2289,26 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                                                     ),
                                                                   ),
                                                                 ),
+                                                              Builder(
+                                                                builder: (dctx) {
+                                                                  final raw = row['created_at']?.toString();
+                                                                  if (raw == null || raw.length < 10) {
+                                                                    return const SizedBox.shrink();
+                                                                  }
+                                                                  return Padding(
+                                                                    padding: const EdgeInsets.only(top: 4),
+                                                                    child: Text(
+                                                                      AppLocalizations.of(dctx).mfgHomologRequestedAt(
+                                                                        raw.substring(0, 10),
+                                                                      ),
+                                                                      style: const TextStyle(
+                                                                        fontSize: 12,
+                                                                        color: Color(0xFF64748B),
+                                                                      ),
+                                                                    ),
+                                                                  );
+                                                                },
+                                                              ),
                                                               const SizedBox(height: 6),
                                                               Text(
                                                                 endorsed
@@ -1436,23 +2334,43 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                                             ],
                                                           ),
                                                         ),
-                                                        if (canDecide)
+                                                        if (canApproveReject || canSuspend || canReactivate)
                                                           Column(
                                                             mainAxisSize: MainAxisSize.min,
                                                             crossAxisAlignment: CrossAxisAlignment.end,
                                                             children: [
-                                                              TextButton(
-                                                                onPressed: _loading
-                                                                    ? null
-                                                                    : () => _decideHomologCredential(rowId, 'approved'),
-                                                                child: Text(loc.credBtnApprove),
-                                                              ),
-                                                              TextButton(
-                                                                onPressed: _loading
-                                                                    ? null
-                                                                    : () => _decideHomologCredential(rowId, 'rejected'),
-                                                                child: Text(loc.credBtnReject),
-                                                              ),
+                                                              if (canApproveReject) ...[
+                                                                TextButton(
+                                                                  onPressed: (_loading || !online)
+                                                                      ? null
+                                                                      : () => _decideHomologCredential(rowId, 'approved'),
+                                                                  child: Text(loc.credBtnApprove),
+                                                                ),
+                                                                TextButton(
+                                                                  onPressed: (_loading || !online)
+                                                                      ? null
+                                                                      : () => _decideHomologCredential(rowId, 'rejected'),
+                                                                  child: Text(loc.credBtnReject),
+                                                                ),
+                                                              ],
+                                                              if (canSuspend)
+                                                                TextButton(
+                                                                  onPressed: (_loading || !online)
+                                                                      ? null
+                                                                      : () => _decideHomologCredential(rowId, 'suspended'),
+                                                                  child: Text(loc.credBtnSuspend),
+                                                                ),
+                                                              if (canReactivate)
+                                                                TextButton(
+                                                                  onPressed: (_loading || !online)
+                                                                      ? null
+                                                                      : () => _decideHomologCredential(
+                                                                            rowId,
+                                                                            'approved',
+                                                                            setFeePaidOnApprove: false,
+                                                                          ),
+                                                                  child: Text(loc.credBtnReactivateHomolog),
+                                                                ),
                                                             ],
                                                           ),
                                                       ],
@@ -1465,6 +2383,297 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                       );
                                     },
                                   ),
+                                ],
+                                      ],
+                                      if (_mfgNavIndex == 5) ...[
+                                Text(l.mfgAnalyticsTitle, style: Theme.of(context).textTheme.titleLarge),
+                                const SizedBox(height: 8),
+                                Text(
+                                  l.mfgAnalyticsIntro,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                ),
+                                const SizedBox(height: 16),
+                                if (_manufacturer?['validation_status']?.toString() != 'active')
+                                  Text(
+                                    l.mfgValHelpPendingValidation,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                  )
+                                else ...[
+                                  if (_analyticsLoading) const LinearProgressIndicator(minHeight: 3),
+                                  Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          if (_analyticsSummary != null) ...[
+                                            Text(l.mfgDashSummaryTitle, style: Theme.of(context).textTheme.titleMedium),
+                                            const SizedBox(height: 10),
+                                            Wrap(
+                                              spacing: 14,
+                                              runSpacing: 14,
+                                              children: [
+                                                _DashKpi(
+                                                  title: l.dashKpiTrainings,
+                                                  value: _analyticsSummary!['trainings_count']?.toString() ?? '0',
+                                                ),
+                                                _DashKpi(
+                                                  title: l.dashKpiFinished,
+                                                  value: _analyticsSummary!['finished_trainings_count']?.toString() ?? '0',
+                                                ),
+                                                _DashKpi(
+                                                  title: l.dashKpiEnrollmentsTotal,
+                                                  value: (_analyticsSummary!['completion_summary'] is Map
+                                                          ? Map<String, dynamic>.from(
+                                                              _analyticsSummary!['completion_summary'] as Map,
+                                                            )['total_enrollments']
+                                                          : null)
+                                                      ?.toString() ??
+                                                      '0',
+                                                ),
+                                                _DashKpi(
+                                                  title: l.dashKpiCompleted,
+                                                  value: (_analyticsSummary!['completion_summary'] is Map
+                                                          ? Map<String, dynamic>.from(
+                                                              _analyticsSummary!['completion_summary'] as Map,
+                                                            )['completed_count']
+                                                          : null)
+                                                      ?.toString() ??
+                                                      '0',
+                                                ),
+                                                _DashKpi(
+                                                  title: l.dashKpiAvgCompleted,
+                                                  value: _analyticsSummary!['avg_score_completed'] == null
+                                                      ? l.trainReqDashNone
+                                                      : _analyticsSummary!['avg_score_completed'].toString(),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Wrap(
+                                              spacing: 10,
+                                              runSpacing: 8,
+                                              children: [
+                                                OutlinedButton.icon(
+                                                  onPressed: (_analyticsLoading || !online)
+                                                      ? null
+                                                      : () => unawaited(_exportManufacturerDashboardCsv()),
+                                                  icon: const Icon(Icons.table_chart_outlined, size: 20),
+                                                  label: Text(l.dashExportCsv),
+                                                ),
+                                                OutlinedButton.icon(
+                                                  onPressed: (_analyticsLoading || !online)
+                                                      ? null
+                                                      : () => unawaited(_exportManufacturerDashboardPdf()),
+                                                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 20),
+                                                  label: Text(l.dashExportPdf),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 16),
+                                          ],
+                                          DropdownButtonFormField<int?>(
+                                            // Controlled field; `value` still required until DropdownMenu migration.
+                                            // ignore: deprecated_member_use
+                                            value: () {
+                                              final opts = _mfgAnalyticsInstitutionItems(l);
+                                              final v = _analyticsInstitutionId;
+                                              if (v == null) {
+                                                return null;
+                                              }
+                                              return opts.any((e) => e.value == v) ? v : null;
+                                            }(),
+                                            decoration: InputDecoration(labelText: l.mfgAnalyticsFilterInstitution),
+                                            items: _mfgAnalyticsInstitutionItems(l),
+                                            onChanged: (_analyticsLoading || !online)
+                                                ? null
+                                                : (v) => setState(() => _analyticsInstitutionId = v),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          DropdownButtonFormField<int?>(
+                                            // ignore: deprecated_member_use
+                                            value: () {
+                                              final opts = _mfgAnalyticsEquipmentItems(l);
+                                              final v = _analyticsEquipmentId;
+                                              if (v == null) {
+                                                return null;
+                                              }
+                                              return opts.any((e) => e.value == v) ? v : null;
+                                            }(),
+                                            decoration: InputDecoration(labelText: l.mfgAnalyticsFilterEquipment),
+                                            items: _mfgAnalyticsEquipmentItems(l),
+                                            onChanged: (_analyticsLoading || !online)
+                                                ? null
+                                                : (v) => setState(() => _analyticsEquipmentId = v),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          TextField(
+                                            controller: _analyticsFromCtrl,
+                                            decoration: InputDecoration(labelText: l.mfgAnalyticsDateFrom),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          TextField(
+                                            controller: _analyticsToCtrl,
+                                            decoration: InputDecoration(labelText: l.mfgAnalyticsDateTo),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Wrap(
+                                            spacing: 10,
+                                            runSpacing: 8,
+                                            children: [
+                                              FilledButton(
+                                                onPressed: (_analyticsLoading || !online) ? null : () => unawaited(_loadAnalytics()),
+                                                child: Text(l.mfgAnalyticsApply),
+                                              ),
+                                              OutlinedButton(
+                                                onPressed: (_analyticsLoading || !online) ? null : _resetAnalyticsFilters,
+                                                child: Text(l.mfgAnalyticsReset),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  if (_analyticsSummary != null) ...[
+                                    Text(l.mfgAnalyticsSectionInstitutions, style: Theme.of(context).textTheme.titleMedium),
+                                    const SizedBox(height: 8),
+                                    Builder(
+                                      builder: (ctx) {
+                                        final loc = AppLocalizations.of(ctx);
+                                        final inst =
+                                            (_analyticsSummary!['aggregated_by_institution'] as List<dynamic>?) ?? [];
+                                        if (inst.isEmpty) {
+                                          return Padding(
+                                            padding: const EdgeInsets.only(bottom: 8),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  loc.mfgAnalyticsEmpty,
+                                                  style: const TextStyle(color: Color(0xFF45464D)),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                Wrap(
+                                                  spacing: 8,
+                                                  runSpacing: 8,
+                                                  children: [
+                                                    OutlinedButton.icon(
+                                                      onPressed: () => navigateToMfgTab(0),
+                                                      icon: const Icon(Icons.home_outlined, size: 18),
+                                                      label: Text(loc.mfgNavHome),
+                                                    ),
+                                                    OutlinedButton.icon(
+                                                      onPressed: () => navigateToMfgTab(2),
+                                                      icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                                                      label: Text(loc.mfgNavProducts),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }
+                                        return Card(
+                                          child: Column(
+                                            children: [
+                                              for (final raw in inst)
+                                                ListTile(
+                                                  title: Text(
+                                                    Map<String, dynamic>.from(raw)['label']?.toString() ??
+                                                        loc.trainReqDashNone,
+                                                  ),
+                                                  subtitle: Text(
+                                                    _analyticsBreakdownSubtitle(
+                                                      loc,
+                                                      Map<String, dynamic>.from(raw),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(l.mfgAnalyticsSectionEquipment, style: Theme.of(context).textTheme.titleMedium),
+                                    const SizedBox(height: 8),
+                                    Builder(
+                                      builder: (ctx) {
+                                        final loc = AppLocalizations.of(ctx);
+                                        final eq =
+                                            (_analyticsSummary!['aggregated_by_equipment'] as List<dynamic>?) ?? [];
+                                        if (eq.isEmpty) {
+                                          return Padding(
+                                            padding: const EdgeInsets.only(bottom: 8),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  loc.mfgAnalyticsEmpty,
+                                                  style: const TextStyle(color: Color(0xFF45464D)),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                Wrap(
+                                                  spacing: 8,
+                                                  runSpacing: 8,
+                                                  children: [
+                                                    OutlinedButton.icon(
+                                                      onPressed: () => navigateToMfgTab(0),
+                                                      icon: const Icon(Icons.home_outlined, size: 18),
+                                                      label: Text(loc.mfgNavHome),
+                                                    ),
+                                                    OutlinedButton.icon(
+                                                      onPressed: () => navigateToMfgTab(2),
+                                                      icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                                                      label: Text(loc.mfgNavProducts),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }
+                                        return Card(
+                                          child: Column(
+                                            children: [
+                                              for (final raw in eq)
+                                                ListTile(
+                                                  title: Text(
+                                                    Map<String, dynamic>.from(raw)['label']?.toString() ??
+                                                        loc.trainReqDashNone,
+                                                  ),
+                                                  subtitle: Text(
+                                                    _analyticsBreakdownSubtitle(
+                                                      loc,
+                                                      Map<String, dynamic>.from(raw),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(l.mfgAnalyticsSectionMonthlyTrend, style: Theme.of(context).textTheme.titleMedium),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      l.mfgAnalyticsMonthlyTrendIntro,
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Card(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: _buildMonthlyTrendCombined(
+                                          l,
+                                          (_analyticsSummary!['monthly_trend'] as List<dynamic>?) ?? [],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                                       ],
                                       if (_mfgNavIndex == 2) ...[
@@ -1485,33 +2694,230 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                 ),
                                 const SizedBox(height: 12),
                                 FilledButton(
-                                  onPressed: _loading ? null : _createOfficialTemplate,
+                                  onPressed: (_loading || !online) ? null : _createOfficialTemplate,
                                   style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0F766E)),
                                   child: Text(l.mfgBtnCreateTemplateDraft),
                                 ),
                                 const SizedBox(height: 20),
                                 Text(l.mfgYourTemplates, style: Theme.of(context).textTheme.titleMedium),
                                 const SizedBox(height: 8),
+                                TextField(
+                                  controller: _templatesSearchCtrl,
+                                  decoration: InputDecoration(
+                                    labelText: l.mfgTplSearchHint,
+                                    suffixIcon: IconButton(
+                                      icon: const Icon(Icons.search_rounded),
+                                      onPressed: (_loading || !online)
+                                          ? null
+                                          : () {
+                                              _templatesSearchDebounce?.cancel();
+                                              unawaited(_reloadTemplatesList());
+                                            },
+                                    ),
+                                  ),
+                                  onChanged: (_) {
+                                    setState(() {});
+                                    _scheduleTemplatesSearchReload();
+                                  },
+                                  onSubmitted: (_) {
+                                    if (!online) return;
+                                    _templatesSearchDebounce?.cancel();
+                                    unawaited(_reloadTemplatesList());
+                                  },
+                                ),
+                                if (_templatesSearchActive) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    l.mfgOpsServerFilterHint,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF64748B)),
+                                  ),
+                                ],
+                                const SizedBox(height: 12),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    l.mfgTplFilterStatusLabel,
+                                    style: Theme.of(context).textTheme.titleSmall,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      ChoiceChip(
+                                        label: Text(l.mfgEquipStatusFilterAll),
+                                        selected: _templatesStatusFilter == null,
+                                        onSelected: (_loading || !online) ? null : (_) => _setTemplatesStatusFilter(null),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 6),
+                                        child: ChoiceChip(
+                                          label: Text(localizedTrainingLifecycleStatus(l, 'draft')),
+                                          selected: _templatesStatusFilter == 'draft',
+                                          onSelected: (_loading || !online) ? null : (_) => _setTemplatesStatusFilter('draft'),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 6),
+                                        child: ChoiceChip(
+                                          label: Text(localizedTrainingLifecycleStatus(l, 'scheduled')),
+                                          selected: _templatesStatusFilter == 'scheduled',
+                                          onSelected: (_loading || !online) ? null : (_) => _setTemplatesStatusFilter('scheduled'),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 6),
+                                        child: ChoiceChip(
+                                          label: Text(localizedTrainingLifecycleStatus(l, 'in_progress')),
+                                          selected: _templatesStatusFilter == 'in_progress',
+                                          onSelected: (_loading || !online) ? null : (_) => _setTemplatesStatusFilter('in_progress'),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 6),
+                                        child: ChoiceChip(
+                                          label: Text(localizedTrainingLifecycleStatus(l, 'finished')),
+                                          selected: _templatesStatusFilter == 'finished',
+                                          onSelected: (_loading || !online) ? null : (_) => _setTemplatesStatusFilter('finished'),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 6),
+                                        child: ChoiceChip(
+                                          label: Text(localizedTrainingLifecycleStatus(l, 'cancelled')),
+                                          selected: _templatesStatusFilter == 'cancelled',
+                                          onSelected: (_loading || !online) ? null : (_) => _setTemplatesStatusFilter('cancelled'),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          Text(
+                                            l.mfgTplSortLabel,
+                                            style: Theme.of(context).textTheme.labelLarge,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          DropdownButton<String>(
+                                            key: ValueKey<String>('mfg_tpl_sort_$_templatesSort'),
+                                            isExpanded: true,
+                                            value: _templatesSort,
+                                            items: [
+                                              DropdownMenuItem(
+                                                value: 'updated_desc',
+                                                child: Text(l.mfgTplSortUpdated),
+                                              ),
+                                              DropdownMenuItem(
+                                                value: 'title_asc',
+                                                child: Text(l.mfgTplSortTitleAsc),
+                                              ),
+                                              DropdownMenuItem(
+                                                value: 'title_desc',
+                                                child: Text(l.mfgTplSortTitleDesc),
+                                              ),
+                                              DropdownMenuItem(
+                                                value: 'status_asc',
+                                                child: Text(l.mfgTplSortStatus),
+                                              ),
+                                            ],
+                                            onChanged: (_loading || !online)
+                                                ? null
+                                                : (v) {
+                                                    if (v != null) _setTemplatesSort(v);
+                                                  },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (_templatesFiltersDirty)
+                                      TextButton(
+                                        onPressed: (_loading || !online) ? null : _clearTemplatesFilters,
+                                        child: Text(l.mfgTplClearFilters),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    l.mfgTplListResultCount(_templates.length),
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: const Color(0xFF64748B),
+                                        ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
                                 if (_templates.isEmpty)
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
-                                    child: Text(
-                                      l.mfgTemplatesEmpty,
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
-                                    ),
+                                    child: _templatesFiltersDirty
+                                        ? Text(
+                                            l.mfgTplNoMatches,
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                          )
+                                        : Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                l.mfgTemplatesEmpty,
+                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                              ),
+                                              const SizedBox(height: 12),
+                                              Wrap(
+                                                spacing: 8,
+                                                runSpacing: 8,
+                                                children: [
+                                                  OutlinedButton.icon(
+                                                    onPressed: () => navigateToMfgTab(0),
+                                                    icon: const Icon(Icons.home_outlined, size: 18),
+                                                    label: Text(l.mfgNavHome),
+                                                  ),
+                                                  OutlinedButton.icon(
+                                                    onPressed: () => navigateToMfgTab(3),
+                                                    icon: const Icon(Icons.settings_suggest_outlined, size: 18),
+                                                    label: Text(l.mfgNavOperations),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
                                   )
                                 else
                                   ..._templates.map((row) {
                                     final id = _parseTrainingId(row['id']);
                                     final ttitle = row['title']?.toString() ?? l.mfgTrainingFallbackTitle;
+                                    final updatedLine = _formatTemplateRowUpdated(l, row['updated_at']);
                                     return Card(
                                       margin: const EdgeInsets.only(bottom: 10),
                                       child: ListTile(
                                         title: Text(ttitle),
-                                        subtitle: Text(localizedTrainingLifecycleStatus(l, row['status']?.toString())),
+                                        subtitle: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(localizedTrainingLifecycleStatus(l, row['status']?.toString())),
+                                            if (updatedLine.isNotEmpty)
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 4),
+                                                child: Text(
+                                                  updatedLine,
+                                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                        color: const Color(0xFF64748B),
+                                                      ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                         trailing: id != null
                                             ? TextButton(
-                                                onPressed: _loading ? null : () => _openTemplateEditor(id, ttitle),
+                                                onPressed: (_loading || !online) ? null : () => _openTemplateEditor(id, ttitle),
                                                 child: Text(l.mfgBtnEditQuestionnaire),
                                               )
                                             : null,
@@ -1526,7 +2932,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                       child: Text(l.mfgCatalogSectionTitle, style: Theme.of(context).textTheme.titleLarge),
                                     ),
                                     FilledButton.icon(
-                                      onPressed: _loading ? null : () => unawaited(_openEquipmentWizard()),
+                                      onPressed: (_loading || !online) ? null : () => unawaited(_openEquipmentWizard()),
                                       icon: const Icon(Icons.add_rounded),
                                       label: Text(l.mfgDashNewEquipment),
                                     ),
@@ -1544,11 +2950,31 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                     labelText: l.mfgEquipSearchHint,
                                     suffixIcon: IconButton(
                                       icon: const Icon(Icons.search_rounded),
-                                      onPressed: _loading ? null : () => unawaited(_reload()),
+                                      onPressed: (_loading || !online)
+                                          ? null
+                                          : () {
+                                              _equipmentSearchDebounce?.cancel();
+                                              unawaited(_reloadEquipmentList());
+                                            },
                                     ),
                                   ),
-                                  onSubmitted: (_) => unawaited(_reload()),
+                                  onChanged: (_) {
+                                    setState(() {});
+                                    _scheduleEquipmentSearchReload();
+                                  },
+                                  onSubmitted: (_) {
+                                    if (!online) return;
+                                    _equipmentSearchDebounce?.cancel();
+                                    unawaited(_reloadEquipmentList());
+                                  },
                                 ),
+                                if (_equipmentSearchActive) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    l.mfgOpsServerFilterHint,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF64748B)),
+                                  ),
+                                ],
                                 const SizedBox(height: 14),
                                 Align(
                                   alignment: Alignment.centerLeft,
@@ -1562,14 +2988,14 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                       ChoiceChip(
                                         label: Text(l.mfgEquipStatusFilterAll),
                                         selected: _equipmentStatusFilter == null,
-                                        onSelected: _loading ? null : (_) => _setEquipmentStatusFilter(null),
+                                        onSelected: (_loading || !online) ? null : (_) => _setEquipmentStatusFilter(null),
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.only(left: 6),
                                         child: ChoiceChip(
                                           label: Text(l.mfgEquipStatusActive),
                                           selected: _equipmentStatusFilter == 'active',
-                                          onSelected: _loading ? null : (_) => _setEquipmentStatusFilter('active'),
+                                          onSelected: (_loading || !online) ? null : (_) => _setEquipmentStatusFilter('active'),
                                         ),
                                       ),
                                       Padding(
@@ -1577,7 +3003,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                         child: ChoiceChip(
                                           label: Text(l.mfgEquipStatusInactive),
                                           selected: _equipmentStatusFilter == 'inactive',
-                                          onSelected: _loading ? null : (_) => _setEquipmentStatusFilter('inactive'),
+                                          onSelected: (_loading || !online) ? null : (_) => _setEquipmentStatusFilter('inactive'),
                                         ),
                                       ),
                                     ],
@@ -1599,7 +3025,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                       ChoiceChip(
                                         label: Text(l.parkFilterChipAll),
                                         selected: _equipmentCategoryFilter == null,
-                                        onSelected: _loading
+                                        onSelected: (_loading || !online)
                                             ? null
                                             : (_) => _setEquipmentCategoryFilter(null),
                                       ),
@@ -1611,7 +3037,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                           child: ChoiceChip(
                                             label: Text(clabel),
                                             selected: _equipmentCategoryFilter == cid,
-                                            onSelected: _loading
+                                            onSelected: (_loading || !online)
                                                 ? null
                                                 : (_) => _setEquipmentCategoryFilter(cid),
                                           ),
@@ -1620,11 +3046,106 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 12),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          Text(
+                                            l.mfgEquipSortLabel,
+                                            style: Theme.of(context).textTheme.labelLarge,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          DropdownButton<String>(
+                                            key: ValueKey<String>('mfg_eq_sort_$_equipmentSort'),
+                                            isExpanded: true,
+                                            value: _equipmentSort,
+                                            items: [
+                                              DropdownMenuItem(
+                                                value: 'name_asc',
+                                                child: Text(l.mfgEquipSortName),
+                                              ),
+                                              DropdownMenuItem(
+                                                value: 'updated_desc',
+                                                child: Text(l.mfgEquipSortUpdated),
+                                              ),
+                                              DropdownMenuItem(
+                                                value: 'templates_desc',
+                                                child: Text(l.mfgEquipSortTemplates),
+                                              ),
+                                            ],
+                                            onChanged: (_loading || !online)
+                                                ? null
+                                                : (v) {
+                                                    if (v != null) _setEquipmentSort(v);
+                                                  },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (_equipmentFiltersDirty)
+                                      TextButton(
+                                        onPressed: (_loading || !online) ? null : _clearEquipmentFilters,
+                                        child: Text(l.mfgEquipClearFilters),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    l.mfgEquipListResultCount(_equipment.length),
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: const Color(0xFF64748B),
+                                        ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
                                 if (_equipment.isEmpty)
                                   Padding(
                                     padding: const EdgeInsets.symmetric(vertical: 24),
-                                    child: Center(child: Text(l.mfgEquipmentEmpty)),
+                                    child: Center(
+                                      child: _equipmentFiltersDirty
+                                          ? Text(
+                                              l.mfgOpsSublistNoMatch,
+                                              textAlign: TextAlign.center,
+                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                            )
+                                          : ConstrainedBox(
+                                              constraints: const BoxConstraints(maxWidth: 420),
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    l.mfgEquipmentEmpty,
+                                                    textAlign: TextAlign.center,
+                                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
+                                                  ),
+                                                  const SizedBox(height: 12),
+                                                  Wrap(
+                                                    alignment: WrapAlignment.center,
+                                                    spacing: 8,
+                                                    runSpacing: 8,
+                                                    children: [
+                                                      OutlinedButton.icon(
+                                                        onPressed: () => navigateToMfgTab(0),
+                                                        icon: const Icon(Icons.home_outlined, size: 18),
+                                                        label: Text(l.mfgNavHome),
+                                                      ),
+                                                      OutlinedButton.icon(
+                                                        onPressed: () => navigateToMfgTab(3),
+                                                        icon: const Icon(Icons.settings_suggest_outlined, size: 18),
+                                                        label: Text(l.mfgNavOperations),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                    ),
                                   )
                                 else
                                   ..._equipment.map((row) {
@@ -1683,7 +3204,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                                 spacing: 0,
                                                 children: [
                                                   TextButton(
-                                                    onPressed: _loading
+                                                    onPressed: (_loading || !online)
                                                         ? null
                                                         : () => unawaited(_openEquipmentWizard(
                                                               editEquipment: Map<String, dynamic>.from(row),
@@ -1691,7 +3212,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                                     child: Text(l.mfgBtnEditEquipment),
                                                   ),
                                                   TextButton(
-                                                    onPressed: _loading
+                                                    onPressed: (_loading || !online)
                                                         ? null
                                                         : () => unawaited(_startNewEquipmentVersion(
                                                               iid,
@@ -1703,7 +3224,7 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                                   ),
                                                   IconButton(
                                                     icon: const Icon(Icons.delete_outline),
-                                                    onPressed: _loading ? null : () => _deleteEquipment(iid),
+                                                    onPressed: (_loading || !online) ? null : () => _deleteEquipment(iid),
                                                   ),
                                                 ],
                                               ),
@@ -1865,6 +3386,13 @@ class _MfgSideNav extends StatelessWidget {
               label: l.mfgNavHomologations,
               selected: selectedIndex == 4,
               onTap: () => onSelect(4),
+            ),
+            _MfgSideTile(
+              icon: Icons.analytics_outlined,
+              selectedIcon: Icons.analytics_rounded,
+              label: l.mfgNavAnalytics,
+              selected: selectedIndex == 5,
+              onTap: () => onSelect(5),
             ),
             const Spacer(),
           ],
@@ -2128,11 +3656,13 @@ class _ValidationStatusCard extends StatelessWidget {
   const _ValidationStatusCard({
     required this.manufacturer,
     required this.loading,
+    required this.apiOnline,
     required this.onRequestValidation,
   });
 
   final Map<String, dynamic> manufacturer;
   final bool loading;
+  final bool apiOnline;
   final VoidCallback onRequestValidation;
 
   String _helpText(AppLocalizations l, String? raw) {
@@ -2210,7 +3740,7 @@ class _ValidationStatusCard extends StatelessWidget {
             if (_canSubmit(raw)) ...[
               const SizedBox(height: 14),
               FilledButton(
-                onPressed: loading ? null : onRequestValidation,
+                onPressed: (loading || !apiOnline) ? null : onRequestValidation,
                 style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0F766E)),
                 child: Text(raw == 'rejected' ? l.mfgBtnResubmitForReview : l.mfgBtnSubmitForReview),
               ),

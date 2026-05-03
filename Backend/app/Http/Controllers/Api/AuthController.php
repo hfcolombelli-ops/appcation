@@ -14,6 +14,9 @@ use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
+    /** @var list<string> */
+    private const APP_MAPPED_ROLES = ['trainee', 'instructor', 'institution_admin', 'manufacturer_admin'];
+
     public function register(Request $request)
     {
         $data = $request->validate([
@@ -113,6 +116,89 @@ class AuthController extends Controller
         ]);
 
         return response()->json($request->user()->fresh()->toApiArray());
+    }
+
+    /**
+     * Utilizador sem `role` mapeável na app (vazio, nulo ou valor desconhecido) pode escolher
+     * traine/instructor/fabricante uma vez — mesmo contrato que o registo inicial.
+     */
+    public function updateMyRole(Request $request)
+    {
+        $user = $request->user();
+
+        if ($this->roleIsMappedForApp($user->role)) {
+            return response()->json([
+                'message' => 'O perfil já está definido. Use «Actualizar sessão» ou contacte o suporte para alterações.',
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'role' => ['required', 'in:trainee,instructor,manufacturer_admin'],
+            'manufacturer_name' => ['nullable', 'string', 'max:180'],
+            'manufacturer_cnpj' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        $manufacturerId = null;
+
+        if ($data['role'] === 'manufacturer_admin') {
+            $email = (string) $user->email;
+            $domain = ManufacturerRegistrationSupport::domainFromEmail($email);
+            if ($domain === null) {
+                return response()->json(['message' => 'E-mail inválido para registo de fabricante.'], 422);
+            }
+
+            $existingByDomain = Manufacturer::query()->where('registration_email_domain', $domain)->first();
+            if ($existingByDomain !== null) {
+                $manufacturerId = $existingByDomain->id;
+            } else {
+                $mfgName = trim((string) ($data['manufacturer_name'] ?? ''));
+                if ($mfgName === '') {
+                    return response()->json([
+                        'message' => 'Informe o nome da empresa para o primeiro registo deste domínio.',
+                        'errors' => ['manufacturer_name' => ['O campo nome da empresa é obrigatório quando ainda não existe fabricante para este domínio.']],
+                    ], 422);
+                }
+
+                $cnpjRaw = $data['manufacturer_cnpj'] ?? null;
+                $cnpjDigits = is_string($cnpjRaw) && $cnpjRaw !== ''
+                    ? preg_replace('/\D+/', '', $cnpjRaw)
+                    : null;
+
+                $manufacturer = Manufacturer::create([
+                    'name' => $mfgName,
+                    'slug' => Str::slug($mfgName).'-'.Str::lower(Str::random(8)),
+                    'cnpj' => ($cnpjDigits !== null && $cnpjDigits !== '') ? $cnpjDigits : null,
+                    'support_email' => $email,
+                    'registration_email_domain' => $domain,
+                    'status' => 'active',
+                    'validation_status' => 'pending_info',
+                ]);
+                $manufacturerId = $manufacturer->id;
+                ManufacturerReviewerNotifier::notifyNewRegistrationIfConfigured($manufacturer);
+            }
+        }
+
+        $payload = ['role' => $data['role']];
+        if ($data['role'] === 'manufacturer_admin') {
+            $payload['manufacturer_id'] = $manufacturerId;
+        } else {
+            $payload['manufacturer_id'] = null;
+        }
+
+        $user->update($payload);
+
+        return response()->json($user->fresh()->toApiArray());
+    }
+
+    private function roleIsMappedForApp(?string $role): bool
+    {
+        if ($role === null) {
+            return false;
+        }
+
+        $r = trim($role);
+
+        return $r !== '' && in_array($r, self::APP_MAPPED_ROLES, true);
     }
 
     /** Gestor: define ou altera a instituição do perfil (Fase 1 roadmap). */

@@ -38,13 +38,38 @@ class ManufacturerDocumentController extends Controller
             return response()->json(['message' => 'Sem permissão.'], 403);
         }
 
-        $rows = ManufacturerDocument::query()
-            ->where('manufacturer_id', $mid)
-            ->latest()
-            ->limit(100)
-            ->get();
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
 
-        return response()->json($rows);
+        $page = max(1, (int) ($validated['page'] ?? 1));
+        $perPage = min(50, max(1, (int) ($validated['per_page'] ?? 20)));
+
+        $q = ManufacturerDocument::query()->where('manufacturer_id', $mid);
+
+        if ($request->filled('search')) {
+            $raw = trim((string) $request->query('search'));
+            $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], mb_strtolower($raw)).'%';
+            $q->where(function ($w) use ($term) {
+                $w->whereRaw('LOWER(original_filename) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(COALESCE(document_kind, "")) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(COALESCE(notes, "")) LIKE ?', [$term]);
+            });
+        }
+
+        $paginator = $q->latest()->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'items' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => max(1, $paginator->lastPage()),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
     }
 
     public function store(Request $request)

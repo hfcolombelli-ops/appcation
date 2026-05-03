@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -112,6 +113,9 @@ class _InstructorShellState extends State<InstructorShell> {
     setState(() => _route = route);
     _navKey.currentState?.pushReplacementNamed(route);
   }
+
+  /// Navegação interna (ex.: CTA no dashboard gestor) mantendo o item correcto no menu lateral.
+  void navigateInShell(String route) => _go(route);
 
   String _title(BuildContext context, String route) {
     final l = AppLocalizations.of(context);
@@ -606,22 +610,37 @@ class _DashboardPageState extends State<_DashboardPage> {
   @override
   Widget build(BuildContext context) {
     if (_error != null) {
+      final l = AppLocalizations.of(context);
       return instructorShellScaffold(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(_error!, textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: _load,
-                  child: Text(AppLocalizations.of(context).actionRetry),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return RefreshIndicator(
+              onRefresh: _load,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: constraints.maxHeight,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_error!, textAlign: TextAlign.center),
+                          const SizedBox(height: 12),
+                          FilledButton(
+                            onPressed: () => _load(),
+                            child: Text(l.actionRetry),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       );
     }
@@ -641,7 +660,22 @@ class _DashboardPageState extends State<_DashboardPage> {
     }
     if (appAuth.role == 'institution_admin') {
       if (_institutionDashboard == null) {
-        return instructorShellScaffold(child: const Center(child: CircularProgressIndicator()));
+        return instructorShellScaffold(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return RefreshIndicator(
+                onRefresh: _load,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: SizedBox(
+                    height: constraints.maxHeight,
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
       }
       final online = _InstructorApiReachability.apiOnlineOf(context);
       return _InstitutionDashboardView(
@@ -653,7 +687,22 @@ class _DashboardPageState extends State<_DashboardPage> {
       );
     }
     if (_summary == null) {
-      return instructorShellScaffold(child: const Center(child: CircularProgressIndicator()));
+      return instructorShellScaffold(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return RefreshIndicator(
+              onRefresh: _load,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: constraints.maxHeight,
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+              ),
+            );
+          },
+        ),
+      );
     }
 
     final l = AppLocalizations.of(context);
@@ -671,6 +720,7 @@ class _DashboardPageState extends State<_DashboardPage> {
       child: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(24),
           children: [
             if (!online) ...[
@@ -811,6 +861,7 @@ class _InstitutionDashboardView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final pending = data['pending_training_requests']?.toString() ?? '0';
+    final pendingCount = int.tryParse(pending) ?? 0;
     final cs = data['completion_summary'];
     Map<String, dynamic>? csm;
     if (cs is Map) {
@@ -833,6 +884,7 @@ class _InstitutionDashboardView extends StatelessWidget {
       child: RefreshIndicator(
         onRefresh: onRefresh,
         child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(24),
           children: [
             Text(l.dashInstitutionKpisTitle, style: Theme.of(context).textTheme.titleLarge),
@@ -843,23 +895,56 @@ class _InstitutionDashboardView extends StatelessWidget {
           ),
           if (!apiOnline) ...[
             const SizedBox(height: 12),
+            _instrOfflineBanner(l),
+          ],
+          if (pendingCount > 0) ...[
+            const SizedBox(height: 12),
             DecoratedBox(
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF1F2),
+                color: const Color(0xFFFFFBEB),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFFECACA)),
+                border: Border.all(color: const Color(0xFFFDE68A)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(Icons.wifi_off_rounded, color: Color(0xFFB91C1C), size: 22),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        l.instrOfflineHint,
-                        style: const TextStyle(fontSize: 13.5, height: 1.4, color: Color(0xFF7F1D1D)),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.assignment_late_outlined, color: Color(0xFFB45309), size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l.dashInstitutionAlertPendingTitle,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF78350F),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                l.dashInstitutionAlertPendingBody(pendingCount),
+                                style: const TextStyle(fontSize: 13.5, height: 1.4, color: Color(0xFF92400E)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FilledButton.tonal(
+                        onPressed: () {
+                          context.findAncestorStateOfType<_InstructorShellState>()?.navigateInShell('/institution/pedidos');
+                        },
+                        child: Text(l.shellNavTrainingRequests),
                       ),
                     ),
                   ],
@@ -867,6 +952,39 @@ class _InstitutionDashboardView extends StatelessWidget {
               ),
             ),
           ],
+          const SizedBox(height: 12),
+          Text(
+            l.dashInstitutionShortcutsTitle,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () {
+                  context.findAncestorStateOfType<_InstructorShellState>()?.navigateInShell('/institution/pedidos');
+                },
+                icon: const Icon(Icons.playlist_add_check_rounded, size: 18),
+                label: Text(l.shellNavTrainingRequests),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  context.findAncestorStateOfType<_InstructorShellState>()?.navigateInShell('/institution/parque');
+                },
+                icon: const Icon(Icons.precision_manufacturing_outlined, size: 18),
+                label: Text(l.shellNavTechPark),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  context.findAncestorStateOfType<_InstructorShellState>()?.navigateInShell('/institution/endorsements');
+                },
+                icon: const Icon(Icons.verified_outlined, size: 18),
+                label: Text(l.shellNavEndorsementsShort),
+              ),
+            ],
+          ),
           if (onExportCsv != null || onExportPdf != null) ...[
             const SizedBox(height: 10),
             Wrap(
@@ -912,7 +1030,22 @@ class _InstitutionDashboardView extends StatelessWidget {
             child: byEq.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text(l.dashNoEquipmentData),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l.dashNoEquipmentData),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            context
+                                .findAncestorStateOfType<_InstructorShellState>()
+                                ?.navigateInShell('/institution/parque');
+                          },
+                          icon: const Icon(Icons.precision_manufacturing_outlined, size: 20),
+                          label: Text(l.shellNavTechPark),
+                        ),
+                      ],
+                    ),
                   )
                 : Column(
                     children: [
@@ -940,7 +1073,37 @@ class _InstitutionDashboardView extends StatelessWidget {
             child: bySector.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text(l.dashNoSectorHistory),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l.dashNoSectorHistory),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                context
+                                    .findAncestorStateOfType<_InstructorShellState>()
+                                    ?.navigateInShell('/institution/pedidos');
+                              },
+                              icon: const Icon(Icons.playlist_add_check_rounded, size: 18),
+                              label: Text(l.shellNavTrainingRequests),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                context
+                                    .findAncestorStateOfType<_InstructorShellState>()
+                                    ?.navigateInShell('/institution/parque');
+                              },
+                              icon: const Icon(Icons.precision_manufacturing_outlined, size: 18),
+                              label: Text(l.shellNavTechPark),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   )
                 : Column(
                     children: [
@@ -1215,7 +1378,7 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
             _selectedId = _parseInt(list.first['id']);
           }
         });
-        _loadMonitor();
+        await _loadMonitor();
       }
     } catch (_) {}
   }
@@ -1289,10 +1452,29 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
           }).toList();
 
     final body = _selectedId == null
-        ? Center(child: Text(l.postTrainingPickTraining, style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant)))
+        ? LayoutBuilder(
+            builder: (context, constraints) {
+              return RefreshIndicator(
+                onRefresh: _refreshTrainings,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: SizedBox(
+                    height: constraints.maxHeight,
+                    child: Center(
+                      child: Text(
+                        l.postTrainingPickTraining,
+                        style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          )
         : LayoutBuilder(
             builder: (context, constraints) {
               final narrow = constraints.maxWidth < 900;
+              final listMinHeight = math.max(160.0, constraints.maxHeight * 0.35);
               Map<String, dynamic>? trainingForCert;
               final trw = _monitor?['training'];
               if (trw is Map) {
@@ -1320,46 +1502,66 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
                       ),
                       const SizedBox(height: 12),
                       Expanded(
-                        child: participants.isEmpty
-                            ? Center(child: Text(l.comandoNoParticipants))
-                            : filteredParticipants.isEmpty
-                                ? Center(
-                                    child: Text(
-                                      l.comandoParticipantsNoMatch,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant),
+                        child: RefreshIndicator(
+                          onRefresh: _refreshTrainings,
+                          child: participants.isEmpty
+                              ? ListView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  children: [
+                                    SizedBox(
+                                      height: listMinHeight,
+                                      child: Center(child: Text(l.comandoNoParticipants)),
                                     ),
-                                  )
-                            : ListView.separated(
-                                itemCount: filteredParticipants.length,
-                                separatorBuilder: (_, _) => const SizedBox(height: 10),
-                                itemBuilder: (context, index) {
-                                  final raw = filteredParticipants[index];
-                                  final row = Map<String, dynamic>.from(raw as Map);
-                                  final eid = _parseInt(row['enrollment']?['id']);
-                                  return _ParticipantTile(
-                                    row,
-                                    apiOnline: online,
-                                    selected: eid != null && _repescageIds.contains(eid),
-                                    onToggle: (enrollmentId) {
-                                      setState(() {
-                                        if (_repescageIds.contains(enrollmentId)) {
-                                          _repescageIds.remove(enrollmentId);
-                                        } else {
-                                          _repescageIds.add(enrollmentId);
-                                        }
-                                      });
-                                    },
-                                    onCertificatePdf: _onParticipantCertificatePdf,
-                                    certificatePdfLoadingForId: _certPdfLoadingId,
-                                    onIssueManualCertificate: eid != null &&
-                                            participantEligibleForManualCertificate(row, trainingForCert)
-                                        ? () => _issueCertificateForEnrollment(eid)
-                                        : null,
-                                    issueCertificateBusy: eid != null && _issueCertLoadingEid == eid,
-                                  );
-                                },
-                              ),
+                                  ],
+                                )
+                              : filteredParticipants.isEmpty
+                                  ? ListView(
+                                      physics: const AlwaysScrollableScrollPhysics(),
+                                      children: [
+                                        SizedBox(
+                                          height: listMinHeight,
+                                          child: Center(
+                                            child: Text(
+                                              l.comandoParticipantsNoMatch,
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : ListView.separated(
+                                      physics: const AlwaysScrollableScrollPhysics(),
+                                      itemCount: filteredParticipants.length,
+                                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                                      itemBuilder: (context, index) {
+                                        final raw = filteredParticipants[index];
+                                        final row = Map<String, dynamic>.from(raw as Map);
+                                        final eid = _parseInt(row['enrollment']?['id']);
+                                        return _ParticipantTile(
+                                          row,
+                                          apiOnline: online,
+                                          selected: eid != null && _repescageIds.contains(eid),
+                                          onToggle: (enrollmentId) {
+                                            setState(() {
+                                              if (_repescageIds.contains(enrollmentId)) {
+                                                _repescageIds.remove(enrollmentId);
+                                              } else {
+                                                _repescageIds.add(enrollmentId);
+                                              }
+                                            });
+                                          },
+                                          onCertificatePdf: _onParticipantCertificatePdf,
+                                          certificatePdfLoadingForId: _certPdfLoadingId,
+                                          onIssueManualCertificate: eid != null &&
+                                                  participantEligibleForManualCertificate(row, trainingForCert)
+                                              ? () => _issueCertificateForEnrollment(eid)
+                                              : null,
+                                          issueCertificateBusy: eid != null && _issueCertLoadingEid == eid,
+                                        );
+                                      },
+                                    ),
+                        ),
                       ),
                     ],
                   ),
@@ -1659,6 +1861,13 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
     } catch (_) {}
   }
 
+  Future<void> _reloadTreinamentoPage() async {
+    await Future.wait([
+      _loadInstitutions(),
+      _loadOfficialTemplates(),
+    ]);
+  }
+
   void _syncRepescagePolicyFromTraining(Map<String, dynamic> tr) {
     final m = tr['metadata'];
     if (m is Map) {
@@ -1864,9 +2073,12 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
     Widget offlineWrap(Widget child) => online ? child : Tooltip(message: s.instrOfflineHint, child: child);
 
     return instructorShellScaffold(
-      child: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
+      child: RefreshIndicator(
+        onRefresh: _reloadTreinamentoPage,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(24),
+          children: [
           Text(s.trainingSectionTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
           const SizedBox(height: 14),
           if (!online) ...[
@@ -2103,6 +2315,7 @@ class _TreinamentoPageState extends State<_TreinamentoPage> {
           ),
         ],
         ],
+        ),
       ),
     );
   }
@@ -2443,6 +2656,7 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
   int? _pickedCatalogId;
   final _sector = TextEditingController();
   final _parkSearchCtrl = TextEditingController();
+  Timer? _parkSearchDebounce;
 
   @override
   void initState() {
@@ -2452,9 +2666,19 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
 
   @override
   void dispose() {
+    _parkSearchDebounce?.cancel();
     _sector.dispose();
     _parkSearchCtrl.dispose();
     super.dispose();
+  }
+
+  void _scheduleParkSearchReload() {
+    _parkSearchDebounce?.cancel();
+    _parkSearchDebounce = Timer(const Duration(milliseconds: 450), () {
+      if (!mounted) return;
+      if (!_InstructorApiReachability.apiOnlineOf(context)) return;
+      unawaited(_reload());
+    });
   }
 
   Future<void> _reload() async {
@@ -2643,10 +2867,21 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                     labelText: l.parkSearchHint,
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.search_rounded),
-                      onPressed: _loading || !online ? null : () => unawaited(_reload()),
+                      onPressed: _loading || !online ? null : () {
+                        _parkSearchDebounce?.cancel();
+                        unawaited(_reload());
+                      },
                     ),
                   ),
-                  onSubmitted: !online ? null : (_) => unawaited(_reload()),
+                  onChanged: (_) {
+                    setState(() {});
+                    _scheduleParkSearchReload();
+                  },
+                  onSubmitted: (_) {
+                    if (!online) return;
+                    _parkSearchDebounce?.cancel();
+                    unawaited(_reload());
+                  },
                 ),
                 const SizedBox(height: 16),
                 Text(l.parkFilterByState, style: Theme.of(context).textTheme.titleSmall),
@@ -2700,7 +2935,22 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                 Text(l.parkSectionAddUnit, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 if (_templates.isEmpty)
-                  Text(l.parkEmptyCatalog)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l.parkEmptyCatalog),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          context
+                              .findAncestorStateOfType<_InstructorShellState>()
+                              ?.navigateInShell('/institution/endorsements');
+                        },
+                        icon: const Icon(Icons.verified_outlined, size: 20),
+                        label: Text(l.shellNavEndorsementsShort),
+                      ),
+                    ],
+                  )
                 else ...[
                   DropdownButton<int?>(
                     isExpanded: true,
@@ -2740,7 +2990,24 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                 if (_units.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Center(child: Text(l.parkEmptyPark)),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(l.parkEmptyPark, textAlign: TextAlign.center),
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              context
+                                  .findAncestorStateOfType<_InstructorShellState>()
+                                  ?.navigateInShell('/institution/pedidos');
+                            },
+                            icon: const Icon(Icons.playlist_add_check_rounded, size: 20),
+                            label: Text(l.shellNavTrainingRequests),
+                          ),
+                        ],
+                      ),
+                    ),
                   )
                 else
                   ..._units.map((row) {
@@ -2886,19 +3153,27 @@ class _InstitutionEndorsementsPageState extends State<_InstitutionEndorsementsPa
     _reload();
   }
 
-  Future<void> _reload() async {
+  /// [silent] evita substituir o ecrã pelo loading (ex.: pull na lista já carregada).
+  Future<void> _reload({bool silent = false}) async {
     final t = appAuth.token;
     if (t == null) {
       return;
     }
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    } else if (mounted) {
+      setState(() => _error = null);
+    }
     try {
       final r = await widget.api.institutionManufacturerEndorsementQueue(t);
       if (mounted) {
-        setState(() => _rows = r);
+        setState(() {
+          _rows = r;
+          _error = null;
+        });
       }
     } on ApiException catch (e) {
       if (mounted) {
@@ -2923,7 +3198,7 @@ class _InstitutionEndorsementsPageState extends State<_InstitutionEndorsementsPa
     setState(() => _endorsing.add(id));
     try {
       await widget.api.institutionManufacturerEndorse(t, id);
-      await _reload();
+      await _reload(silent: true);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).endorsSnackRecorded)),
@@ -2959,106 +3234,158 @@ class _InstitutionEndorsementsPageState extends State<_InstitutionEndorsementsPa
       );
     }
     if (_loading) {
-      return instructorShellScaffold(child: const Center(child: CircularProgressIndicator()));
-    }
-    if (_error != null) {
       return instructorShellScaffold(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(_error!, textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                FilledButton(onPressed: _reload, child: Text(l.actionRetry)),
-              ],
-            ),
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return RefreshIndicator(
+              onRefresh: () => _reload(silent: true),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: constraints.maxHeight,
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+              ),
+            );
+          },
         ),
       );
     }
-    if (_rows.isEmpty) {
+    if (_error != null) {
       return instructorShellScaffold(
-        child: Center(
-          child: Text(
-            l.endorsEmpty,
-            style: const TextStyle(color: Color(0xFF45464D)),
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return RefreshIndicator(
+              onRefresh: () => _reload(silent: true),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: constraints.maxHeight,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_error!, textAlign: TextAlign.center),
+                          const SizedBox(height: 12),
+                          FilledButton(onPressed: () => _reload(), child: Text(l.actionRetry)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       );
     }
     return instructorShellScaffold(
-      child: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          Text(l.shellTitleEndorsements, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
-        const SizedBox(height: 8),
-        Text(
-          l.endorsIntro,
-          style: const TextStyle(color: Color(0xFF45464D)),
-        ),
-        const SizedBox(height: 18),
-        if (!online) ...[
-          _instrOfflineBanner(l),
-          const SizedBox(height: 16),
-        ],
-        for (final row in _rows)
-          Builder(
-            builder: (context) {
-              final rowId = _parseInt(row['id']);
-              final busy = rowId != null && _endorsing.contains(rowId);
-              final mfgName = row['manufacturer'] is Map
-                  ? (row['manufacturer']['name']?.toString() ?? l.endorsManufacturerFallback)
-                  : l.endorsManufacturerFallback;
-              final instName = row['instructor'] is Map
-                  ? (row['instructor']['name']?.toString() ?? l.trainReqDashNone)
-                  : l.trainReqDashNone;
-              return instructorShellCard(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        mfgName,
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        l.endorsInstructorLine(instName),
-                        style: const TextStyle(color: Color(0xFF45464D)),
-                      ),
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: online
-                            ? FilledButton(
-                                onPressed: rowId == null || busy ? null : () => _endorse(rowId),
-                                child: busy
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                      )
-                                    : Text(l.endorsBtnEndorse),
-                              )
-                            : Tooltip(
-                                message: l.instrOfflineHint,
-                                child: FilledButton(
-                                  onPressed: null,
-                                  child: Text(l.endorsBtnEndorse),
-                                ),
-                              ),
-                      ),
-                    ],
+      child: RefreshIndicator(
+        onRefresh: () => _reload(silent: true),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(24),
+          children: [
+            Text(l.shellTitleEndorsements, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
+            const SizedBox(height: 8),
+            Text(
+              l.endorsIntro,
+              style: const TextStyle(color: Color(0xFF45464D)),
+            ),
+            const SizedBox(height: 18),
+            if (!online) ...[
+              _instrOfflineBanner(l),
+              const SizedBox(height: 16),
+            ],
+            if (_rows.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          l.endorsEmpty,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Color(0xFF45464D)),
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            context
+                                .findAncestorStateOfType<_InstructorShellState>()
+                                ?.navigateInShell('/institution/parque');
+                          },
+                          icon: const Icon(Icons.precision_manufacturing_outlined, size: 20),
+                          label: Text(l.shellNavTechPark),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              );
-            },
-          ),
-        ],
+              )
+            else
+              for (final row in _rows)
+                Builder(
+                  builder: (context) {
+                    final rowId = _parseInt(row['id']);
+                    final busy = rowId != null && _endorsing.contains(rowId);
+                    final mfgName = row['manufacturer'] is Map
+                        ? (row['manufacturer']['name']?.toString() ?? l.endorsManufacturerFallback)
+                        : l.endorsManufacturerFallback;
+                    final instName = row['instructor'] is Map
+                        ? (row['instructor']['name']?.toString() ?? l.trainReqDashNone)
+                        : l.trainReqDashNone;
+                    return instructorShellCard(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              mfgName,
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              l.endorsInstructorLine(instName),
+                              style: const TextStyle(color: Color(0xFF45464D)),
+                            ),
+                            const SizedBox(height: 12),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: online
+                                  ? FilledButton(
+                                      onPressed: rowId == null || busy ? null : () => _endorse(rowId),
+                                      child: busy
+                                          ? const SizedBox(
+                                              height: 20,
+                                              width: 20,
+                                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                            )
+                                          : Text(l.endorsBtnEndorse),
+                                    )
+                                  : Tooltip(
+                                      message: l.instrOfflineHint,
+                                      child: FilledButton(
+                                        onPressed: null,
+                                        child: Text(l.endorsBtnEndorse),
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+          ],
+        ),
       ),
     );
   }
@@ -3227,15 +3554,20 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
     _reload();
   }
 
-  Future<void> _reload() async {
+  /// [silent] evita substituir o ecrã pelo loading (ex.: pull no Kanban).
+  Future<void> _reload({bool silent = false}) async {
     final t = appAuth.token;
     if (t == null) {
       return;
     }
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    } else if (mounted) {
+      setState(() => _error = null);
+    }
     try {
       final r = await widget.api.institutionTrainingRequests(t);
       final i = await widget.api.institutionApprovedInstructors(t);
@@ -3246,6 +3578,7 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
           _instructors = i;
           _trainings = tr;
           _batchIds.removeWhere((id) => !r.any((row) => _parseInt(row['id']) == id));
+          _error = null;
         });
       }
     } on ApiException catch (e) {
@@ -3270,7 +3603,7 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
     }
     try {
       await widget.api.updateInstitutionTrainingRequest(t, requestId, body);
-      await _reload();
+      await _reload(silent: true);
       if (mounted && !quiet) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).trainReqSnackUpdated)),
@@ -3411,22 +3744,50 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
       );
     }
     if (_loading) {
-      return instructorShellScaffold(child: const Center(child: CircularProgressIndicator()));
+      return instructorShellScaffold(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return RefreshIndicator(
+              onRefresh: () => _reload(silent: true),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: constraints.maxHeight,
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+              ),
+            );
+          },
+        ),
+      );
     }
     if (_error != null) {
       return instructorShellScaffold(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(_error!, textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                FilledButton(onPressed: _reload, child: Text(l.actionRetry)),
-              ],
-            ),
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return RefreshIndicator(
+              onRefresh: () => _reload(silent: true),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: constraints.maxHeight,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_error!, textAlign: TextAlign.center),
+                          const SizedBox(height: 12),
+                          FilledButton(onPressed: () => _reload(), child: Text(l.actionRetry)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       );
     }
@@ -3449,87 +3810,126 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
     Widget wrapOff(Widget child) => online ? child : Tooltip(message: l.instrOfflineHint, child: child);
 
     return instructorShellScaffold(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 960;
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(l.shellTitleTrainingRequests, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
-                const SizedBox(height: 8),
-                Text(
-                  l.trainReqIntro,
-                  style: const TextStyle(color: Color(0xFF45464D)),
-                ),
-                const SizedBox(height: 18),
-                if (!online) ...[
-                  _instrOfflineBanner(l),
-                  const SizedBox(height: 16),
-                ],
-                if (_requests.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(
-                      l.trainReqEmpty,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Color(0xFF64748B)),
-                    ),
+      child: RefreshIndicator(
+        onRefresh: () => _reload(silent: true),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= 960;
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(l.shellTitleTrainingRequests, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
+                  const SizedBox(height: 8),
+                  Text(
+                    l.trainReqIntro,
+                    style: const TextStyle(color: Color(0xFF45464D)),
                   ),
-                if (_batchIds.isNotEmpty) ...[
-                  instructorShellCard(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              l.trainReqBatchToolbarSelected(_batchIds.length),
-                              style: const TextStyle(fontWeight: FontWeight.w700),
-                            ),
+                  const SizedBox(height: 18),
+                  if (!online) ...[
+                    _instrOfflineBanner(l),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_requests.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 440),
+                          child: Column(
+                            children: [
+                              Text(
+                                l.trainReqEmpty,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Color(0xFF64748B)),
+                              ),
+                              const SizedBox(height: 16),
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      context
+                                          .findAncestorStateOfType<_InstructorShellState>()
+                                          ?.navigateInShell('/institution/parque');
+                                    },
+                                    icon: const Icon(Icons.precision_manufacturing_outlined, size: 18),
+                                    label: Text(l.shellNavTechPark),
+                                  ),
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      context
+                                          .findAncestorStateOfType<_InstructorShellState>()
+                                          ?.navigateInShell('/institution/endorsements');
+                                    },
+                                    icon: const Icon(Icons.verified_outlined, size: 18),
+                                    label: Text(l.shellNavEndorsementsShort),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          TextButton(
-                            onPressed: () => setState(() => _batchIds.clear()),
-                            child: Text(l.trainReqBatchToolbarClear),
-                          ),
-                          const SizedBox(width: 8),
-                          wrapOff(
-                            FilledButton(
-                              onPressed: !online ? null : _showBatchScheduleDialog,
-                              child: Text(l.trainReqBatchToolbarSchedule),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
+                  if (_batchIds.isNotEmpty) ...[
+                    instructorShellCard(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                l.trainReqBatchToolbarSelected(_batchIds.length),
+                                style: const TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => setState(() => _batchIds.clear()),
+                              child: Text(l.trainReqBatchToolbarClear),
+                            ),
+                            const SizedBox(width: 8),
+                            wrapOff(
+                              FilledButton(
+                                onPressed: !online ? null : _showBatchScheduleDialog,
+                                child: Text(l.trainReqBatchToolbarSchedule),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  _TrainingRequestsKanban(
+                    colQueue: colQueue,
+                    colScheduled: colScheduled,
+                    colClosed: colClosed,
+                    instructors: _instructors,
+                    trainings: _trainings,
+                    onSubmit: _update,
+                    wide: wide,
+                    batchSelectedIds: _batchIds,
+                    apiOnline: online,
+                    onBatchToggle: (id) {
+                      setState(() {
+                        if (_batchIds.contains(id)) {
+                          _batchIds.remove(id);
+                        } else {
+                          _batchIds.add(id);
+                        }
+                      });
+                    },
                   ),
-                  const SizedBox(height: 14),
                 ],
-                _TrainingRequestsKanban(
-                  colQueue: colQueue,
-                  colScheduled: colScheduled,
-                  colClosed: colClosed,
-                  instructors: _instructors,
-                  trainings: _trainings,
-                  onSubmit: _update,
-                  wide: wide,
-                  batchSelectedIds: _batchIds,
-                  apiOnline: online,
-                  onBatchToggle: (id) {
-                    setState(() {
-                      if (_batchIds.contains(id)) {
-                        _batchIds.remove(id);
-                      } else {
-                        _batchIds.add(id);
-                      }
-                    });
-                  },
-                ),
-              ],
-            ),
-          );
-        },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -3935,7 +4335,7 @@ class _ComandoPageState extends State<_ComandoPage> {
             _selectedId = _parseInt(list.first['id']);
           }
         });
-        _loadMonitor();
+        await _loadMonitor();
       }
     } catch (_) {}
   }
@@ -4181,7 +4581,7 @@ class _ComandoPageState extends State<_ComandoPage> {
       ),
     );
 
-    Widget participantsCard() {
+    Widget participantsCard(double listPullMinH) {
       return instructorShellCard(
         child: Padding(
           padding: const EdgeInsets.all(18),
@@ -4207,41 +4607,61 @@ class _ComandoPageState extends State<_ComandoPage> {
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: participants.isEmpty
-                    ? Center(
-                        child: Text(l.comandoNoParticipants, style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant)),
-                      )
-                    : filteredParticipants.isEmpty
-                        ? Center(
-                            child: Text(
-                              l.comandoParticipantsNoMatch,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant),
+                child: RefreshIndicator(
+                  onRefresh: _refreshTrainings,
+                  child: participants.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: listPullMinH,
+                              child: Center(
+                                child: Text(l.comandoNoParticipants, style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant)),
+                              ),
                             ),
-                          )
-                    : ListView.separated(
-                        itemCount: filteredParticipants.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          final raw = filteredParticipants[index];
-                          final row = Map<String, dynamic>.from(raw as Map);
-                          final eid = _parseInt(row['enrollment']?['id']);
-                          return _ParticipantTile(
-                            row,
-                            apiOnline: online,
-                            selected: eid != null && _repescageIds.contains(eid),
-                            onToggle: (enrollmentId) {
-                              setState(() {
-                                if (_repescageIds.contains(enrollmentId)) {
-                                  _repescageIds.remove(enrollmentId);
-                                } else {
-                                  _repescageIds.add(enrollmentId);
-                                }
-                              });
-                            },
-                          );
-                        },
-                      ),
+                          ],
+                        )
+                      : filteredParticipants.isEmpty
+                          ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                SizedBox(
+                                  height: listPullMinH,
+                                  child: Center(
+                                    child: Text(
+                                      l.comandoParticipantsNoMatch,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(color: ClinicalPrecisionColors.onSurfaceVariant),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: filteredParticipants.length,
+                              separatorBuilder: (_, _) => const SizedBox(height: 10),
+                              itemBuilder: (context, index) {
+                                final raw = filteredParticipants[index];
+                                final row = Map<String, dynamic>.from(raw as Map);
+                                final eid = _parseInt(row['enrollment']?['id']);
+                                return _ParticipantTile(
+                                  row,
+                                  apiOnline: online,
+                                  selected: eid != null && _repescageIds.contains(eid),
+                                  onToggle: (enrollmentId) {
+                                    setState(() {
+                                      if (_repescageIds.contains(enrollmentId)) {
+                                        _repescageIds.remove(enrollmentId);
+                                      } else {
+                                        _repescageIds.add(enrollmentId);
+                                      }
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                ),
               ),
             ],
           ),
@@ -4471,10 +4891,11 @@ class _ComandoPageState extends State<_ComandoPage> {
     final body = LayoutBuilder(
       builder: (context, constraints) {
         final narrow = constraints.maxWidth < 960;
+        final listPullMinH = math.max(160.0, constraints.maxHeight * 0.22);
         final stack = Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(flex: 5, child: participantsCard()),
+            Expanded(flex: 5, child: participantsCard(listPullMinH)),
             const SizedBox(height: 16),
             Expanded(flex: 5, child: controlDeck()),
             const SizedBox(height: 16),
@@ -4484,7 +4905,7 @@ class _ComandoPageState extends State<_ComandoPage> {
         final row = Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(flex: 5, child: participantsCard()),
+            Expanded(flex: 5, child: participantsCard(listPullMinH)),
             const SizedBox(width: 16),
             Expanded(
               flex: 4,
@@ -5082,14 +5503,17 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
     Widget wrapOff(Widget child) => online ? child : Tooltip(message: l.instrOfflineHint, child: child);
 
     return instructorShellScaffold(
-      child: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          if (!online) ...[
-            _instrOfflineBanner(l),
-            const SizedBox(height: 16),
-          ],
-          Text(l.credTitleInstitutions, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
+      child: RefreshIndicator(
+        onRefresh: _reload,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(24),
+          children: [
+            if (!online) ...[
+              _instrOfflineBanner(l),
+              const SizedBox(height: 16),
+            ],
+            Text(l.credTitleInstitutions, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
         const SizedBox(height: 8),
         Text(l.credIntroInstitutions, style: const TextStyle(color: Color(0xFF45464D))),
         const SizedBox(height: 18),
@@ -5151,7 +5575,7 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
                       for (final i in _list)
                         DropdownMenuItem(value: _parseInt(i['id']), child: Text(i['name']?.toString() ?? '')),
                     ],
-                    onChanged: (v) => setState(() => _applyInstitutionId = v),
+                    onChanged: !online ? null : (v) => setState(() => _applyInstitutionId = v),
                   ),
                   const SizedBox(height: 10),
                   wrapOff(
@@ -5168,7 +5592,7 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
                       for (final m in _manufacturers)
                         DropdownMenuItem(value: _parseInt(m['id']), child: Text(m['name']?.toString() ?? '')),
                     ],
-                    onChanged: (v) => setState(() => _applyManufacturerId = v),
+                    onChanged: !online ? null : (v) => setState(() => _applyManufacturerId = v),
                   ),
                   const SizedBox(height: 10),
                   wrapOff(
@@ -5381,7 +5805,8 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
             ),
         ],
       ],
-    ),
+        ),
+      ),
     );
   }
 

@@ -143,12 +143,13 @@ class CredentialController extends Controller
 
         $rows = ManufacturerInstructor::query()
             ->where('manufacturer_id', $user->manufacturer_id)
-            ->where('status', 'pending')
             ->with([
                 'instructor:id,name,email',
                 'endorsedByInstitution:id,name',
             ])
-            ->orderBy('created_at')
+            ->orderByRaw("case status when 'pending' then 0 when 'approved' then 1 when 'suspended' then 2 when 'rejected' then 3 else 4 end")
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
             ->get();
 
         return response()->json($rows);
@@ -162,7 +163,7 @@ class CredentialController extends Controller
         }
 
         $data = $request->validate([
-            'status' => ['required', 'in:approved,rejected'],
+            'status' => ['required', 'in:approved,rejected,suspended'],
             'fee_paid' => ['sometimes', 'boolean'],
         ]);
 
@@ -171,29 +172,47 @@ class CredentialController extends Controller
             ->where('manufacturer_id', $user->manufacturer_id)
             ->firstOrFail();
 
-        if ($data['status'] === 'approved') {
-            $needsEndorsement = InstitutionInstructor::query()
-                ->where('instructor_id', $row->instructor_id)
-                ->where('status', 'approved')
-                ->exists();
-            if ($needsEndorsement && $row->endorsed_at === null) {
-                return response()->json([
-                    'message' => 'Homologação condicionada: a instituição do instrutor deve endossar o pedido antes de aprovar.',
-                ], 422);
+        $current = $row->status;
+        $next = $data['status'];
+
+        if ($next === 'suspended') {
+            if ($current !== 'approved') {
+                return response()->json(['message' => 'Só é possível suspender homologações já aprovadas.'], 422);
+            }
+        } elseif ($next === 'rejected') {
+            if (! in_array($current, ['pending', 'approved', 'suspended'], true)) {
+                return response()->json(['message' => 'Transição inválida para recusado.'], 422);
+            }
+        } elseif ($next === 'approved') {
+            if (! in_array($current, ['pending', 'suspended'], true)) {
+                return response()->json(['message' => 'Aprovação só a partir de pendente ou suspenso.'], 422);
+            }
+            if ($current === 'pending') {
+                $needsEndorsement = InstitutionInstructor::query()
+                    ->where('instructor_id', $row->instructor_id)
+                    ->where('status', 'approved')
+                    ->exists();
+                if ($needsEndorsement && $row->endorsed_at === null) {
+                    return response()->json([
+                        'message' => 'Homologação condicionada: a instituição do instrutor deve endossar o pedido antes de aprovar.',
+                    ], 422);
+                }
             }
         }
 
-        $row->update([
-            'status' => $data['status'],
-            'fee_paid' => $data['fee_paid'] ?? $row->fee_paid,
-        ]);
+        $payload = ['status' => $next];
+        if (array_key_exists('fee_paid', $data)) {
+            $payload['fee_paid'] = $data['fee_paid'];
+        }
+
+        $row->update($payload);
 
         SecurityAuditLog::record($request, 'credential.manufacturer_decide', ManufacturerInstructor::class, (int) $row->id, [
-            'new_status' => $data['status'],
-            'fee_paid' => $row->fee_paid,
+            'new_status' => $next,
+            'fee_paid' => $row->fresh()->fee_paid,
         ]);
 
-        return response()->json($row->load([
+        return response()->json($row->fresh()->load([
             'instructor:id,name,email',
             'endorsedByInstitution:id,name',
         ]));

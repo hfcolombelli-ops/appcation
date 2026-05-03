@@ -101,4 +101,63 @@ class FluxxoEquipmentCategoriesTest extends TestCase
 
         $this->assertNull(Equipment::query()->find($id)?->category);
     }
+
+    public function test_equipment_list_rejects_invalid_sort(): void
+    {
+        [$token] = $this->manufacturerTokenAndMfg();
+
+        $this->withToken($token)
+            ->getJson('/api/manufacturer/equipment?sort=invalid')
+            ->assertStatus(422);
+    }
+
+    public function test_equipment_list_rejects_invalid_status(): void
+    {
+        [$token] = $this->manufacturerTokenAndMfg();
+
+        $this->withToken($token)
+            ->getJson('/api/manufacturer/equipment?status=archived')
+            ->assertStatus(422);
+    }
+
+    public function test_equipment_list_rejects_search_too_long(): void
+    {
+        [$token] = $this->manufacturerTokenAndMfg();
+        $long = str_repeat('x', 121);
+        $this->withToken($token)
+            ->getJson('/api/manufacturer/equipment?search='.urlencode($long))
+            ->assertStatus(422);
+    }
+
+    public function test_equipment_list_sort_updated_desc(): void
+    {
+        [$token] = $this->manufacturerTokenAndMfg();
+
+        $this->withToken($token)->postJson('/api/manufacturer/equipment', [
+            'name' => 'Zebra',
+            'model' => 'Z1',
+            'category' => 'radiologia',
+        ])->assertCreated();
+        $idZ = Equipment::query()->where('name', 'Zebra')->value('id');
+
+        $this->withToken($token)->postJson('/api/manufacturer/equipment', [
+            'name' => 'Alpha',
+            'model' => 'A1',
+            'category' => 'radiologia',
+        ])->assertCreated();
+        $idA = Equipment::query()->where('name', 'Alpha')->value('id');
+
+        Equipment::query()->whereKey($idZ)->update(['updated_at' => now()->addHour()]);
+        Equipment::query()->whereKey($idA)->update(['updated_at' => now()->subHour()]);
+
+        $names = collect(
+            $this->withToken($token)
+                ->getJson('/api/manufacturer/equipment?sort=updated_desc')
+                ->assertOk()
+                ->json()
+        )->pluck('name')->all();
+
+        $this->assertSame('Zebra', $names[0] ?? null);
+        $this->assertContains('Alpha', $names);
+    }
 }

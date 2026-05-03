@@ -100,6 +100,15 @@ class _ManufacturerEquipmentWizardScreenState extends State<ManufacturerEquipmen
 
   bool get _categoryRequired => widget.parentEquipmentId == null && !_isDerivedVersion;
 
+  void _syncCategoryIdWithCatalog() {
+    final id = _categoryId;
+    if (id == null || id.isEmpty) return;
+    final ok = _cats.any((c) => c['id']?.toString() == id);
+    if (!ok) {
+      _categoryId = null;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -116,6 +125,8 @@ class _ManufacturerEquipmentWizardScreenState extends State<ManufacturerEquipmen
     if (_cats.isEmpty) {
       _catsLoading = true;
       WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_loadCategories()));
+    } else {
+      _syncCategoryIdWithCatalog();
     }
   }
 
@@ -170,6 +181,7 @@ class _ManufacturerEquipmentWizardScreenState extends State<ManufacturerEquipmen
       setState(() {
         _cats = list;
         _catsLoading = false;
+        _syncCategoryIdWithCatalog();
       });
     } catch (_) {
       if (mounted) setState(() => _catsLoading = false);
@@ -204,6 +216,50 @@ class _ManufacturerEquipmentWizardScreenState extends State<ManufacturerEquipmen
   String? _trimOrNull(String s) {
     final t = s.trim();
     return t.isEmpty ? null : t;
+  }
+
+  String? _validateStep0(AppLocalizations l) {
+    if (_name.text.trim().isEmpty || _model.text.trim().isEmpty) {
+      return l.mfgSnackNameModelRequired;
+    }
+    if (_categoryRequired && (_categoryId == null || _categoryId!.isEmpty)) {
+      return l.mfgEquipSnackCategoryRequired;
+    }
+    return null;
+  }
+
+  bool _hasInvalidIntegerField() {
+    for (final c in [_defaultHours, _defaultPass, _defaultCertMo, _defaultReassess, _quantity]) {
+      final t = c.text.trim();
+      if (t.isNotEmpty && int.tryParse(t) == null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String? _validateNumericRanges(AppLocalizations l) {
+    final h = _parseOptionalInt(_defaultHours);
+    if (h != null && (h < 1 || h > 999)) {
+      return l.mfgEquipErrHoursRange;
+    }
+    final pass = _parseOptionalInt(_defaultPass);
+    if (pass != null && (pass < 40 || pass > 100)) {
+      return l.mfgEquipErrPassRange;
+    }
+    final cert = _parseOptionalInt(_defaultCertMo);
+    if (cert != null && (cert < 1 || cert > 240)) {
+      return l.mfgEquipErrCertMonthsRange;
+    }
+    final reass = _parseOptionalInt(_defaultReassess);
+    if (reass != null && (reass < 1 || reass > 365)) {
+      return l.mfgEquipErrReassessRange;
+    }
+    final q = _parseOptionalInt(_quantity);
+    if (q != null && q < 1) {
+      return l.mfgEquipErrQuantityRange;
+    }
+    return null;
   }
 
   Map<String, dynamic> _collectUpdateBody() {
@@ -261,13 +317,18 @@ class _ManufacturerEquipmentWizardScreenState extends State<ManufacturerEquipmen
     final t = appAuth.token;
     if (t == null) return;
 
-    if (_name.text.trim().isEmpty || _model.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.mfgSnackNameModelRequired)));
+    final step0Err = _validateStep0(l);
+    if (step0Err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(step0Err)));
       return;
     }
-
-    if (_categoryRequired && (_categoryId == null || _categoryId!.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.mfgEquipSnackCategoryRequired)));
+    if (_hasInvalidIntegerField()) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.mfgEquipErrInvalidInteger)));
+      return;
+    }
+    final rangeErr = _validateNumericRanges(l);
+    if (rangeErr != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(rangeErr)));
       return;
     }
 
@@ -363,9 +424,50 @@ class _ManufacturerEquipmentWizardScreenState extends State<ManufacturerEquipmen
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
-          Text(
-            _step == 0 ? l.mfgEquipWizardStep1 : l.mfgEquipWizardStep2,
-            style: Theme.of(context).textTheme.titleMedium,
+          Row(
+            children: [
+              Expanded(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: _step == 0 ? const Color(0xFFCCFBF1) : const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                    child: Text(
+                      l.mfgEquipWizardStep1,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: _step == 0 ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 13,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: _step == 1 ? const Color(0xFFCCFBF1) : const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                    child: Text(
+                      l.mfgEquipWizardStep2,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: _step == 1 ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 13,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           if (_step == 0) ...[
@@ -408,27 +510,30 @@ class _ManufacturerEquipmentWizardScreenState extends State<ManufacturerEquipmen
                 child: Center(child: CircularProgressIndicator()),
               )
             else
-              DropdownButtonFormField<String?>(
-                value: _categoryId,
-                decoration: InputDecoration(
-                  hintText: l.trainReqDashNone,
-                ),
-                items: [
-                  DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text(l.trainReqDashNone),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  DropdownButton<String?>(
+                    key: ValueKey<String>('mfg_eq_cat_${_cats.length}_${_categoryId ?? 'null'}'),
+                    isExpanded: true,
+                    value: _categoryId,
+                    hint: Text(l.trainReqDashNone),
+                    items: [
+                      DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text(l.trainReqDashNone),
+                      ),
+                      ..._cats.map((c) {
+                        final cid = c['id']?.toString() ?? '';
+                        return DropdownMenuItem<String?>(
+                          value: cid,
+                          child: Text(c['label']?.toString() ?? cid),
+                        );
+                      }),
+                    ],
+                    onChanged: _busy ? null : (v) => setState(() => _categoryId = v),
                   ),
-                  ..._cats.map((c) {
-                    final cid = c['id']?.toString() ?? '';
-                    return DropdownMenuItem<String?>(
-                      value: cid,
-                      child: Text(c['label']?.toString() ?? cid),
-                    );
-                  }),
                 ],
-                onChanged: _busy
-                    ? null
-                    : (v) => setState(() => _categoryId = v),
               ),
             const SizedBox(height: 16),
             Text(l.mfgEquipSpecsTitle, style: Theme.of(context).textTheme.titleSmall),
@@ -481,35 +586,55 @@ class _ManufacturerEquipmentWizardScreenState extends State<ManufacturerEquipmen
             ),
           ] else ...[
             Text(l.mfgEquipDefaultsTitle, style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 6),
+            Text(
+              l.mfgEquipDefaultsRangeHint,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF64748B)),
+            ),
             const SizedBox(height: 8),
             TextField(
               controller: _defaultHours,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: l.mfgEquipDefaultTrainingHours),
+              decoration: InputDecoration(
+                labelText: l.mfgEquipDefaultTrainingHours,
+                helperText: l.mfgEquipHelperHours,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _defaultPass,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: l.mfgEquipDefaultPassingScore),
+              decoration: InputDecoration(
+                labelText: l.mfgEquipDefaultPassingScore,
+                helperText: l.mfgEquipHelperPass,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _defaultCertMo,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: l.mfgEquipDefaultCertMonths),
+              decoration: InputDecoration(
+                labelText: l.mfgEquipDefaultCertMonths,
+                helperText: l.mfgEquipHelperCertMonths,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _defaultReassess,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: l.mfgEquipDefaultReassessmentDays),
+              decoration: InputDecoration(
+                labelText: l.mfgEquipDefaultReassessmentDays,
+                helperText: l.mfgEquipHelperReassess,
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _quantity,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: l.mfgEquipFieldQuantity),
+              decoration: InputDecoration(
+                labelText: l.mfgEquipFieldQuantity,
+                helperText: l.mfgEquipHelperQuantity,
+              ),
             ),
             const SizedBox(height: 12),
             Align(
@@ -517,7 +642,8 @@ class _ManufacturerEquipmentWizardScreenState extends State<ManufacturerEquipmen
               child: Text(l.mfgEquipFieldStatus, style: Theme.of(context).textTheme.labelLarge),
             ),
             const SizedBox(height: 4),
-            DropdownButtonFormField<String>(
+            DropdownButton<String>(
+              isExpanded: true,
               value: _status,
               items: [
                 DropdownMenuItem(value: 'active', child: Text(l.mfgEquipStatusActive)),
@@ -545,7 +671,16 @@ class _ManufacturerEquipmentWizardScreenState extends State<ManufacturerEquipmen
               const Spacer(),
               if (_step == 0)
                 FilledButton(
-                  onPressed: _busy ? null : () => setState(() => _step = 1),
+                  onPressed: _busy
+                      ? null
+                      : () {
+                          final err = _validateStep0(l);
+                          if (err != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                            return;
+                          }
+                          setState(() => _step = 1);
+                        },
                   child: Text(l.mfgEquipWizardNext),
                 )
               else

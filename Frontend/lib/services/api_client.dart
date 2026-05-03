@@ -69,6 +69,18 @@ class ApiClient {
     return Uri.parse('$base$p');
   }
 
+  Uri _uriWithQuery(String path, Map<String, String>? query) {
+    final u = _uri(path);
+    if (query == null || query.isEmpty) return u;
+    final merged = Map<String, String>.from(u.queryParameters);
+    for (final e in query.entries) {
+      if (e.value.isNotEmpty) {
+        merged[e.key] = e.value;
+      }
+    }
+    return u.replace(queryParameters: merged);
+  }
+
   Future<Map<String, dynamic>> postJson(
     String path,
     Map<String, dynamic> body, {
@@ -103,12 +115,12 @@ class ApiClient {
     return map;
   }
 
-  Future<Map<String, dynamic>> getJson(String path, {String? token}) async {
+  Future<Map<String, dynamic>> getJson(String path, {String? token, Map<String, String>? query}) async {
     final headers = <String, String>{
       'Accept': 'application/json',
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
-    final res = await _client.get(_uri(path), headers: headers);
+    final res = await _client.get(_uriWithQuery(path, query), headers: headers);
     final raw = res.body.trim();
     final decoded = raw.isEmpty ? <String, dynamic>{} : jsonDecode(raw);
     final map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
@@ -220,12 +232,12 @@ class ApiClient {
     return map;
   }
 
-  Future<Uint8List> getBytes(String path, {String? token}) async {
+  Future<Uint8List> getBytes(String path, {String? token, Map<String, String>? query}) async {
     final headers = <String, String>{
       'Accept': '*/*',
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
-    final res = await _client.get(_uri(path), headers: headers);
+    final res = await _client.get(_uriWithQuery(path, query), headers: headers);
     if (res.statusCode >= 400) {
       final raw = res.body.trim();
       Map<String, dynamic> map = {};

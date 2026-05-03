@@ -167,6 +167,28 @@ class AuthSession extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Quando o servidor não tem `role` mapeável: escolha única alinhada a `PATCH /api/me/role`.
+  Future<void> claimInitialRole(
+    String role, {
+    String? manufacturerName,
+    String? manufacturerCnpj,
+  }) async {
+    if (_token == null) return;
+    final body = <String, dynamic>{'role': role};
+    if (role == 'manufacturer_admin') {
+      if (manufacturerName != null && manufacturerName.trim().isNotEmpty) {
+        body['manufacturer_name'] = manufacturerName.trim();
+      }
+      if (manufacturerCnpj != null && manufacturerCnpj.trim().isNotEmpty) {
+        body['manufacturer_cnpj'] = manufacturerCnpj.trim();
+      }
+    }
+    final data = await _api.patchJson('/api/me/role', body, token: _token);
+    _user = Map<String, dynamic>.from(data);
+    await _persist();
+    notifyListeners();
+  }
+
   /// Gestor: vincula o perfil a uma instituição (API devolve o utilizador actualizado).
   Future<void> linkInstitution(int institutionId) async {
     if (_token == null) return;

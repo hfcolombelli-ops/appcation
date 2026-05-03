@@ -69,7 +69,18 @@ class ManufacturerEquipmentController extends Controller
         }
 
         if ($request->filled('status')) {
-            $q->where('status', (string) $request->query('status'));
+            $st = (string) $request->query('status');
+            if (! in_array($st, ['active', 'inactive'], true)) {
+                return response()->json(['message' => 'Estado inválido.'], 422);
+            }
+            $q->where('status', $st);
+        }
+
+        if ($request->has('search')) {
+            $rawSearch = trim((string) $request->query('search', ''));
+            if (strlen($rawSearch) > 120) {
+                return response()->json(['message' => 'Pesquisa demasiado longa.'], 422);
+            }
         }
 
         if ($request->filled('search')) {
@@ -81,9 +92,22 @@ class ManufacturerEquipmentController extends Controller
             });
         }
 
+        $sort = (string) ($request->query('sort') ?? 'name_asc');
+        if ($sort === '') {
+            $sort = 'name_asc';
+        }
+        $allowedSorts = ['name_asc', 'updated_desc', 'templates_desc'];
+        if (! in_array($sort, $allowedSorts, true)) {
+            return response()->json(['message' => 'Ordenação inválida.'], 422);
+        }
+
+        match ($sort) {
+            'updated_desc' => $q->orderByDesc('updated_at')->orderByDesc('id'),
+            'templates_desc' => $q->orderByDesc('official_templates_count')->orderBy('name')->orderBy('id'),
+            default => $q->orderBy('name')->orderBy('id'),
+        };
+
         $rows = $q
-            ->orderBy('name')
-            ->orderBy('id')
             ->limit(200)
             ->get()
             ->map(function (Equipment $row) {

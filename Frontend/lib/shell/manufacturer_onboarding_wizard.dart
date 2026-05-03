@@ -22,11 +22,14 @@ class ManufacturerOnboardingWizard extends StatefulWidget {
     required this.manufacturer,
     required this.onCompleted,
     required this.onLogout,
+    required this.onShellRefresh,
   });
 
   final Map<String, dynamic> manufacturer;
   final VoidCallback onCompleted;
   final VoidCallback onLogout;
+  /// Re-lê perfil no shell (estado de validação, dados remotos).
+  final Future<void> Function() onShellRefresh;
 
   @override
   State<ManufacturerOnboardingWizard> createState() => _ManufacturerOnboardingWizardState();
@@ -112,8 +115,8 @@ class _ManufacturerOnboardingWizardState extends State<ManufacturerOnboardingWiz
     final t = appAuth.token;
     if (t == null) return;
     try {
-      final list = await _api.listManufacturerDocuments(t);
-      if (mounted) setState(() => _documents = list);
+      final page = await _api.listManufacturerDocuments(t);
+      if (mounted) setState(() => _documents = page.items);
     } catch (_) {
       /* ignorado — utilizador pode tentar novamente ao mudar de passo */
     }
@@ -349,6 +352,16 @@ class _ManufacturerOnboardingWizardState extends State<ManufacturerOnboardingWiz
     if (_step > 0) setState(() => _step -= 1);
   }
 
+  Future<void> _onPullRefresh() async {
+    if (_busy) return;
+    await widget.onShellRefresh();
+    if (!mounted) return;
+    setState(() {
+      _hydrateFromManufacturer();
+    });
+    await _loadDocuments();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -364,12 +377,15 @@ class _ManufacturerOnboardingWizardState extends State<ManufacturerOnboardingWiz
       ),
       body: Stack(
         children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
-                child: Column(
+          RefreshIndicator(
+            onRefresh: _onPullRefresh,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
@@ -590,6 +606,7 @@ class _ManufacturerOnboardingWizardState extends State<ManufacturerOnboardingWiz
                   ],
                 ),
               ),
+            ),
             ),
           ),
           Positioned(

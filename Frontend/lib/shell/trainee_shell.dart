@@ -828,6 +828,7 @@ class _TraineeShellState extends State<TraineeShell> {
                         onChanged: (v) => setState(() => _lgpdCheckbox = v ?? false),
                         loading: _loading,
                         onSubmit: _submitLgpdConsent,
+                        onRefresh: _bootstrap,
                       )
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -875,7 +876,13 @@ class _TraineeShellState extends State<TraineeShell> {
   Widget _stepBody() {
     switch (_step) {
       case 1:
-        return _JoinPanel(joinHash: _joinHash, loading: _loading, apiOnline: _apiOnline, onJoin: _doJoin);
+        return _JoinPanel(
+          joinHash: _joinHash,
+          loading: _loading,
+          apiOnline: _apiOnline,
+          onJoin: _doJoin,
+          onRefresh: _bootstrap,
+        );
       case 2:
         return _WaitingPanel(
           enrollment: _enrollment,
@@ -925,6 +932,7 @@ class _TraineeShellState extends State<TraineeShell> {
           onInstitution: (v) => setState(() => _institutionId = v),
           onSubmit: _saveProfile,
           loading: _loading,
+          onShellRefresh: _bootstrap,
         );
     }
   }
@@ -1081,19 +1089,24 @@ class _LgpdConsentPanel extends StatelessWidget {
     required this.onChanged,
     required this.loading,
     required this.onSubmit,
+    required this.onRefresh,
   });
 
   final bool checked;
   final ValueChanged<bool?> onChanged;
   final bool loading;
   final VoidCallback onSubmit;
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        children: [
         Text(
           l.trnPrivacyTitle,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 26),
@@ -1146,6 +1159,7 @@ class _LgpdConsentPanel extends StatelessWidget {
               : Text(l.trnBtnContinue),
         ),
       ],
+      ),
     );
   }
 }
@@ -1161,6 +1175,7 @@ class _ProfilePanel extends StatefulWidget {
     required this.onInstitution,
     required this.onSubmit,
     required this.loading,
+    required this.onShellRefresh,
   });
 
   final ProductionApi api;
@@ -1172,6 +1187,8 @@ class _ProfilePanel extends StatefulWidget {
   final ValueChanged<int?> onInstitution;
   final VoidCallback onSubmit;
   final bool loading;
+  /// Recarrega passo do fluxo (perfil, inscrição, instituições).
+  final Future<void> Function() onShellRefresh;
 
   @override
   State<_ProfilePanel> createState() => _ProfilePanelState();
@@ -1358,12 +1375,20 @@ class _ProfilePanelState extends State<_ProfilePanel> {
     }
   }
 
+  Future<void> _onPullRefresh() async {
+    await widget.onShellRefresh();
+    await _reloadExtras();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
+    return RefreshIndicator(
+      onRefresh: _onPullRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        children: [
         Text(l.trnPreregTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 26)),
         const SizedBox(height: 8),
         Text(l.trnPreregSubtitle, style: const TextStyle(color: Color(0xFF45464D))),
@@ -1621,6 +1646,7 @@ class _ProfilePanelState extends State<_ProfilePanel> {
           ),
         ],
       ],
+      ),
     );
   }
 }
@@ -1631,12 +1657,14 @@ class _JoinPanel extends StatefulWidget {
     required this.loading,
     required this.apiOnline,
     required this.onJoin,
+    required this.onRefresh,
   });
 
   final TextEditingController joinHash;
   final bool loading;
   final bool apiOnline;
   final VoidCallback onJoin;
+  final Future<void> Function() onRefresh;
 
   @override
   State<_JoinPanel> createState() => _JoinPanelState();
@@ -1681,9 +1709,12 @@ class _JoinPanelState extends State<_JoinPanel> {
     final hasSome = len > 0 && len < 8;
     final canJoin = widget.apiOnline && !widget.loading && normalized.isNotEmpty;
 
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        children: [
         Text(l.trnJoinTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 26)),
         const SizedBox(height: 8),
         Text(l.trnJoinIntro, style: const TextStyle(color: Color(0xFF45464D), height: 1.4)),
@@ -1758,6 +1789,7 @@ class _JoinPanelState extends State<_JoinPanel> {
           ),
         ),
       ],
+      ),
     );
   }
 }

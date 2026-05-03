@@ -65,6 +65,8 @@ Route::middleware(['auth:sanctum', 'throttle:api-user'])->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::patch('/me/notification-preferences', [AuthController::class, 'updateNotificationPreferences'])
         ->middleware('throttle:sensitive');
+    Route::patch('/me/role', [AuthController::class, 'updateMyRole'])
+        ->middleware('throttle:sensitive');
     Route::patch('/me/institution', [AuthController::class, 'updateMyInstitution']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 

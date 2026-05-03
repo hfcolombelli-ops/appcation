@@ -36,18 +36,26 @@
   <h2>Por setor</h2>
   <table>
     <thead>
-      <tr><th>Setor</th><th>Média notas</th><th>Conclusões</th></tr>
+      <tr>
+        <th>Setor</th>
+        <th>Inscrições</th>
+        <th>Concluídas</th>
+        <th>Com nota</th>
+        <th>Média notas</th>
+      </tr>
     </thead>
     <tbody>
       @forelse(($data['aggregated_by_sector'] ?? []) as $row)
         @php $r = (array) $row; @endphp
         <tr>
           <td>{{ $r['sector'] ?? '—' }}</td>
-          <td>{{ $r['avg_score'] ?? '—' }}</td>
+          <td>{{ $r['total_enrollments'] ?? '—' }}</td>
+          <td>{{ $r['completed_count'] ?? '—' }}</td>
           <td>{{ $r['completions'] ?? '—' }}</td>
+          <td>{{ $r['avg_score'] ?? '—' }}</td>
         </tr>
       @empty
-        <tr><td colspan="3">Sem dados por setor.</td></tr>
+        <tr><td colspan="5">Sem dados por setor.</td></tr>
       @endforelse
     </tbody>
   </table>
