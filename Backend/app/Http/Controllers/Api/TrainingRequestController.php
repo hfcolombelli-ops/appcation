@@ -8,6 +8,7 @@ use App\Models\SecurityAuditLog;
 use App\Models\TrainingRequest;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class TrainingRequestController extends Controller
 {
@@ -127,6 +128,33 @@ class TrainingRequestController extends Controller
             ->whereKey($id)
             ->where('institution_id', $user->institution_id)
             ->firstOrFail();
+
+        $newStatus = $data['status'] ?? $row->status;
+        $mergedInstr = array_key_exists('assigned_instructor_id', $data)
+            ? $data['assigned_instructor_id']
+            : $row->assigned_instructor_id;
+        $mergedTraining = array_key_exists('fulfilled_training_id', $data)
+            ? $data['fulfilled_training_id']
+            : $row->fulfilled_training_id;
+
+        $instrId = $mergedInstr !== null && $mergedInstr !== ''
+            ? (int) $mergedInstr
+            : null;
+        $trainingId = $mergedTraining !== null && $mergedTraining !== ''
+            ? (int) $mergedTraining
+            : null;
+
+        if ($newStatus === 'scheduled' && ($instrId === null || $instrId < 1)) {
+            throw ValidationException::withMessages([
+                'assigned_instructor_id' => ['Estado «agendado» requer instrutor designado.'],
+            ]);
+        }
+
+        if ($newStatus === 'fulfilled' && ($trainingId === null || $trainingId < 1)) {
+            throw ValidationException::withMessages([
+                'fulfilled_training_id' => ['Estado «concluído» requer treino realizado associado.'],
+            ]);
+        }
 
         $row->update($data);
 

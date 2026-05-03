@@ -1739,6 +1739,12 @@ abstract class AppLocalizations {
   /// **'Agendado'**
   String get trainReqKanbanColumnScheduled;
 
+  /// No description provided for @trainReqKanbanColumnScheduledHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Com instrutor designado'**
+  String get trainReqKanbanColumnScheduledHint;
+
   /// No description provided for @trainReqKanbanColumnClosed.
   ///
   /// In pt, this message translates to:
@@ -1852,6 +1858,72 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Guardar alterações'**
   String get trainReqBtnSaveChanges;
+
+  /// No description provided for @trainReqBatchCheckboxLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Seleccionar para agendar em lote'**
+  String get trainReqBatchCheckboxLabel;
+
+  /// No description provided for @trainReqBatchToolbarSelected.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count} seleccionados'**
+  String trainReqBatchToolbarSelected(int count);
+
+  /// No description provided for @trainReqBatchToolbarClear.
+  ///
+  /// In pt, this message translates to:
+  /// **'Limpar selecção'**
+  String get trainReqBatchToolbarClear;
+
+  /// No description provided for @trainReqBatchToolbarSchedule.
+  ///
+  /// In pt, this message translates to:
+  /// **'Agendar em lote'**
+  String get trainReqBatchToolbarSchedule;
+
+  /// No description provided for @trainReqBatchDialogTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Agendar pedidos em lote'**
+  String get trainReqBatchDialogTitle;
+
+  /// No description provided for @trainReqBatchDialogBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Defina o instrutor para {count} pedido(s) na fila (pendente ou aprovado).'**
+  String trainReqBatchDialogBody(int count);
+
+  /// No description provided for @trainReqBatchSelectInstructorPlaceholder.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolha o instrutor…'**
+  String get trainReqBatchSelectInstructorPlaceholder;
+
+  /// No description provided for @trainReqBatchConfirm.
+  ///
+  /// In pt, this message translates to:
+  /// **'Agendar'**
+  String get trainReqBatchConfirm;
+
+  /// No description provided for @trainReqBatchSnackDone.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count} pedido(s) agendado(s).'**
+  String trainReqBatchSnackDone(int count);
+
+  /// No description provided for @trainReqBatchSnackNoneEligible.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum pedido elegível na selecção (use pendente ou aprovado na fila).'**
+  String get trainReqBatchSnackNoneEligible;
+
+  /// No description provided for @trainReqBatchNoInstructors.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não há instrutores credenciados — aprove credenciais primeiro.'**
+  String get trainReqBatchNoInstructors;
 
   /// No description provided for @parkSnackPickCatalog.
   ///

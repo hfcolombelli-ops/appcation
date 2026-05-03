@@ -2788,6 +2788,8 @@ class _TrainingRequestsKanban extends StatelessWidget {
     required this.trainings,
     required this.onSubmit,
     required this.wide,
+    required this.batchSelectedIds,
+    required this.onBatchToggle,
   });
 
   final List<Map<String, dynamic>> colQueue;
@@ -2797,11 +2799,14 @@ class _TrainingRequestsKanban extends StatelessWidget {
   final List<Map<String, dynamic>> trainings;
   final Future<void> Function(int id, Map<String, dynamic> body) onSubmit;
   final bool wide;
+  final Set<int> batchSelectedIds;
+  final ValueChanged<int>? onBatchToggle;
 
   Widget _column({
     required String title,
     required String subtitle,
     required List<Map<String, dynamic>> rows,
+    bool isBatchColumn = false,
   }) {
     final header = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2848,15 +2853,19 @@ class _TrainingRequestsKanban extends StatelessWidget {
         children: [
           header,
           const SizedBox(height: 14),
-          ...rows.map(
-            (row) => _InstitutionPedidoCard(
+          ...rows.map((row) {
+            final rid = _parseInt(row['id']);
+            return _InstitutionPedidoCard(
               key: ValueKey(row['id']),
               row: row,
               instructors: instructors,
               trainings: trainings,
               onSubmit: onSubmit,
-            ),
-          ),
+              batchSelectable: isBatchColumn && onBatchToggle != null,
+              batchSelected: rid != null && batchSelectedIds.contains(rid),
+              onBatchToggle: (isBatchColumn && onBatchToggle != null && rid != null) ? () => onBatchToggle!(rid) : null,
+            );
+          }),
         ],
       ),
     );
@@ -2869,10 +2878,11 @@ class _TrainingRequestsKanban extends StatelessWidget {
       title: l.trainReqKanbanColumnQueue,
       subtitle: l.trainReqKanbanColumnQueueHint,
       rows: colQueue,
+      isBatchColumn: true,
     );
     final c2 = _column(
       title: l.trainReqKanbanColumnScheduled,
-      subtitle: '',
+      subtitle: l.trainReqKanbanColumnScheduledHint,
       rows: colScheduled,
     );
     final c3 = _column(
@@ -2919,6 +2929,7 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
   List<Map<String, dynamic>> _requests = [];
   List<Map<String, dynamic>> _instructors = [];
   List<Map<String, dynamic>> _trainings = [];
+  final Set<int> _batchIds = {};
   bool _loading = true;
   String? _error;
 
@@ -2946,6 +2957,7 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
           _requests = r;
           _instructors = i;
           _trainings = tr;
+          _batchIds.removeWhere((id) => !r.any((row) => _parseInt(row['id']) == id));
         });
       }
     } on ApiException catch (e) {
@@ -2963,7 +2975,7 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
     }
   }
 
-  Future<void> _update(int requestId, Map<String, dynamic> body) async {
+  Future<void> _update(int requestId, Map<String, dynamic> body, {bool quiet = false}) async {
     final t = appAuth.token;
     if (t == null) {
       return;
@@ -2971,7 +2983,7 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
     try {
       await widget.api.updateInstitutionTrainingRequest(t, requestId, body);
       await _reload();
-      if (mounted) {
+      if (mounted && !quiet) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).trainReqSnackUpdated)),
         );
@@ -2981,6 +2993,116 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
     } catch (_) {
       if (mounted) context.showErrApiConnectionSnack();
     }
+  }
+
+  Future<void> _showBatchScheduleDialog() async {
+    final l = AppLocalizations.of(context);
+    final eligibleIds = <int>[];
+    for (final r in _requests) {
+      final id = _parseInt(r['id']);
+      final st = r['status']?.toString() ?? '';
+      if (id != null && _batchIds.contains(id) && (st == 'pending' || st == 'approved')) {
+        eligibleIds.add(id);
+      }
+    }
+    if (eligibleIds.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.trainReqBatchSnackNoneEligible)));
+      }
+      return;
+    }
+    if (_instructors.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.trainReqBatchNoInstructors)));
+      }
+      return;
+    }
+
+    int? pickedInstructor = _instructors.length == 1 ? _parseInt(_instructors.first['id']) : null;
+    int? pickedTraining;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setLocal) {
+            return AlertDialog(
+              title: Text(l.trainReqBatchDialogTitle),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(l.trainReqBatchDialogBody(eligibleIds.length)),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<int?>(
+                      key: ValueKey<String>('batch_inst_${pickedInstructor ?? 'n'}'),
+                      decoration: InputDecoration(labelText: l.trainReqFieldAssignedInstructor),
+                      initialValue: pickedInstructor,
+                      items: [
+                        DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text(l.trainReqBatchSelectInstructorPlaceholder),
+                        ),
+                        for (final u in _instructors)
+                          DropdownMenuItem<int?>(
+                            value: _parseInt(u['id']),
+                            child: Text(u['name']?.toString() ?? ''),
+                          ),
+                      ],
+                      onChanged: (v) => setLocal(() => pickedInstructor = v),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int?>(
+                      key: ValueKey<String>('batch_tr_${pickedTraining ?? 'n'}'),
+                      decoration: InputDecoration(labelText: l.trainReqFieldFulfilledTraining),
+                      initialValue: pickedTraining,
+                      items: [
+                        DropdownMenuItem<int?>(value: null, child: Text(l.trainReqDashNone)),
+                        for (final t in _trainings)
+                          DropdownMenuItem<int?>(
+                            value: _parseInt(t['id']),
+                            child: Text(
+                              '${t['title'] ?? ''} (#${t['id']})',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                      onChanged: (v) => setLocal(() => pickedTraining = v),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.mfgBtnCancel)),
+                FilledButton(
+                  onPressed: pickedInstructor == null ? null : () => Navigator.pop(ctx, true),
+                  child: Text(l.trainReqBatchConfirm),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    for (final id in eligibleIds) {
+      await _update(
+        id,
+        {
+          'status': 'scheduled',
+          'assigned_instructor_id': pickedInstructor,
+          if (pickedTraining != null) 'fulfilled_training_id': pickedTraining,
+        },
+        quiet: true,
+      );
+    }
+
+    if (!mounted) return;
+    setState(() => _batchIds.clear());
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.trainReqBatchSnackDone(eligibleIds.length))));
   }
 
   @override
@@ -3020,13 +3142,6 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
         ),
       );
     }
-    if (_requests.isEmpty) {
-      return instructorShellScaffold(
-        child: Center(
-          child: Text(l.trainReqEmpty, style: const TextStyle(color: Color(0xFF45464D))),
-        ),
-      );
-    }
     List<Map<String, dynamic>> byStatuses(Set<String> statuses) {
       return _requests.where((r) => statuses.contains(r['status']?.toString() ?? 'pending')).toList();
     }
@@ -3058,6 +3173,42 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
                   style: const TextStyle(color: Color(0xFF45464D)),
                 ),
                 const SizedBox(height: 18),
+                if (_requests.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      l.trainReqEmpty,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Color(0xFF64748B)),
+                    ),
+                  ),
+                if (_batchIds.isNotEmpty) ...[
+                  instructorShellCard(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              l.trainReqBatchToolbarSelected(_batchIds.length),
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => setState(() => _batchIds.clear()),
+                            child: Text(l.trainReqBatchToolbarClear),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton(
+                            onPressed: _showBatchScheduleDialog,
+                            child: Text(l.trainReqBatchToolbarSchedule),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
                 _TrainingRequestsKanban(
                   colQueue: colQueue,
                   colScheduled: colScheduled,
@@ -3066,6 +3217,16 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
                   trainings: _trainings,
                   onSubmit: _update,
                   wide: wide,
+                  batchSelectedIds: _batchIds,
+                  onBatchToggle: (id) {
+                    setState(() {
+                      if (_batchIds.contains(id)) {
+                        _batchIds.remove(id);
+                      } else {
+                        _batchIds.add(id);
+                      }
+                    });
+                  },
                 ),
               ],
             ),
@@ -3083,12 +3244,18 @@ class _InstitutionPedidoCard extends StatefulWidget {
     required this.instructors,
     required this.trainings,
     required this.onSubmit,
+    this.batchSelectable = false,
+    this.batchSelected = false,
+    this.onBatchToggle,
   });
 
   final Map<String, dynamic> row;
   final List<Map<String, dynamic>> instructors;
   final List<Map<String, dynamic>> trainings;
   final Future<void> Function(int id, Map<String, dynamic> body) onSubmit;
+  final bool batchSelectable;
+  final bool batchSelected;
+  final VoidCallback? onBatchToggle;
 
   @override
   State<_InstitutionPedidoCard> createState() => _InstitutionPedidoCardState();
@@ -3146,6 +3313,27 @@ class _InstitutionPedidoCardState extends State<_InstitutionPedidoCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (widget.batchSelectable && widget.onBatchToggle != null) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Checkbox(
+                    value: widget.batchSelected,
+                    onChanged: (_) => widget.onBatchToggle!(),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(
+                        l.trainReqBatchCheckboxLabel,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.25),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+            ],
             Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
             Text(email, style: const TextStyle(fontSize: 13, color: Color(0xFF45464D))),
             if (widget.row['reason_label'] != null && widget.row['reason_label'].toString().isNotEmpty) ...[
@@ -3200,6 +3388,7 @@ class _InstitutionPedidoCardState extends State<_InstitutionPedidoCard> {
               ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
+              key: ValueKey<String>('tr_req_${widget.row['id']}_st_$_status'),
               decoration: InputDecoration(labelText: l.trainReqFieldStatus),
               initialValue: _status,
               items: [
@@ -3217,6 +3406,7 @@ class _InstitutionPedidoCardState extends State<_InstitutionPedidoCard> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<int?>(
+              key: ValueKey<String>('tr_req_${widget.row['id']}_ins_${_instructorId ?? 'n'}'),
               decoration: InputDecoration(labelText: l.trainReqFieldAssignedInstructor),
               initialValue: _instructorId,
               items: [
@@ -3231,6 +3421,7 @@ class _InstitutionPedidoCardState extends State<_InstitutionPedidoCard> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<int?>(
+              key: ValueKey<String>('tr_req_${widget.row['id']}_trn_${_trainingId ?? 'n'}'),
               decoration: InputDecoration(labelText: l.trainReqFieldFulfilledTraining),
               initialValue: _trainingId,
               items: [

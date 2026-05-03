@@ -916,6 +916,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trainReqKanbanColumnScheduled => 'Scheduled';
 
   @override
+  String get trainReqKanbanColumnScheduledHint => 'With an assigned instructor';
+
+  @override
   String get trainReqKanbanColumnClosed => 'Closed';
 
   @override
@@ -983,6 +986,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trainReqBtnSaveChanges => 'Save changes';
+
+  @override
+  String get trainReqBatchCheckboxLabel => 'Select for batch scheduling';
+
+  @override
+  String trainReqBatchToolbarSelected(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get trainReqBatchToolbarClear => 'Clear selection';
+
+  @override
+  String get trainReqBatchToolbarSchedule => 'Schedule in batch';
+
+  @override
+  String get trainReqBatchDialogTitle => 'Batch schedule requests';
+
+  @override
+  String trainReqBatchDialogBody(int count) {
+    return 'Pick the instructor for $count request(s) in the queue (pending or approved).';
+  }
+
+  @override
+  String get trainReqBatchSelectInstructorPlaceholder =>
+      'Choose an instructor…';
+
+  @override
+  String get trainReqBatchConfirm => 'Schedule';
+
+  @override
+  String trainReqBatchSnackDone(int count) {
+    return 'Scheduled $count request(s).';
+  }
+
+  @override
+  String get trainReqBatchSnackNoneEligible =>
+      'No eligible requests in the selection (use pending or approved in the queue).';
+
+  @override
+  String get trainReqBatchNoInstructors =>
+      'No credentialed instructors yet — approve credentials first.';
 
   @override
   String get parkSnackPickCatalog => 'Choose a catalog model.';

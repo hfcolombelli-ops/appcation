@@ -4,8 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Equipment;
 use App\Models\Institution;
+use App\Models\InstitutionInstructor;
 use App\Models\Manufacturer;
 use App\Models\TraineeProfile;
+use App\Models\Training;
+use App\Models\TrainingRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -228,5 +231,156 @@ class FluxxoTrainingRequestFieldsTest extends TestCase
         $this->withToken($token)
             ->getJson('/api/me/institution-park-equipment')
             ->assertStatus(422);
+    }
+
+    public function test_institution_cannot_set_scheduled_without_instructor(): void
+    {
+        $inst = Institution::query()->create([
+            'name' => 'H Sched',
+            'cnpj' => '12.345.678/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $admin = User::factory()->create([
+            'role' => 'institution_admin',
+            'institution_id' => $inst->id,
+        ]);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+
+        $req = TrainingRequest::query()->create([
+            'institution_id' => $inst->id,
+            'requested_by' => $trainee->id,
+            'reason_code' => 'recertification',
+            'priority' => 'normal',
+            'status' => 'approved',
+        ]);
+
+        $token = $admin->createToken('a')->plainTextToken;
+
+        $this->withToken($token)->patchJson("/api/institution/training-requests/{$req->id}", [
+            'status' => 'scheduled',
+        ])->assertUnprocessable();
+    }
+
+    public function test_institution_can_set_scheduled_with_instructor(): void
+    {
+        $inst = Institution::query()->create([
+            'name' => 'H Sched OK',
+            'cnpj' => '12.345.678/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $admin = User::factory()->create([
+            'role' => 'institution_admin',
+            'institution_id' => $inst->id,
+        ]);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+        $instructor = User::factory()->create(['role' => 'instructor']);
+
+        InstitutionInstructor::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'status' => 'approved',
+        ]);
+
+        $req = TrainingRequest::query()->create([
+            'institution_id' => $inst->id,
+            'requested_by' => $trainee->id,
+            'reason_code' => 'recertification',
+            'priority' => 'normal',
+            'status' => 'approved',
+        ]);
+
+        $token = $admin->createToken('a')->plainTextToken;
+
+        $this->withToken($token)->patchJson("/api/institution/training-requests/{$req->id}", [
+            'status' => 'scheduled',
+            'assigned_instructor_id' => $instructor->id,
+        ])->assertOk()->assertJsonPath('status', 'scheduled');
+    }
+
+    public function test_institution_cannot_set_fulfilled_without_training(): void
+    {
+        $inst = Institution::query()->create([
+            'name' => 'H Ful',
+            'cnpj' => '12.345.678/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $admin = User::factory()->create([
+            'role' => 'institution_admin',
+            'institution_id' => $inst->id,
+        ]);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+        $instructor = User::factory()->create(['role' => 'instructor']);
+
+        InstitutionInstructor::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'status' => 'approved',
+        ]);
+
+        $req = TrainingRequest::query()->create([
+            'institution_id' => $inst->id,
+            'requested_by' => $trainee->id,
+            'reason_code' => 'recertification',
+            'priority' => 'normal',
+            'status' => 'scheduled',
+            'assigned_instructor_id' => $instructor->id,
+        ]);
+
+        $token = $admin->createToken('a')->plainTextToken;
+
+        $this->withToken($token)->patchJson("/api/institution/training-requests/{$req->id}", [
+            'status' => 'fulfilled',
+        ])->assertUnprocessable();
+    }
+
+    public function test_institution_can_set_fulfilled_with_training(): void
+    {
+        $inst = Institution::query()->create([
+            'name' => 'H Ful OK',
+            'cnpj' => '12.345.678/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $admin = User::factory()->create([
+            'role' => 'institution_admin',
+            'institution_id' => $inst->id,
+        ]);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+        $instructor = User::factory()->create(['role' => 'instructor']);
+
+        InstitutionInstructor::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'status' => 'approved',
+        ]);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino vinculado',
+            'type' => 'official',
+            'status' => 'finished',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+        ]);
+
+        $req = TrainingRequest::query()->create([
+            'institution_id' => $inst->id,
+            'requested_by' => $trainee->id,
+            'reason_code' => 'recertification',
+            'priority' => 'normal',
+            'status' => 'scheduled',
+            'assigned_instructor_id' => $instructor->id,
+        ]);
+
+        $token = $admin->createToken('a')->plainTextToken;
+
+        $this->withToken($token)->patchJson("/api/institution/training-requests/{$req->id}", [
+            'status' => 'fulfilled',
+            'fulfilled_training_id' => $training->id,
+        ])->assertOk()->assertJsonPath('status', 'fulfilled');
     }
 }

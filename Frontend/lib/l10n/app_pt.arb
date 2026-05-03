@@ -358,6 +358,7 @@
   "trainReqKanbanColumnQueue": "Fila",
   "trainReqKanbanColumnQueueHint": "Pendente · Aprovado",
   "trainReqKanbanColumnScheduled": "Agendado",
+  "trainReqKanbanColumnScheduledHint": "Com instrutor designado",
   "trainReqKanbanColumnClosed": "Encerrados",
   "trainReqKanbanColumnClosedHint": "Concluído · Recusado",
   "trainReqEmpty": "Nenhum pedido de treino.",
@@ -410,6 +411,38 @@
     }
   },
   "trainReqBtnSaveChanges": "Guardar alterações",
+  "trainReqBatchCheckboxLabel": "Seleccionar para agendar em lote",
+  "trainReqBatchToolbarSelected": "{count} seleccionados",
+  "@trainReqBatchToolbarSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainReqBatchToolbarClear": "Limpar selecção",
+  "trainReqBatchToolbarSchedule": "Agendar em lote",
+  "trainReqBatchDialogTitle": "Agendar pedidos em lote",
+  "trainReqBatchDialogBody": "Defina o instrutor para {count} pedido(s) na fila (pendente ou aprovado).",
+  "@trainReqBatchDialogBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainReqBatchSelectInstructorPlaceholder": "Escolha o instrutor…",
+  "trainReqBatchConfirm": "Agendar",
+  "trainReqBatchSnackDone": "{count} pedido(s) agendado(s).",
+  "@trainReqBatchSnackDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainReqBatchSnackNoneEligible": "Nenhum pedido elegível na selecção (use pendente ou aprovado na fila).",
+  "trainReqBatchNoInstructors": "Não há instrutores credenciados — aprove credenciais primeiro.",
   "parkSnackPickCatalog": "Escolha um modelo do catálogo.",
   "parkSnackUnitRegisteredPending": "Unidade registada (pendente).",
   "parkBannerLinkInstitutionFirst": "Associe primeiro a sua instituição no banner acima.",

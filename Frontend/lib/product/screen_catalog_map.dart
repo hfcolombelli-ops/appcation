@@ -19,7 +19,7 @@ abstract final class ScreenCatalogMap {
   static const insDash01 = 'INS-DASH-01'; // Dashboard KPI instituição (_InstitutionDashboardView)
   static const insPar01 = 'INS-PAR-01'; // Parque (_InstitutionParquePage)
   static const insApp01 = 'INS-APP-01'; // Applications gestão (não dedicado; credenciais parciais)
-  static const insSol01 = 'INS-SOL-01'; // Kanban 3 colunas pedidos (_InstitutionPedidosPage — fila pending+approved · scheduled · fulfilled+rejected)
+  static const insSol01 = 'INS-SOL-01'; // Kanban 3 colunas + agendamento em lote (_InstitutionPedidosPage) + validações API
   static const insRel01 = 'INS-REL-01'; // Relatórios sectoriais (parcial no dashboard)
 
   // --- Application / Instrutor (InstructorShell) ---

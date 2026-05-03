@@ -92,9 +92,9 @@ _Registar aqui ou remover quando fechadas._
 
 - **Sprint actual (exemplo):** APP-SAL-02 em `/instructor/resultados` com encerramento (`status: finished` ou comando realtime `close`): a API **emite/atualiza certificados** para todas as inscrições `completed` com nota ≥ limiar (`TrainingSession::issueCertificatesOnTrainingFinished`), além do PDF por participante (`GET /api/trainings/{id}/certificates/{id}/pdf`).
 - APP-SAL-02: chips de situação por participante (Aprovado ≥7,0 · Insuficiente &lt;7,0 · Em recuperação · Em curso / sem nota).
-- INS-SOL-01: Kanban em UI sobre `status` (`pending`+`approved` · `scheduled` · `fulfilled`+`rejected`; pedidos com estado futuro caem na fila).
+- INS-SOL-01: **fechado** — Kanban em `/institution/pedidos` (`pending`+`approved` · `scheduled` · `fulfilled`+`rejected`), agendamento em lote na fila, e validação na API (`scheduled` exige instrutor; `fulfilled` exige treino associado).
 - “Sem perfil” no diagrama: wizard com mudança de `role` na API vs. apenas registo inicial (actual).
 
 ---
 
-**Próximo passo imediato sugerido:** fechar **INS-SOL-01** (Kanban de pedidos de treino na área instituição) ou PDF institucional agregado no dashboard do gestor, conforme prioridade de demo.
+**Próximo passo imediato sugerido:** **INS-REL-01** (relatórios sectoriais incrementais no dashboard instituição) ou PDF institucional extra no dashboard do gestor (além do CSV/PDF já existentes), conforme prioridade de demo.

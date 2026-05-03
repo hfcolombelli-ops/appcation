@@ -923,6 +923,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trainReqKanbanColumnScheduled => 'Agendado';
 
   @override
+  String get trainReqKanbanColumnScheduledHint => 'Com instrutor designado';
+
+  @override
   String get trainReqKanbanColumnClosed => 'Encerrados';
 
   @override
@@ -990,6 +993,47 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trainReqBtnSaveChanges => 'Guardar alterações';
+
+  @override
+  String get trainReqBatchCheckboxLabel => 'Seleccionar para agendar em lote';
+
+  @override
+  String trainReqBatchToolbarSelected(int count) {
+    return '$count seleccionados';
+  }
+
+  @override
+  String get trainReqBatchToolbarClear => 'Limpar selecção';
+
+  @override
+  String get trainReqBatchToolbarSchedule => 'Agendar em lote';
+
+  @override
+  String get trainReqBatchDialogTitle => 'Agendar pedidos em lote';
+
+  @override
+  String trainReqBatchDialogBody(int count) {
+    return 'Defina o instrutor para $count pedido(s) na fila (pendente ou aprovado).';
+  }
+
+  @override
+  String get trainReqBatchSelectInstructorPlaceholder => 'Escolha o instrutor…';
+
+  @override
+  String get trainReqBatchConfirm => 'Agendar';
+
+  @override
+  String trainReqBatchSnackDone(int count) {
+    return '$count pedido(s) agendado(s).';
+  }
+
+  @override
+  String get trainReqBatchSnackNoneEligible =>
+      'Nenhum pedido elegível na selecção (use pendente ou aprovado na fila).';
+
+  @override
+  String get trainReqBatchNoInstructors =>
+      'Não há instrutores credenciados — aprove credenciais primeiro.';
 
   @override
   String get parkSnackPickCatalog => 'Escolha um modelo do catálogo.';

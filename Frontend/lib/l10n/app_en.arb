@@ -358,6 +358,7 @@
   "trainReqKanbanColumnQueue": "Queue",
   "trainReqKanbanColumnQueueHint": "Pending · Approved",
   "trainReqKanbanColumnScheduled": "Scheduled",
+  "trainReqKanbanColumnScheduledHint": "With an assigned instructor",
   "trainReqKanbanColumnClosed": "Closed",
   "trainReqKanbanColumnClosedHint": "Completed · Rejected",
   "trainReqEmpty": "No training requests.",
@@ -410,6 +411,38 @@
     }
   },
   "trainReqBtnSaveChanges": "Save changes",
+  "trainReqBatchCheckboxLabel": "Select for batch scheduling",
+  "trainReqBatchToolbarSelected": "{count} selected",
+  "@trainReqBatchToolbarSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainReqBatchToolbarClear": "Clear selection",
+  "trainReqBatchToolbarSchedule": "Schedule in batch",
+  "trainReqBatchDialogTitle": "Batch schedule requests",
+  "trainReqBatchDialogBody": "Pick the instructor for {count} request(s) in the queue (pending or approved).",
+  "@trainReqBatchDialogBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainReqBatchSelectInstructorPlaceholder": "Choose an instructor…",
+  "trainReqBatchConfirm": "Schedule",
+  "trainReqBatchSnackDone": "Scheduled {count} request(s).",
+  "@trainReqBatchSnackDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainReqBatchSnackNoneEligible": "No eligible requests in the selection (use pending or approved in the queue).",
+  "trainReqBatchNoInstructors": "No credentialed instructors yet — approve credentials first.",
   "parkSnackPickCatalog": "Choose a catalog model.",
   "parkSnackUnitRegisteredPending": "Unit registered (pending).",
   "parkBannerLinkInstitutionFirst": "Link your institution first using the banner above.",
