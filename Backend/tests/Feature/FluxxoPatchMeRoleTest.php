@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Manufacturer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -116,5 +117,16 @@ class FluxxoPatchMeRoleTest extends TestCase
         $m = Manufacturer::query()->find($u->manufacturer_id);
         $this->assertNotNull($m);
         $this->assertSame('newwidgetcorp-test.example', $m->registration_email_domain);
+    }
+
+    public function test_mapped_user_idempotent_same_role_trims_whitespace_in_database(): void
+    {
+        $u = User::factory()->create(['role' => 'manufacturer_admin']);
+        DB::table('users')->where('id', $u->id)->update(['role' => ' manufacturer_admin ']);
+
+        Sanctum::actingAs($u->fresh());
+
+        $this->patchJson('/api/me/role', ['role' => 'manufacturer_admin'])
+            ->assertOk();
     }
 }

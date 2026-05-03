@@ -146,7 +146,9 @@ class AuthController extends Controller
 
         // Perfil já fechado no servidor: reconfirmar o mesmo role (ex.: triagem UI desfasada) deve ser 200, não 403.
         if (! $user->needsProfileGateForApi() && $this->roleIsMappedForApp($user->role)) {
-            if ($data['role'] === $user->role) {
+            $requested = trim((string) $data['role']);
+            $current = trim((string) ($user->role ?? ''));
+            if ($requested !== '' && $requested === $current) {
                 return response()->json($user->fresh()->toApiArray());
             }
 

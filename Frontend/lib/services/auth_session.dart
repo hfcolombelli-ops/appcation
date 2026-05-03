@@ -41,7 +41,12 @@ class AuthSession extends ChangeNotifier {
   bool get needsProfileGate {
     final u = _user;
     if (u == null) return false;
-    if (u['needs_profile_gate'] == true) return true;
+
+    // O servidor é fonte de verdade: se vier explícito, não deixar o fallback
+    // Google+triage reabrir o gate quando `/me` já diz que a triagem terminou.
+    final gate = u['needs_profile_gate'];
+    if (gate == false) return false;
+    if (gate == true) return true;
 
     final subRaw = u['google_sub'];
     final hasGoogle = subRaw is String && subRaw.trim().isNotEmpty;
