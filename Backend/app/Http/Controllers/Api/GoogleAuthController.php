@@ -23,6 +23,7 @@ class GoogleAuthController extends Controller
     {
         $data = $request->validate([
             'id_token' => ['required', 'string'],
+            // Opcional: omitir para criar conta só com Google e completar perfil na triagem (PATCH /api/me/role).
             'role' => ['nullable', 'in:trainee,instructor,manufacturer_admin'],
             'manufacturer_name' => ['nullable', 'string', 'max:180'],
             'manufacturer_cnpj' => ['nullable', 'string', 'max:20'],
@@ -46,7 +47,7 @@ class GoogleAuthController extends Controller
             return response()->json(['message' => 'Token Google sem e-mail ou identificador.'], 422);
         }
 
-        $role = $data['role'] ?? 'trainee';
+        $role = $data['role'] ?? null;
 
         $user = User::query()->where('google_sub', $sub)->first();
 

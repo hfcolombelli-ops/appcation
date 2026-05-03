@@ -121,22 +121,25 @@ class AuthSession extends ChangeNotifier {
   }
 
   /// Troca um ID token Google já obtido no cliente por sessão Sanctum (Web: botão GIS; mobile: após `authenticate`).
+  /// Sem [role]: o servidor cria/vincula a sessão e deixa o perfil para a triagem (`ProfileGateScreen`).
   Future<void> loginWithGoogleIdToken(
     String idToken, {
-    String role = 'trainee',
+    String? role,
     String? manufacturerName,
     String? manufacturerCnpj,
   }) async {
-    final body = <String, dynamic>{
-      'id_token': idToken,
-      if (role != 'trainee') 'role': role,
-      if (role == 'manufacturer_admin') ...{
-        if (manufacturerName != null && manufacturerName.trim().isNotEmpty)
-          'manufacturer_name': manufacturerName.trim(),
-        if (manufacturerCnpj != null && manufacturerCnpj.trim().isNotEmpty)
-          'manufacturer_cnpj': manufacturerCnpj.trim(),
-      },
-    };
+    final body = <String, dynamic>{'id_token': idToken};
+    if (role != null) {
+      body['role'] = role;
+      if (role == 'manufacturer_admin') {
+        if (manufacturerName != null && manufacturerName.trim().isNotEmpty) {
+          body['manufacturer_name'] = manufacturerName.trim();
+        }
+        if (manufacturerCnpj != null && manufacturerCnpj.trim().isNotEmpty) {
+          body['manufacturer_cnpj'] = manufacturerCnpj.trim();
+        }
+      }
+    }
 
     final data = await _api.postJson('/api/auth/google', body);
     final t = data['token'] as String?;
@@ -152,10 +155,10 @@ class AuthSession extends ChangeNotifier {
 
   Future<void> loginWithGoogle(
     BuildContext context, {
-    String role = 'trainee',
+    bool forceAccountPicker = true,
+    String? role,
     String? manufacturerName,
     String? manufacturerCnpj,
-    bool forceAccountPicker = true,
   }) async {
     final idToken = await obtainGoogleIdToken(
       context: context,

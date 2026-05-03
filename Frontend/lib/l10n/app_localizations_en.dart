@@ -430,6 +430,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileGatePickRoleFirst => 'Choose a role first.';
 
   @override
+  String get loginGoogleTriageHint =>
+      'After signing in with Google, you will choose your profile in two steps (account type, then company details if needed).';
+
+  @override
+  String get profileTriageTitle => 'Choose your profile';
+
+  @override
+  String get profileTriageSubtitle =>
+      'Select the account type. On the next step you confirm or complete details to link your Google account.';
+
+  @override
+  String get profileTriageStep2Title => 'Profile details';
+
+  @override
+  String get profileTriageTraineeBody =>
+      'As a trainee you join sessions with a code, answer questionnaires, and access certificates.';
+
+  @override
+  String get profileTriageInstructorBody =>
+      'As an instructor you create and run trainings and get credentialed with institutions and manufacturers when applicable.';
+
+  @override
+  String get profileTriageManufacturerBody =>
+      'Enter the public company name and optionally the tax ID. Your email domain determines the manufacturer area.';
+
+  @override
+  String get profileTriageBack => 'Change profile type';
+
+  @override
   String get actionRetry => 'Try again';
 
   @override

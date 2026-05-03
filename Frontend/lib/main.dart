@@ -214,9 +214,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   final _mfgNameRegister = TextEditingController();
   final _mfgCnpjRegister = TextEditingController();
 
-  final _mfgNameGoogle = TextEditingController();
-  final _mfgCnpjGoogle = TextEditingController();
-
   _AuthPhase _phase = _AuthPhase.entry;
   _AuthDocumentTrack _authTrack = _AuthDocumentTrack.cpf;
   /// `trainee` | `instructor` (CPF) ou `manufacturer_admin` (CNPJ).
@@ -228,7 +225,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   String? _errorLogin;
   String? _errorRegister;
   String? _errorRegisterManufacturer;
-  String _googleRole = 'trainee';
 
   @override
   void dispose() {
@@ -239,8 +235,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     _passwordRegister.dispose();
     _mfgNameRegister.dispose();
     _mfgCnpjRegister.dispose();
-    _mfgNameGoogle.dispose();
-    _mfgCnpjGoogle.dispose();
     super.dispose();
   }
 
@@ -276,12 +270,8 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     setState(() {
       _authTrack = track;
       if (track == _AuthDocumentTrack.cnpj) {
-        _googleRole = 'manufacturer_admin';
         _registerAccountType = 'manufacturer_admin';
       } else {
-        if (_googleRole == 'manufacturer_admin') {
-          _googleRole = 'trainee';
-        }
         if (_registerAccountType == 'manufacturer_admin') {
           _registerAccountType = 'trainee';
         }
@@ -362,18 +352,9 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       _snack(s.errGoogleClientId);
       return;
     }
-    if (_googleRole == 'manufacturer_admin' && _mfgNameGoogle.text.trim().isEmpty) {
-      _snack(s.errMfgNameBeforeGoogle);
-      return;
-    }
     setState(() => _loadingGoogle = true);
     try {
-      await appAuth.loginWithGoogle(
-        context,
-        role: _googleRole,
-        manufacturerName: _mfgNameGoogle.text.trim().isEmpty ? null : _mfgNameGoogle.text.trim(),
-        manufacturerCnpj: _mfgCnpjGoogle.text.trim().isEmpty ? null : _mfgCnpjGoogle.text.trim(),
-      );
+      await appAuth.loginWithGoogle(context);
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _errorLogin = localizedApiMessage(AppLocalizations.of(context), e));
@@ -401,18 +382,9 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       _snack(s.errGoogleClientId);
       return;
     }
-    if (_googleRole == 'manufacturer_admin' && _mfgNameGoogle.text.trim().isEmpty) {
-      _snack(s.errMfgNameBeforeGoogle);
-      return;
-    }
     setState(() => _loadingGoogle = true);
     try {
-      await appAuth.loginWithGoogleIdToken(
-        idToken,
-        role: _googleRole,
-        manufacturerName: _mfgNameGoogle.text.trim().isEmpty ? null : _mfgNameGoogle.text.trim(),
-        manufacturerCnpj: _mfgCnpjGoogle.text.trim().isEmpty ? null : _mfgCnpjGoogle.text.trim(),
-      );
+      await appAuth.loginWithGoogleIdToken(idToken);
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _errorLogin = localizedApiMessage(AppLocalizations.of(context), e));
@@ -568,18 +540,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     );
   }
 
-  List<({String id, String label, IconData icon})> _googleRoles(AppLocalizations s) {
-    if (_authTrack == _AuthDocumentTrack.cnpj) {
-      return [
-        (id: 'manufacturer_admin', label: s.googleRoleManufacturerAdmin, icon: Icons.precision_manufacturing_outlined),
-      ];
-    }
-    return [
-      (id: 'trainee', label: s.googleRoleTrainee, icon: Icons.school_outlined),
-      (id: 'instructor', label: s.googleRoleInstructor, icon: Icons.verified_user_outlined),
-    ];
-  }
-
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
@@ -674,7 +634,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                   : () {
                       setState(() {
                         _setAuthTrack(_AuthDocumentTrack.cpf);
-                        _googleRole = 'instructor';
+                        _registerAccountType = 'instructor';
                       });
                     },
               child: Text(s.loginIamInstructorLink),
@@ -723,37 +683,11 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              _authTrack == _AuthDocumentTrack.cnpj ? s.loginGoogleProfileSectionCnpj : s.loginGoogleProfileSectionCpf,
-              style: tt.labelMedium?.copyWith(
-                color: const Color(0xFF45464D),
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
-              ),
+              s.loginGoogleTriageHint,
+              textAlign: TextAlign.center,
+              style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280), height: 1.4),
             ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 44,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.zero,
-                itemCount: _googleRoles(s).length,
-                separatorBuilder: (context, index) => const SizedBox(width: 8),
-                itemBuilder: (context, i) {
-                  final r = _googleRoles(s)[i];
-                  return _GoogleRoleChip(
-                    label: r.label,
-                    icon: r.icon,
-                    selected: _googleRole == r.id,
-                    onTap: _loadingGoogle
-                        ? null
-                        : () {
-                            setState(() => _googleRole = r.id);
-                          },
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             OfficialGoogleLoginSlot(
               loading: _loadingGoogle,
               onWebGoogleToken: _onWebGoogleIdToken,
@@ -1109,61 +1043,6 @@ Widget _primaryButton(
       ),
     ),
   );
-}
-
-/// Chip compacto em linha (scroll horizontal) para perfil Google.
-class _GoogleRoleChip extends StatelessWidget {
-  const _GoogleRoleChip({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    const accent = Color(0xFF00677D);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFE8F4F7) : const Color(0xFFF4F6F8),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: selected ? accent : const Color(0xFFE0E4E8),
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: selected ? accent : const Color(0xFF6B7280)),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? const Color(0xFF0D3D47) : const Color(0xFF374151),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _AccountTypeMiniCard extends StatelessWidget {

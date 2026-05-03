@@ -866,6 +866,54 @@ abstract class AppLocalizations {
   /// **'Escolha um perfil primeiro.'**
   String get profileGatePickRoleFirst;
 
+  /// No description provided for @loginGoogleTriageHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Depois de entrar com o Google, escolhe o teu perfil em dois passos (tipo de conta e, se necessário, dados da empresa).'**
+  String get loginGoogleTriageHint;
+
+  /// No description provided for @profileTriageTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolhe o teu perfil'**
+  String get profileTriageTitle;
+
+  /// No description provided for @profileTriageSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Selecciona o tipo de conta. No passo seguinte confirmas ou completas os dados para vincular a conta Google.'**
+  String get profileTriageSubtitle;
+
+  /// No description provided for @profileTriageStep2Title.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dados do perfil'**
+  String get profileTriageStep2Title;
+
+  /// No description provided for @profileTriageTraineeBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Como treinando participas em sessões com código, respondes ao questionário e acedes a certificados.'**
+  String get profileTriageTraineeBody;
+
+  /// No description provided for @profileTriageInstructorBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Como instrutor crias e conduzes treinos e credencias-te em instituições e fabricantes quando aplicável.'**
+  String get profileTriageInstructorBody;
+
+  /// No description provided for @profileTriageManufacturerBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Indica o nome público da empresa e, opcionalmente, o CNPJ. O domínio do teu e-mail determina a área de fabricante.'**
+  String get profileTriageManufacturerBody;
+
+  /// No description provided for @profileTriageBack.
+  ///
+  /// In pt, this message translates to:
+  /// **'Alterar tipo de perfil'**
+  String get profileTriageBack;
+
   /// No description provided for @actionRetry.
   ///
   /// In pt, this message translates to:
