@@ -829,4 +829,72 @@ class FluxxoCertificateAndRepescageTest extends TestCase
         $this->withToken($otoken)->get("/api/trainings/{$training->id}/certificates/export.csv")
             ->assertForbidden();
     }
+
+    public function test_instructor_can_export_training_certificates_pdf(): void
+    {
+        $inst = Institution::query()->create([
+            'name' => 'Inst Export PDF',
+            'cnpj' => '88.999.000/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino relatório PDF',
+            'type' => 'official',
+            'status' => 'finished',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+            'command_seq' => 0,
+            'passing_score_percent' => 70,
+        ]);
+
+        Enrollment::query()->create([
+            'training_id' => $training->id,
+            'user_id' => $trainee->id,
+            'status' => 'completed',
+            'score' => 7.5,
+            'joined_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $itoken = $instructor->createToken('ins')->plainTextToken;
+
+        $res = $this->withToken($itoken)->get("/api/trainings/{$training->id}/certificates/export.pdf");
+
+        $res->assertOk();
+        $this->assertStringStartsWith('%PDF', (string) $res->getContent());
+    }
+
+    public function test_export_training_certificates_pdf_forbidden_for_other_instructor(): void
+    {
+        $inst = Institution::query()->create([
+            'name' => 'Inst PDF 403',
+            'cnpj' => '99.000.111/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $other = User::factory()->create(['role' => 'instructor']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino PDF priv',
+            'type' => 'official',
+            'status' => 'finished',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+            'command_seq' => 0,
+        ]);
+
+        $otoken = $other->createToken('o')->plainTextToken;
+
+        $this->withToken($otoken)->get("/api/trainings/{$training->id}/certificates/export.pdf")
+            ->assertForbidden();
+    }
 }

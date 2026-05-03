@@ -707,6 +707,27 @@ abstract class AppLocalizations {
     String stamp,
   );
 
+  /// No description provided for @postTrainingExportCertificatesPdfTooltip.
+  ///
+  /// In pt, this message translates to:
+  /// **'Descarregar PDF com inscritos e certificados deste treino (auditoria).'**
+  String get postTrainingExportCertificatesPdfTooltip;
+
+  /// No description provided for @postTrainingExportCertificatesPdfDone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Relatório PDF descarregado.'**
+  String get postTrainingExportCertificatesPdfDone;
+
+  /// No description provided for @postTrainingExportCertificatesPdfFilename.
+  ///
+  /// In pt, this message translates to:
+  /// **'appcation-treino-{trainingId}-{stamp}.pdf'**
+  String postTrainingExportCertificatesPdfFilename(
+    int trainingId,
+    String stamp,
+  );
+
   /// No description provided for @shellLinkInstitutionTitle.
   ///
   /// In pt, this message translates to:

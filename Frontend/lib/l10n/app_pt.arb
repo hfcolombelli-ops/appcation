@@ -111,6 +111,19 @@
       }
     }
   },
+  "postTrainingExportCertificatesPdfTooltip": "Descarregar PDF com inscritos e certificados deste treino (auditoria).",
+  "postTrainingExportCertificatesPdfDone": "Relatório PDF descarregado.",
+  "postTrainingExportCertificatesPdfFilename": "appcation-treino-{trainingId}-{stamp}.pdf",
+  "@postTrainingExportCertificatesPdfFilename": {
+    "placeholders": {
+      "trainingId": {
+        "type": "int"
+      },
+      "stamp": {
+        "type": "String"
+      }
+    }
+  },
   "shellLinkInstitutionTitle": "Vincule a sua instituição",
   "shellLinkInstitutionBody": "Sem isto não vê pedidos de treino nem o dashboard agregado.",
   "shellLinkInstitutionEmpty": "Não há instituições na API — crie uma em Credenciamento (como instrutor) ou peça ao administrador.",

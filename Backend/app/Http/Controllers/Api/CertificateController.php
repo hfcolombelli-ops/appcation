@@ -90,16 +90,7 @@ class CertificateController extends Controller
             'format' => 'csv',
         ]);
 
-        $enrollments = Enrollment::query()
-            ->where('training_id', $training->id)
-            ->with('user:id,name,email')
-            ->orderBy('joined_at')
-            ->get();
-
-        $certsByEnrollment = Certificate::query()
-            ->whereIn('enrollment_id', $enrollments->pluck('id'))
-            ->get()
-            ->keyBy('enrollment_id');
+        [$enrollments, $certsByEnrollment] = $this->loadTrainingCertificateReport($training);
 
         $filename = 'appcation-treino-'.$training->id.'-'.now()->format('Y-m-d-His').'.csv';
 
@@ -152,6 +143,68 @@ class CertificateController extends Controller
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
+    }
+
+    /**
+     * Mesmo conteúdo do CSV em PDF (DomPDF) para arquivo / impressão.
+     */
+    public function exportTrainingCertificatesPdf(Request $request, string $trainingId): Response|JsonResponse
+    {
+        $training = Training::query()->with('institution:id,name')->findOrFail($trainingId);
+
+        if ((int) $training->instructor_id !== (int) $request->user()->id) {
+            return response()->json(['message' => 'Acesso negado.'], 403);
+        }
+
+        SecurityAuditLog::record($request, 'instructor.training_certificates_export_pdf', Training::class, (int) $training->id, [
+            'format' => 'pdf',
+        ]);
+
+        [$enrollments, $certsByEnrollment] = $this->loadTrainingCertificateReport($training);
+
+        $rows = [];
+        foreach ($enrollments as $e) {
+            $u = $e->user;
+            $cert = $certsByEnrollment->get($e->id);
+            $rows[] = [
+                'participant' => (string) ($u?->name ?? ''),
+                'email' => (string) ($u?->email ?? ''),
+                'enrollment_status' => (string) $e->status,
+                'score' => $e->score !== null ? (string) $e->score : '',
+                'certificate_code' => $cert !== null ? (string) $cert->certificate_code : '',
+                'issued_at' => $cert?->issued_at?->timezone('UTC')->toIso8601String() ?? '',
+                'expires_at' => $cert?->expires_at?->timezone('UTC')->toIso8601String() ?? '',
+            ];
+        }
+
+        $pdf = Pdf::loadView('reports.training_certificates', [
+            'training' => $training,
+            'rows' => $rows,
+            'generatedAt' => now()->timezone('UTC'),
+        ])->setPaper('a4', 'portrait');
+
+        $safe = preg_replace('/[^A-Za-z0-9_.-]+/', '-', (string) $training->title) ?: 'treino';
+
+        return $pdf->download('appcation-treino-'.$training->id.'-'.$safe.'-'.now()->format('Y-m-d-His').'.pdf');
+    }
+
+    /**
+     * @return array{0: \Illuminate\Database\Eloquent\Collection<int, Enrollment>, 1: \Illuminate\Support\Collection<int|string, Certificate>}
+     */
+    private function loadTrainingCertificateReport(Training $training): array
+    {
+        $enrollments = Enrollment::query()
+            ->where('training_id', $training->id)
+            ->with('user:id,name,email')
+            ->orderBy('joined_at')
+            ->get();
+
+        $certsByEnrollment = Certificate::query()
+            ->whereIn('enrollment_id', $enrollments->pluck('id'))
+            ->get()
+            ->keyBy('enrollment_id');
+
+        return [$enrollments, $certsByEnrollment];
     }
 
     protected function pdfDownloadResponse(Certificate $certificate): Response

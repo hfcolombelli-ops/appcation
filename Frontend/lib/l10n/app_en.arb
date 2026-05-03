@@ -111,6 +111,19 @@
       }
     }
   },
+  "postTrainingExportCertificatesPdfTooltip": "Download a PDF of enrollments and certificates for this training (audit).",
+  "postTrainingExportCertificatesPdfDone": "PDF report downloaded.",
+  "postTrainingExportCertificatesPdfFilename": "appcation-training-{trainingId}-{stamp}.pdf",
+  "@postTrainingExportCertificatesPdfFilename": {
+    "placeholders": {
+      "trainingId": {
+        "type": "int"
+      },
+      "stamp": {
+        "type": "String"
+      }
+    }
+  },
   "shellLinkInstitutionTitle": "Link your institution",
   "shellLinkInstitutionBody": "Without this you cannot see training requests or the aggregated dashboard.",
   "shellLinkInstitutionEmpty": "No institutions in the API — create one under Credentialing (as instructor) or ask an administrator.",

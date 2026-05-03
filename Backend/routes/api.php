@@ -147,6 +147,8 @@ Route::middleware(['auth:sanctum', 'throttle:api-user'])->group(function () {
         ->middleware('throttle:sensitive');
     Route::get('/trainings/{training}/certificates/export.csv', [CertificateController::class, 'exportTrainingCertificatesCsv'])
         ->middleware('throttle:sensitive');
+    Route::get('/trainings/{training}/certificates/export.pdf', [CertificateController::class, 'exportTrainingCertificatesPdf'])
+        ->middleware('throttle:sensitive');
     Route::get('/trainings/{training}/certificates/{certificate}/pdf', [CertificateController::class, 'instructorDownloadPdf']);
     Route::get('/trainings/{training}/questionnaire', [QuestionnaireController::class, 'show'])
         ->middleware('trainee.lgpd');

@@ -97,4 +97,4 @@ _Registar aqui ou remover quando fechadas._
 
 ---
 
-**Próximo passo imediato sugerido:** export PDF do mesmo relatório por treino (espelho do CSV) ou PDF institucional agregado; em alternativa, fechar **INS-SOL-01** (Kanban de pedidos) conforme prioridade de demo.
+**Próximo passo imediato sugerido:** fechar **INS-SOL-01** (Kanban de pedidos de treino na área instituição) ou PDF institucional agregado no dashboard do gestor, conforme prioridade de demo.

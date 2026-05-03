@@ -341,6 +341,9 @@ class ProductionApi {
   Future<Uint8List> downloadTrainingCertificatesReportCsv(String token, int trainingId) =>
       _http.getBytes('/api/trainings/$trainingId/certificates/export.csv', token: token);
 
+  Future<Uint8List> downloadTrainingCertificatesReportPdf(String token, int trainingId) =>
+      _http.getBytes('/api/trainings/$trainingId/certificates/export.pdf', token: token);
+
   Future<Map<String, dynamic>> traineeState(String token) =>
       _http.getJson('/api/me/trainee-state', token: token);
 

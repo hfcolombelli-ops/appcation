@@ -337,6 +337,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get postTrainingExportCertificatesPdfTooltip =>
+      'Download a PDF of enrollments and certificates for this training (audit).';
+
+  @override
+  String get postTrainingExportCertificatesPdfDone => 'PDF report downloaded.';
+
+  @override
+  String postTrainingExportCertificatesPdfFilename(
+    int trainingId,
+    String stamp,
+  ) {
+    return 'appcation-training-$trainingId-$stamp.pdf';
+  }
+
+  @override
   String get shellLinkInstitutionTitle => 'Link your institution';
 
   @override
