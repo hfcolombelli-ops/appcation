@@ -895,6 +895,7 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
   bool _closingTraining = false;
   int? _certPdfLoadingId;
   int? _issueCertLoadingEid;
+  bool _exportCsvLoading = false;
   final Set<int> _repescageIds = {};
   List<Map<String, dynamic>> _trainingBlocks = [];
   int? _repescageBlockId;
@@ -998,6 +999,33 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
       if (mounted) context.showErrApiConnectionSnack();
     } finally {
       if (mounted) setState(() => _issueCertLoadingEid = null);
+    }
+  }
+
+  Future<void> _exportTrainingCertificatesCsv() async {
+    final l = AppLocalizations.of(context);
+    final t = appAuth.token;
+    final tid = _selectedId;
+    if (t == null || tid == null) return;
+    if (!downloadBytesSupported) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.dashExportCsvWebOnly)));
+      }
+      return;
+    }
+    setState(() => _exportCsvLoading = true);
+    try {
+      final bytes = await widget.api.downloadTrainingCertificatesReportCsv(t, tid);
+      if (!mounted) return;
+      final stamp = DateTime.now().toUtc().toIso8601String().replaceAll(':', '-');
+      downloadBytesAsFile(bytes, l.postTrainingExportCertificatesCsvFilename(tid, stamp));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.postTrainingExportCertificatesDone)));
+    } on ApiException catch (e) {
+      if (mounted) context.showLocalizedApiExceptionSnack(e);
+    } catch (_) {
+      if (mounted) context.showErrApiConnectionSnack();
+    } finally {
+      if (mounted) setState(() => _exportCsvLoading = false);
     }
   }
 
@@ -1261,6 +1289,21 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
                   ),
                 ),
                 IconButton(onPressed: _refreshTrainings, icon: const Icon(Icons.refresh_rounded)),
+                if (_selectedId != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 2, top: 6),
+                    child: IconButton(
+                      tooltip: l.postTrainingExportCertificatesCsvTooltip,
+                      onPressed: _exportCsvLoading ? null : _exportTrainingCertificatesCsv,
+                      icon: _exportCsvLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.table_chart_outlined),
+                    ),
+                  ),
                 if (_selectedId != null && _canFinishTrainingFromMonitor())
                   Padding(
                     padding: const EdgeInsets.only(left: 4, top: 6),

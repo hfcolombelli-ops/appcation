@@ -686,6 +686,27 @@ abstract class AppLocalizations {
   /// **'Este participante já tinha certificado.'**
   String get postTrainingIssueCertificateAlready;
 
+  /// No description provided for @postTrainingExportCertificatesCsvTooltip.
+  ///
+  /// In pt, this message translates to:
+  /// **'Descarregar CSV com inscritos e certificados deste treino (auditoria).'**
+  String get postTrainingExportCertificatesCsvTooltip;
+
+  /// No description provided for @postTrainingExportCertificatesDone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Relatório CSV descarregado.'**
+  String get postTrainingExportCertificatesDone;
+
+  /// No description provided for @postTrainingExportCertificatesCsvFilename.
+  ///
+  /// In pt, this message translates to:
+  /// **'appcation-treino-{trainingId}-{stamp}.csv'**
+  String postTrainingExportCertificatesCsvFilename(
+    int trainingId,
+    String stamp,
+  );
+
   /// No description provided for @shellLinkInstitutionTitle.
   ///
   /// In pt, this message translates to:

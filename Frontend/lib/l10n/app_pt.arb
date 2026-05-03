@@ -98,6 +98,19 @@
   "postTrainingIssueCertificateTooltip": "Registar o certificado na base quando a nota já é ≥ ao limiar (ex.: correção após encerramento).",
   "postTrainingIssueCertificateDone": "Certificado emitido.",
   "postTrainingIssueCertificateAlready": "Este participante já tinha certificado.",
+  "postTrainingExportCertificatesCsvTooltip": "Descarregar CSV com inscritos e certificados deste treino (auditoria).",
+  "postTrainingExportCertificatesDone": "Relatório CSV descarregado.",
+  "postTrainingExportCertificatesCsvFilename": "appcation-treino-{trainingId}-{stamp}.csv",
+  "@postTrainingExportCertificatesCsvFilename": {
+    "placeholders": {
+      "trainingId": {
+        "type": "int"
+      },
+      "stamp": {
+        "type": "String"
+      }
+    }
+  },
   "shellLinkInstitutionTitle": "Vincule a sua instituição",
   "shellLinkInstitutionBody": "Sem isto não vê pedidos de treino nem o dashboard agregado.",
   "shellLinkInstitutionEmpty": "Não há instituições na API — crie uma em Credenciamento (como instrutor) ou peça ao administrador.",

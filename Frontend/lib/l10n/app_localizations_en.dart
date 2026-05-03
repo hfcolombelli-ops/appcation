@@ -322,6 +322,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'This participant already had a certificate.';
 
   @override
+  String get postTrainingExportCertificatesCsvTooltip =>
+      'Download a CSV of enrollments and certificates for this training (audit).';
+
+  @override
+  String get postTrainingExportCertificatesDone => 'CSV report downloaded.';
+
+  @override
+  String postTrainingExportCertificatesCsvFilename(
+    int trainingId,
+    String stamp,
+  ) {
+    return 'appcation-training-$trainingId-$stamp.csv';
+  }
+
+  @override
   String get shellLinkInstitutionTitle => 'Link your institution';
 
   @override

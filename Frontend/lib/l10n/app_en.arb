@@ -98,6 +98,19 @@
   "postTrainingIssueCertificateTooltip": "Register the certificate when the score already meets the passing threshold (e.g. after a missed close step).",
   "postTrainingIssueCertificateDone": "Certificate issued.",
   "postTrainingIssueCertificateAlready": "This participant already had a certificate.",
+  "postTrainingExportCertificatesCsvTooltip": "Download a CSV of enrollments and certificates for this training (audit).",
+  "postTrainingExportCertificatesDone": "CSV report downloaded.",
+  "postTrainingExportCertificatesCsvFilename": "appcation-training-{trainingId}-{stamp}.csv",
+  "@postTrainingExportCertificatesCsvFilename": {
+    "placeholders": {
+      "trainingId": {
+        "type": "int"
+      },
+      "stamp": {
+        "type": "String"
+      }
+    }
+  },
   "shellLinkInstitutionTitle": "Link your institution",
   "shellLinkInstitutionBody": "Without this you cannot see training requests or the aggregated dashboard.",
   "shellLinkInstitutionEmpty": "No institutions in the API — create one under Credentialing (as instructor) or ask an administrator.",

@@ -745,4 +745,88 @@ class FluxxoCertificateAndRepescageTest extends TestCase
             []
         )->assertUnprocessable();
     }
+
+    public function test_instructor_can_export_training_certificates_csv(): void
+    {
+        $inst = Institution::query()->create([
+            'name' => 'Inst Export CSV',
+            'cnpj' => '66.777.888/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino relatório CSV',
+            'type' => 'official',
+            'status' => 'finished',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+            'command_seq' => 0,
+            'passing_score_percent' => 70,
+        ]);
+
+        $enrollment = Enrollment::query()->create([
+            'training_id' => $training->id,
+            'user_id' => $trainee->id,
+            'status' => 'completed',
+            'score' => 8.5,
+            'joined_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $certCode = 'APP²-CSV'.Str::upper(Str::random(8));
+        Certificate::query()->create([
+            'user_id' => $trainee->id,
+            'enrollment_id' => $enrollment->id,
+            'training_id' => $training->id,
+            'score' => 8.5,
+            'certificate_code' => $certCode,
+            'issued_at' => now(),
+            'expires_at' => now()->addYear(),
+        ]);
+
+        $itoken = $instructor->createToken('ins')->plainTextToken;
+
+        $res = $this->withToken($itoken)->get("/api/trainings/{$training->id}/certificates/export.csv");
+
+        $res->assertOk();
+        $res->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $body = (string) $res->getContent();
+        $this->assertStringContainsString('Participante', $body);
+        $this->assertStringContainsString('Treino relatório CSV', $body);
+        $this->assertStringContainsString($certCode, $body);
+        $this->assertStringContainsString((string) $trainee->name, $body);
+    }
+
+    public function test_export_training_certificates_csv_forbidden_for_other_instructor(): void
+    {
+        $inst = Institution::query()->create([
+            'name' => 'Inst Export 403',
+            'cnpj' => '77.888.999/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $other = User::factory()->create(['role' => 'instructor']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino privado',
+            'type' => 'official',
+            'status' => 'finished',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+            'command_seq' => 0,
+        ]);
+
+        $otoken = $other->createToken('o')->plainTextToken;
+
+        $this->withToken($otoken)->get("/api/trainings/{$training->id}/certificates/export.csv")
+            ->assertForbidden();
+    }
 }

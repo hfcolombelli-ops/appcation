@@ -97,4 +97,4 @@ _Registar aqui ou remover quando fechadas._
 
 ---
 
-**Próximo passo imediato sugerido:** relatório agrupado de certificados por treino (export CSV/PDF na sala de resultados ou no dashboard), conforme necessidade de auditoria.
+**Próximo passo imediato sugerido:** export PDF do mesmo relatório por treino (espelho do CSV) ou PDF institucional agregado; em alternativa, fechar **INS-SOL-01** (Kanban de pedidos) conforme prioridade de demo.

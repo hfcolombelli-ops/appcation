@@ -323,6 +323,22 @@ class AppLocalizationsPt extends AppLocalizations {
       'Este participante já tinha certificado.';
 
   @override
+  String get postTrainingExportCertificatesCsvTooltip =>
+      'Descarregar CSV com inscritos e certificados deste treino (auditoria).';
+
+  @override
+  String get postTrainingExportCertificatesDone =>
+      'Relatório CSV descarregado.';
+
+  @override
+  String postTrainingExportCertificatesCsvFilename(
+    int trainingId,
+    String stamp,
+  ) {
+    return 'appcation-treino-$trainingId-$stamp.csv';
+  }
+
+  @override
   String get shellLinkInstitutionTitle => 'Vincule a sua instituição';
 
   @override
