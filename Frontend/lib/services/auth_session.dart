@@ -80,7 +80,8 @@ class AuthSession extends ChangeNotifier {
         _user = me;
         await _persist();
       } on ApiException catch (e) {
-        if (e.statusCode == 401 || e.statusCode == 403) {
+        // Só 401 = não autenticado (Sanctum). 403 aqui seria “proibido”, não deve apagar o token.
+        if (e.statusCode == 401) {
           await clear(notify: false);
         }
       } catch (_) {
