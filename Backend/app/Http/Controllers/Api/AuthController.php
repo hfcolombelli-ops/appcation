@@ -138,17 +138,22 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        if (! $user->needsProfileGateForApi() && $this->roleIsMappedForApp($user->role)) {
-            return response()->json([
-                'message' => 'O perfil já está definido. Use «Actualizar sessão» ou contacte o suporte para alterações.',
-            ], 403);
-        }
-
         $data = $request->validate([
             'role' => ['required', 'in:trainee,instructor,manufacturer_admin'],
             'manufacturer_name' => ['nullable', 'string', 'max:180'],
             'manufacturer_cnpj' => ['nullable', 'string', 'max:20'],
         ]);
+
+        // Perfil já fechado no servidor: reconfirmar o mesmo role (ex.: triagem UI desfasada) deve ser 200, não 403.
+        if (! $user->needsProfileGateForApi() && $this->roleIsMappedForApp($user->role)) {
+            if ($data['role'] === $user->role) {
+                return response()->json($user->fresh()->toApiArray());
+            }
+
+            return response()->json([
+                'message' => 'O perfil já está definido. Use «Actualizar sessão» ou contacte o suporte para alterações.',
+            ], 403);
+        }
 
         $manufacturerId = null;
 

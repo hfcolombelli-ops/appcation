@@ -41,6 +41,17 @@ class FluxxoPatchMeRoleTest extends TestCase
         $this->assertSame('trainee', $u->fresh()->role);
     }
 
+    public function test_mapped_user_idempotent_same_role_returns_ok(): void
+    {
+        $u = User::factory()->create(['role' => 'trainee']);
+
+        Sanctum::actingAs($u);
+
+        $this->patchJson('/api/me/role', ['role' => 'trainee'])
+            ->assertOk()
+            ->assertJsonPath('role', 'trainee');
+    }
+
     public function test_google_trainee_pending_triage_can_claim_instructor(): void
     {
         $u = User::factory()->create([
