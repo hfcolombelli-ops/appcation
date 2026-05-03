@@ -35,7 +35,29 @@ class AuthSession extends ChangeNotifier {
   }
 
   /// API: `needs_profile_gate` — conta Google (ou perfil inválido) ainda sem escolha em PATCH /api/me/role.
-  bool get needsProfileGate => _user?['needs_profile_gate'] == true;
+  ///
+  /// Fallback: API antiga ou cache sem o campo — replica o critério Laravel (google_sub + sem
+  /// `google_triage_completed_at` + papel treinando ou sem perfil) para não ir directo ao pré-registro.
+  bool get needsProfileGate {
+    final u = _user;
+    if (u == null) return false;
+    if (u['needs_profile_gate'] == true) return true;
+
+    final subRaw = u['google_sub'];
+    final hasGoogle = subRaw is String && subRaw.trim().isNotEmpty;
+    if (!hasGoogle) return false;
+
+    final triageAt = u['google_triage_completed_at'];
+    final triageDone = switch (triageAt) {
+      null => false,
+      String s => s.trim().isNotEmpty,
+      _ => true,
+    };
+    if (triageDone) return false;
+
+    final r = role;
+    return r == null || r == 'trainee';
+  }
 
   Future<void> restore() async {
     final prefs = await SharedPreferences.getInstance();
