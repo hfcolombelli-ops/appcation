@@ -23,7 +23,16 @@ class AuthSession extends ChangeNotifier {
 
   bool get isAuthenticated => _token != null && _user != null;
 
-  String? get role => _user?['role'] as String?;
+  /// Perfil API (`users.role`). Valores não-string ou vazios tratam-se como «sem perfil» → triagem.
+  String? get role {
+    final u = _user;
+    if (u == null) return null;
+    final raw = u['role'];
+    if (raw == null) return null;
+    if (raw is! String) return null;
+    final s = raw.trim();
+    return s.isEmpty ? null : s;
+  }
 
   Future<void> restore() async {
     final prefs = await SharedPreferences.getInstance();

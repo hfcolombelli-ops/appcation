@@ -102,6 +102,12 @@ class GoogleAuthController extends Controller
                 'manufacturer_id' => $manufacturerId,
                 'avatar_url' => isset($payload['picture']) ? Str::limit((string) $payload['picture'], 500) : null,
             ]);
+
+            // Alguns motores ainda aplicam DEFAULT «trainee» ao INSERT; força NULL para a triagem na app.
+            if ($role === null) {
+                User::query()->whereKey($user->id)->update(['role' => null]);
+                $user->refresh();
+            }
         } else {
             $user->forceFill([
                 'name' => (string) ($payload['name'] ?? $user->name),

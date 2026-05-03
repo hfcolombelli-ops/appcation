@@ -26,4 +26,20 @@ return [
         FILTER_VALIDATE_BOOLEAN
     ),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Saltar revisão humana (homologação documental)
+    |--------------------------------------------------------------------------
+    |
+    | Quando true: após o fabricante cumprir onboarding e chamar
+    | POST /api/manufacturer/request-validation, o estado passa directamente
+    | a «active» em vez de «pending_validation» (útil para testes antes da
+    | plataforma de revisão). Em produção mantenha false ou omita a variável.
+    |
+    */
+    'skip_validation_review' => filter_var(
+        env('MANUFACTURER_SKIP_VALIDATION_REVIEW', false),
+        FILTER_VALIDATE_BOOLEAN
+    ),
+
 ];

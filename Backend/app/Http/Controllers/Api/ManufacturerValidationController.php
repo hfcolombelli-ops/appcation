@@ -67,6 +67,22 @@ class ManufacturerValidationController extends Controller
 
         $protocol = $m->validation_protocol ?? ManufacturerRegistrationSupport::nextValidationProtocol();
 
+        if (config('manufacturer.skip_validation_review', false)) {
+            $m->update([
+                'validation_status' => 'active',
+                'validation_protocol' => $protocol,
+                'validation_submitted_at' => now(),
+            ]);
+            $fresh = $m->fresh();
+
+            SecurityAuditLog::record($request, 'manufacturer.validation_request', Manufacturer::class, (int) $fresh->id, [
+                'validation_status' => $fresh->validation_status,
+                'skip_validation_review' => true,
+            ]);
+
+            return response()->json(['manufacturer' => $fresh]);
+        }
+
         $m->update([
             'validation_status' => 'pending_validation',
             'validation_protocol' => $protocol,

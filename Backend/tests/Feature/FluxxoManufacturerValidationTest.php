@@ -73,6 +73,7 @@ class FluxxoManufacturerValidationTest extends TestCase
     {
         Mail::fake();
         Config::set('manufacturer.reviewer_emails', ['rev@notify.test']);
+        Config::set('manufacturer.skip_validation_review', false);
 
         [$m, $user] = $this->makeManufacturerAdmin('pending_info');
         $this->seedManufacturerReadyForValidation($m, $user->email);
@@ -88,6 +89,28 @@ class FluxxoManufacturerValidationTest extends TestCase
         $this->assertStringStartsWith('FAB-', $proto);
 
         Mail::assertQueued(ManufacturerValidationRequested::class);
+    }
+
+    public function test_manufacturer_request_validation_skips_review_when_config_enabled(): void
+    {
+        Mail::fake();
+        Config::set('manufacturer.reviewer_emails', ['rev@notify.test']);
+        Config::set('manufacturer.skip_validation_review', true);
+
+        [$m, $user] = $this->makeManufacturerAdmin('pending_info');
+        $this->seedManufacturerReadyForValidation($m, $user->email);
+
+        Sanctum::actingAs($user);
+
+        $res = $this->postJson('/api/manufacturer/request-validation')
+            ->assertOk()
+            ->assertJsonPath('manufacturer.validation_status', 'active');
+
+        $proto = $res->json('manufacturer.validation_protocol');
+        $this->assertIsString($proto);
+        $this->assertStringStartsWith('FAB-', $proto);
+
+        Mail::assertNothingQueued();
     }
 
     public function test_reviewer_gets_registration_mail_when_option_enabled(): void

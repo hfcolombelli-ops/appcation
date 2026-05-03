@@ -33,7 +33,8 @@ class FluxxoGoogleAuthTriageTest extends TestCase
             'id_token' => 'fake-id-token',
         ])
             ->assertOk()
-            ->assertJsonStructure(['token', 'user']);
+            ->assertJsonStructure(['token', 'user'])
+            ->assertJsonPath('user.role', null);
 
         $u = User::query()->where('email', $email)->firstOrFail();
         $this->assertNull($u->role);
