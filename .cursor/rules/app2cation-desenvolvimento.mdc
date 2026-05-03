@@ -1,0 +1,12 @@
+---
+description: Lógica de desenvolvimento App²cation — fluxo, fases e checklist
+alwaysApply: true
+---
+
+# App²cation — como desenvolver
+
+1. **Seguir** o guia [`docs/DESENVOLVIMENTO.md`](../../docs/DESENVOLVIMENTO.md): fatias verticais, um fluxo Mermaid de cada vez, contrato API antes de polish visual.
+2. **Fluxo de produto:** [`docs/product/fluxo_app2cation.mermaid`](../../docs/product/fluxo_app2cation.mermaid).
+3. **IDs de telas vs código:** [`Frontend/lib/product/screen_catalog_map.dart`](../../Frontend/lib/product/screen_catalog_map.dart) — actualizar comentários ao fechar lacunas.
+4. **UI shells:** preferir `instructorShellScaffold` / `instructorShellCard` em [`Frontend/lib/theme/instructor_page_chrome.dart`](../../Frontend/lib/theme/instructor_page_chrome.dart); texto só via ARB (`flutter gen-l10n`).
+5. **Entrega:** `dart analyze` nos ficheiros tocados; `./scripts/bump_version.sh` quando a mudança for para utilizador final.
