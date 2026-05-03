@@ -15,16 +15,16 @@ abstract final class ScreenCatalogMap {
   static const fabEqp02 = 'FAB-EQP-02'; // Wizard `manufacturer_equipment_wizard`: 2 passos, validações + helperText por intervalo, dropdown categoria/estado, sync categoria vs catálogo
   static const fabTre01 = 'FAB-TRE-01'; // Lista templates (`ManufacturerShell` Produtos): API `templates_only` + search≤120 + status/sort + limite 80; debounce + reload parcial lista; chips + linha actualizado
   static const fabTre02 = 'FAB-TRE-02'; // Editor questionário (`manufacturer_template_editor`): vários blocos (título + perguntas), reordenar secções/perguntas, Editar/Pré-visualizar, 2–12 opções, PopScope, refresh; GET questionnaire ordena por bloco + inclui `training_block`
-  static const fabHom01 = 'FAB-HOM-01'; // Fila homologação instrutor↔fabricante: API lista todos os estados + filtros com contagens; UI fabricante + credenciamento instrutor
-  static const fabHom02 = 'FAB-HOM-02'; // Pós-aprovação: `PATCH /api/credentials/manufacturer/{id}` com `status: suspended` (só desde `approved`) ou `approved` desde `suspended` (reactivar, sem re-enviar `fee_paid`); UI fila homologação `ManufacturerShell` + credenciamento `InstructorShell` (admin fabricante)
+  static const fabHom01 = 'FAB-HOM-01'; // Fila homologação instrutor↔fabricante: API lista todos os estados + filtros com contagens; UI fabricante + credenciamento instrutor (`/instructor/credenciamento`: `_CredenciamentoPage` + faixa/`instrOfflineHint` + filas aprovar/recusar/suspender offline)
+  static const fabHom02 = 'FAB-HOM-02'; // Pós-aprovação: `PATCH /api/credentials/manufacturer/{id}` com `status: suspended` (só desde `approved`) ou `approved` desde `suspended` (reactivar, sem re-enviar `fee_paid`); UI fila homologação `ManufacturerShell` + credenciamento `InstructorShell` (admin fabricante; mesma página cred + offline)
   static const fabAna01 = 'FAB-ANA-01'; // Análises fabricante (MVP): filtros + tabelas + `monthly_trend` alinhado + CSV/PDF combinados
   static const fabOps01 = 'FAB-OPS-01'; // Operações fabricante (ManufacturerShell → índice 3): épocas, prémios, documentos; `search` + paginação API (`items`/`meta`) + «Carregar mais» + debounce
 
   // --- Instituição (rotas /institution/* no InstructorShell) ---
   static const insDash01 = 'INS-DASH-01'; // Dashboard KPI instituição (_InstitutionDashboardView)
-  static const insPar01 = 'INS-PAR-01'; // Parque (_InstitutionParquePage)
-  static const insApp01 = 'INS-APP-01'; // Applications gestão (não dedicado; credenciais parciais)
-  static const insSol01 = 'INS-SOL-01'; // Kanban 3 colunas + agendamento em lote (_InstitutionPedidosPage) + validações API
+  static const insPar01 = 'INS-PAR-01'; // Parque (`_InstitutionParquePage`): catálogo + filtros + unidades; `_InstructorApiReachability`; faixa `instrOfflineHint`; chips/pesquisa/registo/activar/remover desactivados offline
+  static const insApp01 = 'INS-APP-01'; // Applications gestão (não dedicado; credenciais parciais). Endorsements fabricante (`/institution/endorsements` — `_InstitutionEndorsementsPage`): fila + «Endossar» desactivado offline (`instrOfflineHint`)
+  static const insSol01 = 'INS-SOL-01'; // Kanban 3 colunas + agendamento em lote (`_InstitutionPedidosPage` + `_InstitutionPedidoCard`) + validações API; faixa `instrOfflineHint`; guardar cartão + agendamento em lote + dropdowns desactivados offline (`apiOnline`)
   static const insRel01 = 'INS-REL-01'; // Por setor no dashboard gestor: agregado por treinos da instituição + inscr./concl./com nota/média; CSV/PDF alinhados
 
   // --- Application / Instrutor (InstructorShell) ---

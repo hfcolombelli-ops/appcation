@@ -32,6 +32,32 @@ class _InstructorApiReachability extends InheritedWidget {
   bool updateShouldNotify(covariant _InstructorApiReachability oldWidget) => oldWidget.apiOnline != apiOnline;
 }
 
+Widget _instrOfflineBanner(AppLocalizations l) {
+  return DecoratedBox(
+    decoration: BoxDecoration(
+      color: const Color(0xFFFFF1F2),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFFECACA)),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.wifi_off_rounded, color: Color(0xFFB91C1C), size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              l.instrOfflineHint,
+              style: const TextStyle(fontSize: 13.5, height: 1.4, color: Color(0xFF7F1D1D)),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 bool _gestorNeedsInstitutionLink() {
   if (appAuth.role != 'institution_admin') {
     return false;
@@ -2575,6 +2601,7 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final online = _InstructorApiReachability.apiOnlineOf(context);
     if (_gestorNeedsInstitutionLink()) {
       return instructorShellScaffold(
         child: Center(
@@ -2606,16 +2633,20 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF45464D)),
                 ),
                 const SizedBox(height: 12),
+                if (!online) ...[
+                  _instrOfflineBanner(l),
+                  const SizedBox(height: 12),
+                ],
                 TextField(
                   controller: _parkSearchCtrl,
                   decoration: InputDecoration(
                     labelText: l.parkSearchHint,
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.search_rounded),
-                      onPressed: _loading ? null : () => unawaited(_reload()),
+                      onPressed: _loading || !online ? null : () => unawaited(_reload()),
                     ),
                   ),
-                  onSubmitted: (_) => unawaited(_reload()),
+                  onSubmitted: !online ? null : (_) => unawaited(_reload()),
                 ),
                 const SizedBox(height: 16),
                 Text(l.parkFilterByState, style: Theme.of(context).textTheme.titleSmall),
@@ -2626,17 +2657,17 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                     ChoiceChip(
                       label: Text(l.parkFilterChipAll),
                       selected: _statusFilter == null,
-                      onSelected: _loading ? null : (_) => _setFilter(null),
+                      onSelected: _loading || !online ? null : (_) => _setFilter(null),
                     ),
                     ChoiceChip(
                       label: Text(l.parkFilterChipPending),
                       selected: _statusFilter == 'pending',
-                      onSelected: _loading ? null : (_) => _setFilter('pending'),
+                      onSelected: _loading || !online ? null : (_) => _setFilter('pending'),
                     ),
                     ChoiceChip(
                       label: Text(l.parkFilterChipActive),
                       selected: _statusFilter == 'active',
-                      onSelected: _loading ? null : (_) => _setFilter('active'),
+                      onSelected: _loading || !online ? null : (_) => _setFilter('active'),
                     ),
                   ],
                 ),
@@ -2650,7 +2681,7 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                     ChoiceChip(
                       label: Text(l.parkFilterChipAllCategories),
                       selected: _categoryFilter == null,
-                      onSelected: _loading ? null : (_) => _setCategoryFilter(null),
+                      onSelected: _loading || !online ? null : (_) => _setCategoryFilter(null),
                     ),
                     ..._categoryCatalog.map((c) {
                       final cid = c['id']?.toString();
@@ -2660,7 +2691,7 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                       return ChoiceChip(
                         label: Text(c['label']?.toString() ?? cid),
                         selected: _categoryFilter == cid,
-                        onSelected: _loading ? null : (_) => _setCategoryFilter(cid),
+                        onSelected: _loading || !online ? null : (_) => _setCategoryFilter(cid),
                       );
                     }),
                   ],
@@ -2685,7 +2716,7 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                           ),
                         ),
                     ],
-                    onChanged: _loading
+                    onChanged: _loading || !online
                         ? null
                         : (v) => setState(() => _pickedCatalogId = v),
                   ),
@@ -2699,7 +2730,7 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                   ),
                   const SizedBox(height: 12),
                   FilledButton(
-                    onPressed: _loading ? null : _addUnit,
+                    onPressed: _loading || !online ? null : _addUnit,
                     child: Text(l.parkBtnRegisterUnit),
                   ),
                 ],
@@ -2756,12 +2787,12 @@ class _InstitutionParquePageState extends State<_InstitutionParquePage> {
                                 children: [
                                   if (pending)
                                     TextButton(
-                                      onPressed: _loading ? null : () => _activate(id),
+                                      onPressed: _loading || !online ? null : () => _activate(id),
                                       child: Text(l.parkBtnActivate),
                                     ),
                                   IconButton(
                                     icon: const Icon(Icons.delete_outline),
-                                    onPressed: _loading ? null : () => _remove(id),
+                                    onPressed: _loading || !online ? null : () => _remove(id),
                                   ),
                                 ],
                               ),
@@ -2912,6 +2943,7 @@ class _InstitutionEndorsementsPageState extends State<_InstitutionEndorsementsPa
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final online = _InstructorApiReachability.apiOnlineOf(context);
     if (_gestorNeedsInstitutionLink()) {
       return instructorShellScaffold(
         child: Center(
@@ -2967,6 +2999,10 @@ class _InstitutionEndorsementsPageState extends State<_InstitutionEndorsementsPa
           style: const TextStyle(color: Color(0xFF45464D)),
         ),
         const SizedBox(height: 18),
+        if (!online) ...[
+          _instrOfflineBanner(l),
+          const SizedBox(height: 16),
+        ],
         for (final row in _rows)
           Builder(
             builder: (context) {
@@ -2997,16 +3033,24 @@ class _InstitutionEndorsementsPageState extends State<_InstitutionEndorsementsPa
                       const SizedBox(height: 12),
                       Align(
                         alignment: Alignment.centerRight,
-                        child: FilledButton(
-                          onPressed: rowId == null || busy ? null : () => _endorse(rowId),
-                          child: busy
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                )
-                              : Text(l.endorsBtnEndorse),
-                        ),
+                        child: online
+                            ? FilledButton(
+                                onPressed: rowId == null || busy ? null : () => _endorse(rowId),
+                                child: busy
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      )
+                                    : Text(l.endorsBtnEndorse),
+                              )
+                            : Tooltip(
+                                message: l.instrOfflineHint,
+                                child: FilledButton(
+                                  onPressed: null,
+                                  child: Text(l.endorsBtnEndorse),
+                                ),
+                              ),
                       ),
                     ],
                   ),
@@ -3031,6 +3075,7 @@ class _TrainingRequestsKanban extends StatelessWidget {
     required this.wide,
     required this.batchSelectedIds,
     required this.onBatchToggle,
+    required this.apiOnline,
   });
 
   final List<Map<String, dynamic>> colQueue;
@@ -3042,6 +3087,7 @@ class _TrainingRequestsKanban extends StatelessWidget {
   final bool wide;
   final Set<int> batchSelectedIds;
   final ValueChanged<int>? onBatchToggle;
+  final bool apiOnline;
 
   Widget _column({
     required String title,
@@ -3102,6 +3148,7 @@ class _TrainingRequestsKanban extends StatelessWidget {
               instructors: instructors,
               trainings: trainings,
               onSubmit: onSubmit,
+              apiOnline: apiOnline,
               batchSelectable: isBatchColumn && onBatchToggle != null,
               batchSelected: rid != null && batchSelectedIds.contains(rid),
               onBatchToggle: (isBatchColumn && onBatchToggle != null && rid != null) ? () => onBatchToggle!(rid) : null,
@@ -3398,6 +3445,9 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
       colQueue = [...colQueue, ...orphans];
     }
 
+    final online = _InstructorApiReachability.apiOnlineOf(context);
+    Widget wrapOff(Widget child) => online ? child : Tooltip(message: l.instrOfflineHint, child: child);
+
     return instructorShellScaffold(
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -3414,6 +3464,10 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
                   style: const TextStyle(color: Color(0xFF45464D)),
                 ),
                 const SizedBox(height: 18),
+                if (!online) ...[
+                  _instrOfflineBanner(l),
+                  const SizedBox(height: 16),
+                ],
                 if (_requests.isEmpty)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -3440,9 +3494,11 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
                             child: Text(l.trainReqBatchToolbarClear),
                           ),
                           const SizedBox(width: 8),
-                          FilledButton(
-                            onPressed: _showBatchScheduleDialog,
-                            child: Text(l.trainReqBatchToolbarSchedule),
+                          wrapOff(
+                            FilledButton(
+                              onPressed: !online ? null : _showBatchScheduleDialog,
+                              child: Text(l.trainReqBatchToolbarSchedule),
+                            ),
                           ),
                         ],
                       ),
@@ -3459,6 +3515,7 @@ class _InstitutionPedidosPageState extends State<_InstitutionPedidosPage> {
                   onSubmit: _update,
                   wide: wide,
                   batchSelectedIds: _batchIds,
+                  apiOnline: online,
                   onBatchToggle: (id) {
                     setState(() {
                       if (_batchIds.contains(id)) {
@@ -3485,6 +3542,7 @@ class _InstitutionPedidoCard extends StatefulWidget {
     required this.instructors,
     required this.trainings,
     required this.onSubmit,
+    this.apiOnline = true,
     this.batchSelectable = false,
     this.batchSelected = false,
     this.onBatchToggle,
@@ -3494,6 +3552,7 @@ class _InstitutionPedidoCard extends StatefulWidget {
   final List<Map<String, dynamic>> instructors;
   final List<Map<String, dynamic>> trainings;
   final Future<void> Function(int id, Map<String, dynamic> body) onSubmit;
+  final bool apiOnline;
   final bool batchSelectable;
   final bool batchSelected;
   final VoidCallback? onBatchToggle;
@@ -3542,6 +3601,7 @@ class _InstitutionPedidoCardState extends State<_InstitutionPedidoCard> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final online = widget.apiOnline;
     final req = widget.row['requester'] as Map?;
     final name = req?['name']?.toString() ?? l.trainReqDashNone;
     final email = req?['email']?.toString() ?? '';
@@ -3639,11 +3699,13 @@ class _InstitutionPedidoCardState extends State<_InstitutionPedidoCard> {
                 DropdownMenuItem(value: 'rejected', child: Text(l.trainReqStatusRejected)),
                 DropdownMenuItem(value: 'fulfilled', child: Text(l.trainReqStatusFulfilled)),
               ],
-              onChanged: (v) {
-                if (v != null) {
-                  setState(() => _status = v);
-                }
-              },
+              onChanged: !online
+                  ? null
+                  : (v) {
+                      if (v != null) {
+                        setState(() => _status = v);
+                      }
+                    },
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<int?>(
@@ -3658,7 +3720,7 @@ class _InstitutionPedidoCardState extends State<_InstitutionPedidoCard> {
                     child: Text(u['name']?.toString() ?? ''),
                   ),
               ],
-              onChanged: (v) => setState(() => _instructorId = v),
+              onChanged: !online ? null : (v) => setState(() => _instructorId = v),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<int?>(
@@ -3676,7 +3738,7 @@ class _InstitutionPedidoCardState extends State<_InstitutionPedidoCard> {
                     ),
                   ),
               ],
-              onChanged: (v) => setState(() => _trainingId = v),
+              onChanged: !online ? null : (v) => setState(() => _trainingId = v),
             ),
             if (ft != null) ...[
               const SizedBox(height: 8),
@@ -3691,11 +3753,20 @@ class _InstitutionPedidoCardState extends State<_InstitutionPedidoCard> {
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,
-              child: FilledButton(
-                onPressed: _save,
-                style: FilledButton.styleFrom(backgroundColor: const Color(0xFF00677D)),
-                child: Text(l.trainReqBtnSaveChanges),
-              ),
+              child: online
+                  ? FilledButton(
+                      onPressed: _save,
+                      style: FilledButton.styleFrom(backgroundColor: const Color(0xFF00677D)),
+                      child: Text(l.trainReqBtnSaveChanges),
+                    )
+                  : Tooltip(
+                      message: l.instrOfflineHint,
+                      child: FilledButton(
+                        onPressed: null,
+                        style: FilledButton.styleFrom(backgroundColor: const Color(0xFF00677D)),
+                        child: Text(l.trainReqBtnSaveChanges),
+                      ),
+                    ),
             ),
           ],
         ),
@@ -5007,10 +5078,17 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final online = _InstructorApiReachability.apiOnlineOf(context);
+    Widget wrapOff(Widget child) => online ? child : Tooltip(message: l.instrOfflineHint, child: child);
+
     return instructorShellScaffold(
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
+          if (!online) ...[
+            _instrOfflineBanner(l),
+            const SizedBox(height: 16),
+          ],
           Text(l.credTitleInstitutions, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 22)),
         const SizedBox(height: 8),
         Text(l.credIntroInstitutions, style: const TextStyle(color: Color(0xFF45464D))),
@@ -5029,10 +5107,12 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
                   Text(_error!, style: const TextStyle(color: Color(0xFFB91C1C))),
                 ],
                 const SizedBox(height: 14),
-                FilledButton(
-                  onPressed: _loading ? null : _submit,
-                  style: FilledButton.styleFrom(backgroundColor: const Color(0xFF131B2E), padding: const EdgeInsets.symmetric(vertical: 16)),
-                  child: Text(l.credBtnRegisterInstitution),
+                wrapOff(
+                  FilledButton(
+                    onPressed: _loading || !online ? null : _submit,
+                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFF131B2E), padding: const EdgeInsets.symmetric(vertical: 16)),
+                    child: Text(l.credBtnRegisterInstitution),
+                  ),
                 ),
               ],
             ),
@@ -5074,9 +5154,11 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
                     onChanged: (v) => setState(() => _applyInstitutionId = v),
                   ),
                   const SizedBox(height: 10),
-                  FilledButton(
-                    onPressed: _loading ? null : _applyInst,
-                    child: Text(l.credBtnRequestInstitution),
+                  wrapOff(
+                    FilledButton(
+                      onPressed: _loading || !online ? null : _applyInst,
+                      child: Text(l.credBtnRequestInstitution),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<int>(
@@ -5089,10 +5171,12 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
                     onChanged: (v) => setState(() => _applyManufacturerId = v),
                   ),
                   const SizedBox(height: 10),
-                  FilledButton(
-                    onPressed: _loading ? null : _applyManu,
-                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFF00677D)),
-                    child: Text(l.credBtnRequestManufacturer),
+                  wrapOff(
+                    FilledButton(
+                      onPressed: _loading || !online ? null : _applyManu,
+                      style: FilledButton.styleFrom(backgroundColor: const Color(0xFF00677D)),
+                      child: Text(l.credBtnRequestManufacturer),
+                    ),
                   ),
                 ],
               ),
@@ -5182,11 +5266,11 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             TextButton(
-                              onPressed: () => _decideInst(row['id'], 'approved'),
+                              onPressed: !online ? null : () => _decideInst(row['id'], 'approved'),
                               child: Text(l.credBtnApprove),
                             ),
                             TextButton(
-                              onPressed: () => _decideInst(row['id'], 'rejected'),
+                              onPressed: !online ? null : () => _decideInst(row['id'], 'rejected'),
                               child: Text(l.credBtnReject),
                             ),
                           ],
@@ -5269,22 +5353,22 @@ class _CredenciamentoPageState extends State<_CredenciamentoPage> {
                             children: [
                               if (canApproveRejectManu) ...[
                                 TextButton(
-                                  onPressed: () => _decideManu(row['id'], 'approved'),
+                                  onPressed: !online ? null : () => _decideManu(row['id'], 'approved'),
                                   child: Text(l.credBtnApprove),
                                 ),
                                 TextButton(
-                                  onPressed: () => _decideManu(row['id'], 'rejected'),
+                                  onPressed: !online ? null : () => _decideManu(row['id'], 'rejected'),
                                   child: Text(l.credBtnReject),
                                 ),
                               ],
                               if (canSuspendManu)
                                 TextButton(
-                                  onPressed: () => _decideManu(row['id'], 'suspended'),
+                                  onPressed: !online ? null : () => _decideManu(row['id'], 'suspended'),
                                   child: Text(l.credBtnSuspend),
                                 ),
                               if (canReactivateManu)
                                 TextButton(
-                                  onPressed: () => _decideManu(row['id'], 'approved', setFeePaidOnApprove: false),
+                                  onPressed: !online ? null : () => _decideManu(row['id'], 'approved', setFeePaidOnApprove: false),
                                   child: Text(l.credBtnReactivateHomolog),
                                 ),
                             ],
