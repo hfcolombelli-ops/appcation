@@ -11,6 +11,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
 
 class CertificateController extends Controller
@@ -189,7 +190,7 @@ class CertificateController extends Controller
     }
 
     /**
-     * @return array{0: \Illuminate\Database\Eloquent\Collection<int, Enrollment>, 1: \Illuminate\Support\Collection<int|string, Certificate>}
+     * @return array{0: \Illuminate\Database\Eloquent\Collection<int, Enrollment>, 1: Collection<int|string, Certificate>}
      */
     private function loadTrainingCertificateReport(Training $training): array
     {

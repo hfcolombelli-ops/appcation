@@ -24,7 +24,7 @@ return new class extends Migration
         if ($driver === 'mysql') {
             try {
                 DB::statement('ALTER TABLE users ALTER COLUMN role DROP DEFAULT');
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // já sem default ou motor antigo
             }
             DB::statement('ALTER TABLE users MODIFY COLUMN role VARCHAR(255) NULL DEFAULT NULL');

@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use Firebase\JWT\ExpiredException;
-use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
+use Firebase\JWT\JWT;
 use Firebase\JWT\SignatureInvalidException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
