@@ -28,10 +28,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: PHP 8.3
+      - name: PHP 8.4
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, bcmath, intl, fileinfo
           coverage: none
 

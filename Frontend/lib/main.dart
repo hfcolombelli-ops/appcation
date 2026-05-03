@@ -924,16 +924,31 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  runSpacing: 6,
                   children: [
                     Text(s.loginNoAccountPrefix, style: tt.bodyMedium?.copyWith(color: ClinicalPrecisionColors.onSurface)),
                     TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
                       onPressed: _openRegisterCard,
                       child: Text(s.loginNoAccountAction, style: const TextStyle(fontWeight: FontWeight.w700)),
                     ),
                     Text('·', style: TextStyle(color: Colors.grey.shade500)),
                     TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
                       onPressed: () => _snack(s.loginFooterSoon),
                       child: Text(s.loginNavQuestions, style: const TextStyle(fontWeight: FontWeight.w600)),
                     ),
