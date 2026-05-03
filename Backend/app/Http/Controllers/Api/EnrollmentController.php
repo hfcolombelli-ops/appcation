@@ -9,6 +9,7 @@ use App\Models\Enrollment;
 use App\Models\Question;
 use App\Models\Training;
 use App\Models\TrainingBlock;
+use App\Support\TrainingSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -194,5 +195,72 @@ class EnrollmentController extends Controller
             'training_blocks' => $blocks,
             'participants' => $enrollments,
         ]);
+    }
+
+    /**
+     * Emissão manual de certificado (casos em que o encerramento automático não correu ou correção operacional).
+     * Mesma regra que {@see TrainingSession::issueCertificateForPassedEnrollment}: nota ≥ limiar do treino.
+     */
+    public function issueCertificateForTraining(Request $request, string $trainingId, string $enrollmentId)
+    {
+        $training = Training::query()->findOrFail($trainingId);
+
+        if ((int) $training->instructor_id !== (int) $request->user()->id) {
+            return response()->json(['message' => 'Acesso negado.'], 403);
+        }
+
+        if (! in_array($training->status, ['in_progress', 'finished'], true)) {
+            return response()->json([
+                'message' => 'Só é possível emitir com o treino em andamento ou já encerrado.',
+            ], 422);
+        }
+
+        $enrollment = Enrollment::query()
+            ->whereKey($enrollmentId)
+            ->where('training_id', $training->id)
+            ->firstOrFail();
+
+        if ($enrollment->status !== 'completed') {
+            return response()->json(['message' => 'A inscrição tem de estar concluída.'], 422);
+        }
+
+        if ($enrollment->score === null) {
+            return response()->json(['message' => 'Nota final em falta.'], 422);
+        }
+
+        $scoreTen = (float) $enrollment->score;
+        $passing = (float) ($training->passing_score_percent ?? 70) / 10.0;
+        if ($scoreTen < $passing) {
+            return response()->json(['message' => 'Nota inferior ao limiar de aprovação.'], 422);
+        }
+
+        $existing = Certificate::query()->where('enrollment_id', $enrollment->id)->first();
+        if ($existing !== null) {
+            return response()->json([
+                'already_issued' => true,
+                'certificate' => [
+                    'id' => $existing->id,
+                    'certificate_code' => $existing->certificate_code,
+                    'issued_at' => $existing->issued_at,
+                    'expires_at' => $existing->expires_at,
+                    'score' => $existing->score,
+                ],
+            ]);
+        }
+
+        TrainingSession::issueCertificateForPassedEnrollment($enrollment, $training->fresh(), $scoreTen);
+
+        $cert = Certificate::query()->where('enrollment_id', $enrollment->id)->firstOrFail();
+
+        return response()->json([
+            'already_issued' => false,
+            'certificate' => [
+                'id' => $cert->id,
+                'certificate_code' => $cert->certificate_code,
+                'issued_at' => $cert->issued_at,
+                'expires_at' => $cert->expires_at,
+                'score' => $cert->score,
+            ],
+        ], 201);
     }
 }

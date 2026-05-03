@@ -518,4 +518,231 @@ class FluxxoCertificateAndRepescageTest extends TestCase
 
         $this->assertSame(1, Certificate::query()->where('training_id', $training->id)->count());
     }
+
+    public function test_instructor_can_manually_issue_certificate_when_passing_and_missing(): void
+    {
+        Event::fake();
+
+        $inst = Institution::query()->create([
+            'name' => 'Inst Manual Cert',
+            'cnpj' => '11.222.333/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino manual cert',
+            'type' => 'official',
+            'status' => 'in_progress',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+            'command_seq' => 0,
+            'passing_score_percent' => 70,
+        ]);
+
+        $enrollment = Enrollment::query()->create([
+            'training_id' => $training->id,
+            'user_id' => $trainee->id,
+            'status' => 'completed',
+            'score' => 8.0,
+            'joined_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $this->assertSame(0, Certificate::query()->where('enrollment_id', $enrollment->id)->count());
+
+        $itoken = $instructor->createToken('ins')->plainTextToken;
+
+        $res = $this->withToken($itoken)->postJson(
+            "/api/trainings/{$training->id}/enrollments/{$enrollment->id}/certificate",
+            []
+        );
+
+        $res->assertCreated();
+        $res->assertJsonPath('already_issued', false);
+        $this->assertSame(1, Certificate::query()->where('enrollment_id', $enrollment->id)->count());
+    }
+
+    public function test_manual_issue_certificate_idempotent_when_already_exists(): void
+    {
+        Event::fake();
+
+        $inst = Institution::query()->create([
+            'name' => 'Inst Manual Idem',
+            'cnpj' => '22.333.444/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino idem',
+            'type' => 'official',
+            'status' => 'finished',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+            'command_seq' => 0,
+            'passing_score_percent' => 70,
+        ]);
+
+        $enrollment = Enrollment::query()->create([
+            'training_id' => $training->id,
+            'user_id' => $trainee->id,
+            'status' => 'completed',
+            'score' => 9.0,
+            'joined_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $itoken = $instructor->createToken('ins')->plainTextToken;
+
+        $this->withToken($itoken)->postJson(
+            "/api/trainings/{$training->id}/enrollments/{$enrollment->id}/certificate",
+            []
+        )->assertCreated();
+
+        $cert = Certificate::query()->where('enrollment_id', $enrollment->id)->firstOrFail();
+        $issuedAt = $cert->issued_at?->toIso8601String();
+
+        $res2 = $this->withToken($itoken)->postJson(
+            "/api/trainings/{$training->id}/enrollments/{$enrollment->id}/certificate",
+            []
+        );
+        $res2->assertOk();
+        $res2->assertJsonPath('already_issued', true);
+
+        $cert->refresh();
+        $this->assertSame($issuedAt, $cert->issued_at?->toIso8601String());
+        $this->assertSame(1, Certificate::query()->where('enrollment_id', $enrollment->id)->count());
+    }
+
+    public function test_manual_issue_certificate_rejects_below_passing(): void
+    {
+        $inst = Institution::query()->create([
+            'name' => 'Inst Manual Fail',
+            'cnpj' => '33.444.555/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino baixa',
+            'type' => 'official',
+            'status' => 'in_progress',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+            'command_seq' => 0,
+            'passing_score_percent' => 70,
+        ]);
+
+        $enrollment = Enrollment::query()->create([
+            'training_id' => $training->id,
+            'user_id' => $trainee->id,
+            'status' => 'completed',
+            'score' => 6.5,
+            'joined_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $itoken = $instructor->createToken('ins')->plainTextToken;
+
+        $this->withToken($itoken)->postJson(
+            "/api/trainings/{$training->id}/enrollments/{$enrollment->id}/certificate",
+            []
+        )->assertUnprocessable();
+
+        $this->assertSame(0, Certificate::query()->where('enrollment_id', $enrollment->id)->count());
+    }
+
+    public function test_manual_issue_certificate_wrong_instructor_forbidden(): void
+    {
+        $inst = Institution::query()->create([
+            'name' => 'Inst Manual 403',
+            'cnpj' => '44.555.666/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $other = User::factory()->create(['role' => 'instructor']);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino outro',
+            'type' => 'official',
+            'status' => 'in_progress',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+            'command_seq' => 0,
+            'passing_score_percent' => 70,
+        ]);
+
+        $enrollment = Enrollment::query()->create([
+            'training_id' => $training->id,
+            'user_id' => $trainee->id,
+            'status' => 'completed',
+            'score' => 8.0,
+            'joined_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $otoken = $other->createToken('o')->plainTextToken;
+
+        $this->withToken($otoken)->postJson(
+            "/api/trainings/{$training->id}/enrollments/{$enrollment->id}/certificate",
+            []
+        )->assertForbidden();
+    }
+
+    public function test_manual_issue_certificate_rejects_when_training_not_started(): void
+    {
+        $inst = Institution::query()->create([
+            'name' => 'Inst Manual Draft',
+            'cnpj' => '55.666.777/0001-'.Str::upper(Str::random(2)),
+            'status' => 'active',
+        ]);
+
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $trainee = User::factory()->create(['role' => 'trainee']);
+
+        $training = Training::query()->create([
+            'institution_id' => $inst->id,
+            'instructor_id' => $instructor->id,
+            'title' => 'Treino rascunho',
+            'type' => 'official',
+            'status' => 'draft',
+            'join_hash' => Str::lower(Str::random(12)),
+            'is_official_template' => false,
+            'command_seq' => 0,
+            'passing_score_percent' => 70,
+        ]);
+
+        $enrollment = Enrollment::query()->create([
+            'training_id' => $training->id,
+            'user_id' => $trainee->id,
+            'status' => 'completed',
+            'score' => 8.0,
+            'joined_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $itoken = $instructor->createToken('ins')->plainTextToken;
+
+        $this->withToken($itoken)->postJson(
+            "/api/trainings/{$training->id}/enrollments/{$enrollment->id}/certificate",
+            []
+        )->assertUnprocessable();
+    }
 }

@@ -143,6 +143,8 @@ Route::middleware(['auth:sanctum', 'throttle:api-user'])->group(function () {
     Route::post('/trainings/from-template/{template}', [TrainingTemplateController::class, 'instantiate']);
 
     Route::get('/trainings/{training}/enrollments', [EnrollmentController::class, 'forTraining']);
+    Route::post('/trainings/{training}/enrollments/{enrollment}/certificate', [EnrollmentController::class, 'issueCertificateForTraining'])
+        ->middleware('throttle:sensitive');
     Route::get('/trainings/{training}/certificates/{certificate}/pdf', [CertificateController::class, 'instructorDownloadPdf']);
     Route::get('/trainings/{training}/questionnaire', [QuestionnaireController::class, 'show'])
         ->middleware('trainee.lgpd');

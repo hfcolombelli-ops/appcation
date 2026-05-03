@@ -894,6 +894,7 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
   bool _loading = false;
   bool _closingTraining = false;
   int? _certPdfLoadingId;
+  int? _issueCertLoadingEid;
   final Set<int> _repescageIds = {};
   List<Map<String, dynamic>> _trainingBlocks = [];
   int? _repescageBlockId;
@@ -972,6 +973,31 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
       }
     } finally {
       if (mounted) setState(() => _certPdfLoadingId = null);
+    }
+  }
+
+  Future<void> _issueCertificateForEnrollment(int enrollmentId) async {
+    final l = AppLocalizations.of(context);
+    final t = appAuth.token;
+    final tid = _selectedId;
+    if (t == null || tid == null) return;
+    setState(() => _issueCertLoadingEid = enrollmentId);
+    try {
+      final r = await widget.api.issueTrainingEnrollmentCertificate(t, tid, enrollmentId);
+      await _loadMonitor();
+      if (!mounted) return;
+      final already = r['already_issued'] == true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(already ? l.postTrainingIssueCertificateAlready : l.postTrainingIssueCertificateDone),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (mounted) context.showLocalizedApiExceptionSnack(e);
+    } catch (_) {
+      if (mounted) context.showErrApiConnectionSnack();
+    } finally {
+      if (mounted) setState(() => _issueCertLoadingEid = null);
     }
   }
 
@@ -1060,6 +1086,11 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
         : LayoutBuilder(
             builder: (context, constraints) {
               final narrow = constraints.maxWidth < 900;
+              Map<String, dynamic>? trainingForCert;
+              final trw = _monitor?['training'];
+              if (trw is Map) {
+                trainingForCert = Map<String, dynamic>.from(trw);
+              }
               final participantPane = instructorShellCard(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -1092,6 +1123,11 @@ class _PostTrainingResultsPageState extends State<_PostTrainingResultsPage> {
                                     },
                                     onCertificatePdf: _onParticipantCertificatePdf,
                                     certificatePdfLoadingForId: _certPdfLoadingId,
+                                    onIssueManualCertificate: eid != null &&
+                                            participantEligibleForManualCertificate(row, trainingForCert)
+                                        ? () => _issueCertificateForEnrollment(eid)
+                                        : null,
+                                    issueCertificateBusy: eid != null && _issueCertLoadingEid == eid,
                                   );
                                 },
                               ),
@@ -1740,6 +1776,34 @@ double? _parseScoreDouble(dynamic v) {
   if (v is num) return v.toDouble();
   final s = v.toString().trim().replaceAll(',', '.');
   return double.tryParse(s);
+}
+
+bool participantEligibleForManualCertificate(
+  Map<String, dynamic> row,
+  Map<String, dynamic>? training,
+) {
+  if (row['certificate'] != null) {
+    return false;
+  }
+  final e = row['enrollment'];
+  if (e is! Map) {
+    return false;
+  }
+  final em = Map<String, dynamic>.from(e);
+  if (em['status']?.toString() != 'completed') {
+    return false;
+  }
+  final score = _parseScoreDouble(em['score']);
+  if (score == null) {
+    return false;
+  }
+  final pct = training?['passing_score_percent'];
+  final passing = ((pct is num) ? pct : 70).toDouble() / 10.0;
+  if (score < passing) {
+    return false;
+  }
+  final st = training?['status']?.toString();
+  return st == 'in_progress' || st == 'finished';
 }
 
 Widget _postTrainingOutcomeChip(BuildContext context, Map<String, dynamic>? enrollment) {
@@ -4047,6 +4111,8 @@ class _ParticipantTile extends StatelessWidget {
     required this.onToggle,
     this.onCertificatePdf,
     this.certificatePdfLoadingForId,
+    this.onIssueManualCertificate,
+    this.issueCertificateBusy = false,
   });
 
   final Map<String, dynamic> row;
@@ -4054,6 +4120,8 @@ class _ParticipantTile extends StatelessWidget {
   final ValueChanged<int> onToggle;
   final ValueChanged<Map<String, dynamic>>? onCertificatePdf;
   final int? certificatePdfLoadingForId;
+  final VoidCallback? onIssueManualCertificate;
+  final bool issueCertificateBusy;
 
   @override
   Widget build(BuildContext context) {
@@ -4165,6 +4233,31 @@ class _ParticipantTile extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Text(score, style: const TextStyle(fontWeight: FontWeight.w800, color: ClinicalPrecisionColors.secondary)),
+                    ),
+                  if (onIssueManualCertificate != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Tooltip(
+                        message: l.postTrainingIssueCertificateTooltip,
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: issueCertificateBusy ? null : onIssueManualCertificate,
+                          child: issueCertificateBusy
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Text(
+                                  l.postTrainingIssueCertificate,
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                                ),
+                        ),
+                      ),
                     ),
                   if (certId != null && onCertificatePdf != null)
                     Padding(

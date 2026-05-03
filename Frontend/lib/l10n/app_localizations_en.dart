@@ -308,6 +308,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get postTrainingCertificatePdfTooltip => 'Download certificate (PDF)';
 
   @override
+  String get postTrainingIssueCertificate => 'Issue certificate';
+
+  @override
+  String get postTrainingIssueCertificateTooltip =>
+      'Register the certificate when the score already meets the passing threshold (e.g. after a missed close step).';
+
+  @override
+  String get postTrainingIssueCertificateDone => 'Certificate issued.';
+
+  @override
+  String get postTrainingIssueCertificateAlready =>
+      'This participant already had a certificate.';
+
+  @override
   String get shellLinkInstitutionTitle => 'Link your institution';
 
   @override

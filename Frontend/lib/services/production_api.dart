@@ -326,6 +326,18 @@ class ProductionApi {
   Future<Map<String, dynamic>> trainingParticipants(String token, int trainingId) =>
       _http.getJson('/api/trainings/$trainingId/enrollments', token: token);
 
+  /// Instrutor: emissão manual quando a nota já cumpre o limiar e o certificado ainda falta (ou idempotente).
+  Future<Map<String, dynamic>> issueTrainingEnrollmentCertificate(
+    String token,
+    int trainingId,
+    int enrollmentId,
+  ) =>
+      _http.postJson(
+        '/api/trainings/$trainingId/enrollments/$enrollmentId/certificate',
+        {},
+        token: token,
+      );
+
   Future<Map<String, dynamic>> traineeState(String token) =>
       _http.getJson('/api/me/trainee-state', token: token);
 

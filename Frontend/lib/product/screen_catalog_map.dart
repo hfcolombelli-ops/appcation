@@ -26,7 +26,7 @@ abstract final class ScreenCatalogMap {
   static const appDash01 = 'APP-DASH-01'; // Dashboard instrutor (_DashboardPage)
   static const appTre01 = 'APP-TRE-01'; // Criar treino (/instructor/treinamento — _TreinamentoPage)
   static const appSal01 = 'APP-SAL-01'; // Sala de comando (/instructor/comando — _ComandoPage)
-  static const appSal02 = 'APP-SAL-02'; // /instructor/resultados — encerrar treino (emite certificados GA10 na API) + PDF + chips + repescagem
+  static const appSal02 = 'APP-SAL-02'; // /instructor/resultados — encerrar treino (GA10) + PDF + emissão manual + chips + repescagem
 
   // --- Treinando (TraineeShell, steps internos) ---
   static const treAcc01 = 'TRE-ACC-01'; // Convite / entrada (join hash + login)

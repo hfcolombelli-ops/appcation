@@ -662,6 +662,30 @@ abstract class AppLocalizations {
   /// **'Descarregar certificado (PDF)'**
   String get postTrainingCertificatePdfTooltip;
 
+  /// No description provided for @postTrainingIssueCertificate.
+  ///
+  /// In pt, this message translates to:
+  /// **'Emitir certificado'**
+  String get postTrainingIssueCertificate;
+
+  /// No description provided for @postTrainingIssueCertificateTooltip.
+  ///
+  /// In pt, this message translates to:
+  /// **'Registar o certificado na base quando a nota já é ≥ ao limiar (ex.: correção após encerramento).'**
+  String get postTrainingIssueCertificateTooltip;
+
+  /// No description provided for @postTrainingIssueCertificateDone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Certificado emitido.'**
+  String get postTrainingIssueCertificateDone;
+
+  /// No description provided for @postTrainingIssueCertificateAlready.
+  ///
+  /// In pt, this message translates to:
+  /// **'Este participante já tinha certificado.'**
+  String get postTrainingIssueCertificateAlready;
+
   /// No description provided for @shellLinkInstitutionTitle.
   ///
   /// In pt, this message translates to:

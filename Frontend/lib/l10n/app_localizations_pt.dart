@@ -309,6 +309,20 @@ class AppLocalizationsPt extends AppLocalizations {
       'Descarregar certificado (PDF)';
 
   @override
+  String get postTrainingIssueCertificate => 'Emitir certificado';
+
+  @override
+  String get postTrainingIssueCertificateTooltip =>
+      'Registar o certificado na base quando a nota já é ≥ ao limiar (ex.: correção após encerramento).';
+
+  @override
+  String get postTrainingIssueCertificateDone => 'Certificado emitido.';
+
+  @override
+  String get postTrainingIssueCertificateAlready =>
+      'Este participante já tinha certificado.';
+
+  @override
   String get shellLinkInstitutionTitle => 'Vincule a sua instituição';
 
   @override

@@ -97,4 +97,4 @@ _Registar aqui ou remover quando fechadas._
 
 ---
 
-**Próximo passo imediato sugerido:** disparar emissão de certificado manualmente (casos especiais) ou relatório agrupado de certificados por treino, conforme necessidade de auditoria.
+**Próximo passo imediato sugerido:** relatório agrupado de certificados por treino (export CSV/PDF na sala de resultados ou no dashboard), conforme necessidade de auditoria.
