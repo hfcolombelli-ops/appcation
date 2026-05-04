@@ -507,33 +507,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get profileGatePickRoleFirst => 'Escolha um perfil primeiro.';
 
   @override
-  String get profileGateProfileAlreadySetSync =>
-      'Perfil já definido no servidor. A sincronizar…';
-
-  @override
-  String profileGateRoleMismatchUseRefresh(Object serverRole) {
-    return 'O servidor já tem outra função ($serverRole). Toque em «Actualizar sessão» para abrir a área correcta ou contacte o suporte se precisar de alterar o tipo de conta.';
-  }
-
-  @override
-  String profileGateServerRoleHint(Object serverRoleLabel) {
-    return 'No servidor a função registada é «$serverRoleLabel». Se já concluiu a triagem com esse tipo (aqui ou outro dispositivo), use «Actualizar sessão» para entrar na área correcta — não precisa de voltar a escolher em baixo.';
-  }
-
-  @override
-  String profileGateChoiceConflictsServer(
-    Object chosenLabel,
-    Object serverRoleLabel,
-  ) {
-    return 'Está a confirmar «$chosenLabel», mas o servidor já tem «$serverRoleLabel». «Confirmar perfil» só é aceite enquanto a triagem ainda permite mudar de função; se o servidor já fechou o perfil, verá erro 403 — use «Actualizar sessão» ou contacte o suporte para mudar de tipo de conta.';
-  }
-
-  @override
-  String get profileGateRoleMismatchFollowUp =>
-      'Se «Actualizar sessão» não abrir a área esperada, termine a sessão e entre de novo com Google, ou escreva ao suporte com o e-mail da conta.';
-
-  @override
-  String get profileGateRoleLabelInstitutionAdmin => 'Gestor de instituição';
+  String get profileGateSnackUseRefresh =>
+      'Use «Actualizar sessão» para continuar.';
 
   @override
   String get loginGoogleTriageHint =>

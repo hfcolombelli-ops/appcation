@@ -16,29 +16,6 @@ class ProfileGateScreen extends StatefulWidget {
 
 enum _TriageStep { pickRole, details }
 
-String _humanApiRole(AppLocalizations l, String raw) {
-  switch (raw.trim()) {
-    case 'trainee':
-      return l.googleRoleTrainee;
-    case 'instructor':
-      return l.googleRoleInstructor;
-    case 'manufacturer_admin':
-      return l.googleRoleManufacturerAdmin;
-    case 'institution_admin':
-      return l.profileGateRoleLabelInstitutionAdmin;
-    default:
-      return raw.trim();
-  }
-}
-
-String _humanChosenRole(AppLocalizations l, String? roleId) {
-  return switch (roleId) {
-    'instructor' => l.googleRoleInstructor,
-    'manufacturer_admin' => l.googleRoleManufacturerAdmin,
-    _ => l.googleRoleTrainee,
-  };
-}
-
 class _ProfileGateScreenState extends State<ProfileGateScreen> {
   bool _refreshing = false;
   bool _claiming = false;
@@ -94,66 +71,14 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
         await appAuth.restore();
         if (!mounted) return;
         if (!appAuth.needsProfileGate) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              duration: const Duration(seconds: 6),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l.profileGateProfileAlreadySetSync),
-                  const SizedBox(height: 6),
-                  Text(
-                    l.profileGateRoleMismatchFollowUp,
-                    style: const TextStyle(fontSize: 13, height: 1.35),
-                  ),
-                ],
-              ),
-            ),
-          );
           return;
         }
         final body = e.message;
         final lockedProfile =
             body.contains('perfil já está definido') || body.contains('Actualizar sessão');
         if (lockedProfile) {
-          final apiRole = appAuth.role?.trim();
-          if (apiRole != null && apiRole.isNotEmpty && apiRole != role) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                duration: const Duration(seconds: 10),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(l.profileGateRoleMismatchUseRefresh(apiRole)),
-                    const SizedBox(height: 8),
-                    Text(
-                      l.profileGateRoleMismatchFollowUp,
-                      style: const TextStyle(fontSize: 13, height: 1.35),
-                    ),
-                  ],
-                ),
-              ),
-            );
-            return;
-          }
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              duration: const Duration(seconds: 6),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l.profileGateProfileAlreadySetSync),
-                  const SizedBox(height: 6),
-                  Text(
-                    l.profileGateRoleMismatchFollowUp,
-                    style: const TextStyle(fontSize: 13, height: 1.35),
-                  ),
-                ],
-              ),
-            ),
+            SnackBar(content: Text(l.profileGateSnackUseRefresh)),
           );
           return;
         }
@@ -279,28 +204,7 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
     );
   }
 
-  Widget _noticeCard(String text) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: ClinicalPrecisionColors.secondary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ClinicalPrecisionColors.secondary.withValues(alpha: 0.32)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.info_outline_rounded, color: ClinicalPrecisionColors.secondary, size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 13, height: 1.42, color: ClinicalPrecisionColors.onSurface)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPickRole(AppLocalizations l, String? name, String? email, String roleLabel, String? apiRoleRaw) {
+  Widget _buildPickRole(AppLocalizations l, String? name, String? email, String roleLabel) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -321,10 +225,6 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
         if (name != null || email != null) ...[
           const SizedBox(height: 18),
           _accountCard(l, name, email, roleLabel),
-        ],
-        if (apiRoleRaw != null && apiRoleRaw.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          _noticeCard(l.profileGateServerRoleHint(_humanApiRole(l, apiRoleRaw))),
         ],
         const SizedBox(height: 22),
         _rolePickCard(
@@ -395,8 +295,6 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
 
   Widget _buildDetails(AppLocalizations l) {
     final role = _selectedRole;
-    final apiRole = appAuth.role?.trim();
-    final roleConflict = apiRole != null && apiRole.isNotEmpty && role != null && apiRole != role;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -431,19 +329,6 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
           _roleBody(l, role),
           style: const TextStyle(fontSize: 14, height: 1.45, color: ClinicalPrecisionColors.onSurfaceVariant),
         ),
-        if (apiRole != null && apiRole.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          _noticeCard(l.profileGateServerRoleHint(_humanApiRole(l, apiRole))),
-        ],
-        if (roleConflict) ...[
-          const SizedBox(height: 12),
-          _noticeCard(
-            l.profileGateChoiceConflictsServer(
-              _humanApiRole(l, apiRole),
-              _humanChosenRole(l, role),
-            ),
-          ),
-        ],
         if (role == 'manufacturer_admin') ...[
           const SizedBox(height: 18),
           TextField(
@@ -538,7 +423,7 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
                       child: KeyedSubtree(
                         key: ValueKey(_step),
                         child: _step == _TriageStep.pickRole
-                            ? _buildPickRole(l, name, email, roleLabel, roleRaw)
+                            ? _buildPickRole(l, name, email, roleLabel)
                             : _buildDetails(l),
                       ),
                     ),

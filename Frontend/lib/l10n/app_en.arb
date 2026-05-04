@@ -174,28 +174,7 @@
   "profileGateChooseRole": "Platform role",
   "profileGateConfirmProfile": "Confirm profile",
   "profileGatePickRoleFirst": "Choose a role first.",
-  "profileGateProfileAlreadySetSync": "Profile already set on the server. Syncing…",
-  "profileGateRoleMismatchUseRefresh": "The server already has a different role ({serverRole}). Tap «Refresh session» to open the correct area, or contact support if you need to change account type.",
-  "@profileGateRoleMismatchUseRefresh": {
-    "placeholders": {
-      "serverRole": {}
-    }
-  },
-  "profileGateServerRoleHint": "The server already has your role as «{serverRoleLabel}». If you already finished triage with that type (here or on another device), use «Refresh session» to open the right area — you do not need to choose again below.",
-  "@profileGateServerRoleHint": {
-    "placeholders": {
-      "serverRoleLabel": {}
-    }
-  },
-  "profileGateChoiceConflictsServer": "You are about to confirm «{chosenLabel}», but the server already has «{serverRoleLabel}». «Confirm profile» is only accepted while triage still allows changing role; if the server already locked your profile, you will get HTTP 403 — use «Refresh session» or contact support to change account type.",
-  "@profileGateChoiceConflictsServer": {
-    "placeholders": {
-      "chosenLabel": {},
-      "serverRoleLabel": {}
-    }
-  },
-  "profileGateRoleMismatchFollowUp": "If «Refresh session» does not open the area you expect, sign out and sign in with Google again, or email support with your account address.",
-  "profileGateRoleLabelInstitutionAdmin": "Institution manager",
+  "profileGateSnackUseRefresh": "Tap «Refresh session» to continue.",
   "loginGoogleTriageHint": "After signing in with Google, you will choose your profile in two steps (account type, then company details if needed).",
   "profileTriageTitle": "Choose your profile",
   "profileTriageSubtitle": "Select the account type. On the next step you confirm or complete details to link your Google account.",

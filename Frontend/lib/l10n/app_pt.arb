@@ -174,28 +174,7 @@
   "profileGateChooseRole": "Perfil na plataforma",
   "profileGateConfirmProfile": "Confirmar perfil",
   "profileGatePickRoleFirst": "Escolha um perfil primeiro.",
-  "profileGateProfileAlreadySetSync": "Perfil já definido no servidor. A sincronizar…",
-  "profileGateRoleMismatchUseRefresh": "O servidor já tem outra função ({serverRole}). Toque em «Actualizar sessão» para abrir a área correcta ou contacte o suporte se precisar de alterar o tipo de conta.",
-  "@profileGateRoleMismatchUseRefresh": {
-    "placeholders": {
-      "serverRole": {}
-    }
-  },
-  "profileGateServerRoleHint": "No servidor a função registada é «{serverRoleLabel}». Se já concluiu a triagem com esse tipo (aqui ou outro dispositivo), use «Actualizar sessão» para entrar na área correcta — não precisa de voltar a escolher em baixo.",
-  "@profileGateServerRoleHint": {
-    "placeholders": {
-      "serverRoleLabel": {}
-    }
-  },
-  "profileGateChoiceConflictsServer": "Está a confirmar «{chosenLabel}», mas o servidor já tem «{serverRoleLabel}». «Confirmar perfil» só é aceite enquanto a triagem ainda permite mudar de função; se o servidor já fechou o perfil, verá erro 403 — use «Actualizar sessão» ou contacte o suporte para mudar de tipo de conta.",
-  "@profileGateChoiceConflictsServer": {
-    "placeholders": {
-      "chosenLabel": {},
-      "serverRoleLabel": {}
-    }
-  },
-  "profileGateRoleMismatchFollowUp": "Se «Actualizar sessão» não abrir a área esperada, termine a sessão e entre de novo com Google, ou escreva ao suporte com o e-mail da conta.",
-  "profileGateRoleLabelInstitutionAdmin": "Gestor de instituição",
+  "profileGateSnackUseRefresh": "Use «Actualizar sessão» para continuar.",
   "loginGoogleTriageHint": "Depois de entrar com o Google, escolhe o teu perfil em dois passos (tipo de conta e, se necessário, dados da empresa).",
   "profileTriageTitle": "Escolhe o teu perfil",
   "profileTriageSubtitle": "Selecciona o tipo de conta. No passo seguinte confirmas ou completas os dados para vincular a conta Google.",
