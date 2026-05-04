@@ -950,18 +950,6 @@ abstract class AppLocalizations {
   /// **'Função (role) no servidor: {role}'**
   String profileGateRoleFromApi(Object role);
 
-  /// No description provided for @profileGateRefreshSession.
-  ///
-  /// In pt, this message translates to:
-  /// **'Actualizar sessão'**
-  String get profileGateRefreshSession;
-
-  /// No description provided for @profileGateRefreshHint.
-  ///
-  /// In pt, this message translates to:
-  /// **'Use depois de um administrador actualizar a sua função — sem voltar a escrever a palavra-passe.'**
-  String get profileGateRefreshHint;
-
   /// No description provided for @profileGateClaimSectionTitle.
   ///
   /// In pt, this message translates to:
@@ -998,11 +986,11 @@ abstract class AppLocalizations {
   /// **'Escolha um perfil primeiro.'**
   String get profileGatePickRoleFirst;
 
-  /// No description provided for @profileGateSnackUseRefresh.
+  /// No description provided for @profileGateRetryLaterOrSignOut.
   ///
   /// In pt, this message translates to:
-  /// **'Use «Actualizar sessão» para continuar.'**
-  String get profileGateSnackUseRefresh;
+  /// **'Não foi possível sincronizar agora. Tente de novo dentro de momentos ou saia e entre novamente.'**
+  String get profileGateRetryLaterOrSignOut;
 
   /// No description provided for @loginGoogleTriageHint.
   ///

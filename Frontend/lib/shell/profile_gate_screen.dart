@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
@@ -17,8 +19,9 @@ class ProfileGateScreen extends StatefulWidget {
 enum _TriageStep { pickRole, details }
 
 class _ProfileGateScreenState extends State<ProfileGateScreen> {
-  bool _refreshing = false;
   bool _claiming = false;
+  bool _mePollBusy = false;
+  Timer? _mePoll;
   _TriageStep _step = _TriageStep.pickRole;
   String? _selectedRole;
   final TextEditingController _mfgName = TextEditingController();
@@ -29,22 +32,40 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await appAuth.restore();
+      if (!mounted) return;
+      unawaited(_syncMeIfStillGated());
+      _mePoll?.cancel();
+      _mePoll = Timer.periodic(const Duration(seconds: 12), (_) {
+        unawaited(_syncMeIfStillGated());
+      });
     });
   }
 
   @override
   void dispose() {
+    _mePoll?.cancel();
     _mfgName.dispose();
     _mfgCnpj.dispose();
     super.dispose();
   }
 
-  Future<void> _refreshSession() async {
-    setState(() => _refreshing = true);
+  Future<void> _syncMeIfStillGated() async {
+    if (!mounted || _mePollBusy) return;
+    if (!appAuth.needsProfileGate) {
+      _mePoll?.cancel();
+      _mePoll = null;
+      return;
+    }
+    _mePollBusy = true;
     try {
       await appAuth.restore();
     } finally {
-      if (mounted) setState(() => _refreshing = false);
+      _mePollBusy = false;
+    }
+    if (!mounted) return;
+    if (!appAuth.needsProfileGate) {
+      _mePoll?.cancel();
+      _mePoll = null;
     }
   }
 
@@ -70,15 +91,20 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
       if (e.statusCode == 403) {
         await appAuth.restore();
         if (!mounted) return;
-        if (!appAuth.needsProfileGate) {
-          return;
-        }
+        if (!appAuth.needsProfileGate) return;
         final body = e.message;
         final lockedProfile =
             body.contains('perfil já está definido') || body.contains('Actualizar sessão');
         if (lockedProfile) {
+          for (var i = 0; i < 6; i++) {
+            await appAuth.restore();
+            if (!mounted) return;
+            if (!appAuth.needsProfileGate) return;
+            await Future<void>.delayed(const Duration(milliseconds: 350));
+          }
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l.profileGateSnackUseRefresh)),
+            SnackBar(content: Text(l.profileGateRetryLaterOrSignOut)),
           );
           return;
         }
@@ -152,7 +178,7 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
         elevation: 0,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: (_claiming || _refreshing)
+          onTap: _claiming
               ? null
               : () {
                   setState(() {
@@ -256,14 +282,6 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
           style: TextStyle(fontSize: 12, color: ClinicalPrecisionColors.onSurfaceVariant.withValues(alpha: 0.85), height: 1.35),
         ),
         const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: _refreshing ? null : _refreshSession,
-          icon: _refreshing
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.sync_rounded, size: 20),
-          label: Text(l.profileGateRefreshSession),
-        ),
-        const SizedBox(height: 10),
         FilledButton(
           onPressed: () => appAuth.logout(),
           style: FilledButton.styleFrom(
@@ -302,7 +320,7 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
-            onPressed: (_claiming || _refreshing) ? null : _goToPickRole,
+            onPressed: _claiming ? null : _goToPickRole,
             icon: const Icon(Icons.arrow_back_rounded, size: 20),
             label: Text(l.profileTriageBack),
           ),
@@ -333,7 +351,7 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
           const SizedBox(height: 18),
           TextField(
             controller: _mfgName,
-            enabled: !_claiming && !_refreshing,
+            enabled: !_claiming,
             decoration: InputDecoration(
               labelText: l.fieldCompanyName,
               border: const OutlineInputBorder(),
@@ -343,7 +361,7 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
           const SizedBox(height: 10),
           TextField(
             controller: _mfgCnpj,
-            enabled: !_claiming && !_refreshing,
+            enabled: !_claiming,
             decoration: InputDecoration(
               labelText: l.mfgCnpjOptionalLabel,
               border: const OutlineInputBorder(),
@@ -357,19 +375,11 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
         ],
         const SizedBox(height: 22),
         FilledButton(
-          onPressed: (_claiming || _refreshing) ? null : () => _submitClaim(l),
+          onPressed: _claiming ? null : () => _submitClaim(l),
           style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
           child: _claiming
               ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2))
               : Text(l.profileGateConfirmProfile),
-        ),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: _refreshing ? null : _refreshSession,
-          icon: _refreshing
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.sync_rounded, size: 20),
-          label: Text(l.profileGateRefreshSession),
         ),
         const SizedBox(height: 10),
         FilledButton(
@@ -403,7 +413,9 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),
                 child: RefreshIndicator(
-                  onRefresh: _refreshSession,
+                  onRefresh: () async {
+                    await appAuth.restore();
+                  },
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(28),

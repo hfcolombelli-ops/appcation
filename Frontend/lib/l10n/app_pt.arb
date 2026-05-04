@@ -166,15 +166,13 @@
       "role": {}
     }
   },
-  "profileGateRefreshSession": "Actualizar sessão",
-  "profileGateRefreshHint": "Use depois de um administrador actualizar a sua função — sem voltar a escrever a palavra-passe.",
   "profileGateClaimSectionTitle": "Definir perfil (uma vez)",
   "profileGateClaimIntro": "Se a sua conta deve ser treinando, instrutor ou administrador de fabricante mas a função no servidor estava em falta ou inválida, escolha abaixo. Só é permitido até existir uma função válida gravada.",
   "profileGateClaimHint": "Gestor de instituição não se define aqui — o hospital ou o fabricante cria esse acesso.",
   "profileGateChooseRole": "Perfil na plataforma",
   "profileGateConfirmProfile": "Confirmar perfil",
   "profileGatePickRoleFirst": "Escolha um perfil primeiro.",
-  "profileGateSnackUseRefresh": "Use «Actualizar sessão» para continuar.",
+  "profileGateRetryLaterOrSignOut": "Não foi possível sincronizar agora. Tente de novo dentro de momentos ou saia e entre novamente.",
   "loginGoogleTriageHint": "Depois de entrar com o Google, escolhe o teu perfil em dois passos (tipo de conta e, se necessário, dados da empresa).",
   "profileTriageTitle": "Escolhe o teu perfil",
   "profileTriageSubtitle": "Selecciona o tipo de conta. No passo seguinte confirmas ou completas os dados para vincular a conta Google.",

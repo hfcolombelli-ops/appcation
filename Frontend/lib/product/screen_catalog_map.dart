@@ -7,7 +7,7 @@
 /// IDs do catálogo (PARTE 2) para pesquisa no código e alinhamento incremental.
 abstract final class ScreenCatalogMap {
   // --- Pós-login global (`main.dart` / `RoleHome`) — diagrama «Sem perfil» ---
-  static const coreProfileGate = 'CORE-PROFILE-GATE'; // `ProfileGateScreen`: role vazio/desconhecido; cartão conta + role API; `PATCH /api/me/role` (trainee/instructor/manufacturer + dados fabricante); «Actualizar sessão» + pull-to-refresh → `restore()`; `SingleChildScrollView` + `AlwaysScrollableScrollPhysics`; sair; `VersionBadge`
+  static const coreProfileGate = 'CORE-PROFILE-GATE'; // `ProfileGateScreen`: role vazio/desconhecido; cartão conta + role API; `PATCH /api/me/role` (trainee/instructor/manufacturer + dados fabricante); poll ~12s + pull-to-refresh → `restore()`; após 403 bloqueado vários `restore()`; `SingleChildScrollView` + `AlwaysScrollableScrollPhysics`; sair; `VersionBadge`
 
   // --- Fabricante (ManufacturerShell: `_api.health()` ~20s, chip API, faixa `instrOfflineHint`, acções/export/homologação e pesquisa debounced só com API online) ---
   static const fabDash01 = 'FAB-DASH-01'; // Início: KPI + export + pré-visualização `monthly_trend` (6 meses) + CTA Análises (`navigateToMfgTab(5)`); fabricante `active` sem `dashboard-summary` → cartão indisponível + Tentar novamente / Abrir análises; `pending_validation` → `ManufacturerPendingApprovalScreen` com pull → `_reload()`; `pending_info`/`rejected` → `ManufacturerOnboardingWizard` com pull → `_reload()` + re-hidratar formulário e documentos

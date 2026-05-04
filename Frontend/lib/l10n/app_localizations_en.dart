@@ -476,13 +476,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get profileGateRefreshSession => 'Refresh session';
-
-  @override
-  String get profileGateRefreshHint =>
-      'Try this after an administrator updates your role — no password needed.';
-
-  @override
   String get profileGateClaimSectionTitle => 'Set profile (one time)';
 
   @override
@@ -503,7 +496,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileGatePickRoleFirst => 'Choose a role first.';
 
   @override
-  String get profileGateSnackUseRefresh => 'Tap «Refresh session» to continue.';
+  String get profileGateRetryLaterOrSignOut =>
+      'Could not sync right now. Try again in a moment or sign out and sign back in.';
 
   @override
   String get loginGoogleTriageHint =>

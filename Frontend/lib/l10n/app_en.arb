@@ -166,15 +166,13 @@
       "role": {}
     }
   },
-  "profileGateRefreshSession": "Refresh session",
-  "profileGateRefreshHint": "Try this after an administrator updates your role — no password needed.",
   "profileGateClaimSectionTitle": "Set profile (one time)",
   "profileGateClaimIntro": "If your account should be a trainee, instructor, or manufacturer admin but the server role was missing or invalid, choose it below. This is allowed only until a valid role is stored.",
   "profileGateClaimHint": "Institution managers are not self-service here — your hospital or manufacturer creates that access.",
   "profileGateChooseRole": "Platform role",
   "profileGateConfirmProfile": "Confirm profile",
   "profileGatePickRoleFirst": "Choose a role first.",
-  "profileGateSnackUseRefresh": "Tap «Refresh session» to continue.",
+  "profileGateRetryLaterOrSignOut": "Could not sync right now. Try again in a moment or sign out and sign back in.",
   "loginGoogleTriageHint": "After signing in with Google, you will choose your profile in two steps (account type, then company details if needed).",
   "profileTriageTitle": "Choose your profile",
   "profileTriageSubtitle": "Select the account type. On the next step you confirm or complete details to link your Google account.",

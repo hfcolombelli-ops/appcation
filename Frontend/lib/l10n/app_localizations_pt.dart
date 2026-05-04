@@ -480,13 +480,6 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get profileGateRefreshSession => 'Actualizar sessão';
-
-  @override
-  String get profileGateRefreshHint =>
-      'Use depois de um administrador actualizar a sua função — sem voltar a escrever a palavra-passe.';
-
-  @override
   String get profileGateClaimSectionTitle => 'Definir perfil (uma vez)';
 
   @override
@@ -507,8 +500,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get profileGatePickRoleFirst => 'Escolha um perfil primeiro.';
 
   @override
-  String get profileGateSnackUseRefresh =>
-      'Use «Actualizar sessão» para continuar.';
+  String get profileGateRetryLaterOrSignOut =>
+      'Não foi possível sincronizar agora. Tente de novo dentro de momentos ou saia e entre novamente.';
 
   @override
   String get loginGoogleTriageHint =>
