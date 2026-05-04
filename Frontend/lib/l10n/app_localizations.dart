@@ -5428,6 +5428,282 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Documento em falta: {title}'**
   String mfgDocMissingKind(Object title);
+
+  /// No description provided for @inviteAcceptTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aceitar convite'**
+  String get inviteAcceptTitle;
+
+  /// No description provided for @inviteMissingToken.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ligação de convite inválida ou incompleta.'**
+  String get inviteMissingToken;
+
+  /// No description provided for @inviteStatusNotPending.
+  ///
+  /// In pt, this message translates to:
+  /// **'Este convite já não está disponível (estado: {status}).'**
+  String inviteStatusNotPending(Object status);
+
+  /// No description provided for @inviteRoleLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Perfil'**
+  String get inviteRoleLabel;
+
+  /// No description provided for @inviteEmailLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'E-mail'**
+  String get inviteEmailLabel;
+
+  /// No description provided for @inviteInstitutionLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Instituição'**
+  String get inviteInstitutionLabel;
+
+  /// No description provided for @inviteNameLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome completo'**
+  String get inviteNameLabel;
+
+  /// No description provided for @invitePasswordLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Palavra-passe'**
+  String get invitePasswordLabel;
+
+  /// No description provided for @invitePasswordConfirmLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Confirmar palavra-passe'**
+  String get invitePasswordConfirmLabel;
+
+  /// No description provided for @inviteActivate.
+  ///
+  /// In pt, this message translates to:
+  /// **'Activar conta'**
+  String get inviteActivate;
+
+  /// No description provided for @invitePasswordMismatch.
+  ///
+  /// In pt, this message translates to:
+  /// **'As palavras-passe não coincidem.'**
+  String get invitePasswordMismatch;
+
+  /// No description provided for @inviteNameRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Indique o seu nome.'**
+  String get inviteNameRequired;
+
+  /// No description provided for @inviteCpfRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Indique o CPF para concluir o convite.'**
+  String get inviteCpfRequired;
+
+  /// No description provided for @inviteCpfLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'CPF (apenas dígitos)'**
+  String get inviteCpfLabel;
+
+  /// No description provided for @traineeJoinTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entrar no treino'**
+  String get traineeJoinTitle;
+
+  /// No description provided for @traineeJoinSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Crie a sua conta de treinando para aceder ao treino indicado no link.'**
+  String get traineeJoinSubtitle;
+
+  /// No description provided for @traineeJoinName.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome completo'**
+  String get traineeJoinName;
+
+  /// No description provided for @traineeJoinEmail.
+  ///
+  /// In pt, this message translates to:
+  /// **'E-mail'**
+  String get traineeJoinEmail;
+
+  /// No description provided for @traineeJoinPassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Palavra-passe'**
+  String get traineeJoinPassword;
+
+  /// No description provided for @traineeJoinPasswordConfirm.
+  ///
+  /// In pt, this message translates to:
+  /// **'Confirmar palavra-passe'**
+  String get traineeJoinPasswordConfirm;
+
+  /// No description provided for @traineeJoinSubmit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Registar e entrar'**
+  String get traineeJoinSubmit;
+
+  /// No description provided for @traineeJoinMissingHash.
+  ///
+  /// In pt, this message translates to:
+  /// **'Código do treino em falta na ligação.'**
+  String get traineeJoinMissingHash;
+
+  /// No description provided for @mfgProvisioningHubTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Instituições e convites'**
+  String get mfgProvisioningHubTitle;
+
+  /// No description provided for @mfgProvisioningHubSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar instituições, convidar gestores e instrutores.'**
+  String get mfgProvisioningHubSubtitle;
+
+  /// No description provided for @mfgProvisioningNavTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Provisionamento'**
+  String get mfgProvisioningNavTitle;
+
+  /// No description provided for @mfgProvisioningCreateInstitutionTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nova instituição'**
+  String get mfgProvisioningCreateInstitutionTitle;
+
+  /// No description provided for @mfgProvisioningInstitutionListTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'As suas instituições'**
+  String get mfgProvisioningInstitutionListTitle;
+
+  /// No description provided for @mfgProvisioningInviteCreateTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Novo convite'**
+  String get mfgProvisioningInviteCreateTitle;
+
+  /// No description provided for @mfgProvisioningInvitationListTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Convites recentes'**
+  String get mfgProvisioningInvitationListTitle;
+
+  /// No description provided for @mfgProvisioningFieldName.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome'**
+  String get mfgProvisioningFieldName;
+
+  /// No description provided for @mfgProvisioningFieldCnpj.
+  ///
+  /// In pt, this message translates to:
+  /// **'CNPJ'**
+  String get mfgProvisioningFieldCnpj;
+
+  /// No description provided for @mfgProvisioningFieldInviteEmail.
+  ///
+  /// In pt, this message translates to:
+  /// **'E-mail do convidado'**
+  String get mfgProvisioningFieldInviteEmail;
+
+  /// No description provided for @mfgProvisioningFieldInviteNameOptional.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome do convidado (opcional)'**
+  String get mfgProvisioningFieldInviteNameOptional;
+
+  /// No description provided for @mfgProvisioningFieldInviteCpfOptional.
+  ///
+  /// In pt, this message translates to:
+  /// **'CPF do convidado (opcional)'**
+  String get mfgProvisioningFieldInviteCpfOptional;
+
+  /// No description provided for @mfgProvisioningRoleGestor.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gestor da instituição'**
+  String get mfgProvisioningRoleGestor;
+
+  /// No description provided for @mfgProvisioningRoleInstructor.
+  ///
+  /// In pt, this message translates to:
+  /// **'Instrutor'**
+  String get mfgProvisioningRoleInstructor;
+
+  /// No description provided for @mfgProvisioningInviteRoleLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Função do convite'**
+  String get mfgProvisioningInviteRoleLabel;
+
+  /// No description provided for @mfgProvisioningSubmitCreateInstitution.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar instituição'**
+  String get mfgProvisioningSubmitCreateInstitution;
+
+  /// No description provided for @mfgProvisioningSubmitCreateInvite.
+  ///
+  /// In pt, this message translates to:
+  /// **'Enviar convite'**
+  String get mfgProvisioningSubmitCreateInvite;
+
+  /// No description provided for @mfgProvisioningRevokeInvite.
+  ///
+  /// In pt, this message translates to:
+  /// **'Revogar'**
+  String get mfgProvisioningRevokeInvite;
+
+  /// No description provided for @mfgProvisioningEmptyInstitutions.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda não há instituições criadas por este fabricante.'**
+  String get mfgProvisioningEmptyInstitutions;
+
+  /// No description provided for @mfgProvisioningPickInstitution.
+  ///
+  /// In pt, this message translates to:
+  /// **'Crie primeiro uma instituição para poder enviar convites.'**
+  String get mfgProvisioningPickInstitution;
+
+  /// No description provided for @mfgProvisioningInstitutionDropdownLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Instituição do convite'**
+  String get mfgProvisioningInstitutionDropdownLabel;
+
+  /// No description provided for @mfgProvisioningNeedInstitutionFirst.
+  ///
+  /// In pt, this message translates to:
+  /// **'Seleccione uma instituição.'**
+  String get mfgProvisioningNeedInstitutionFirst;
+
+  /// No description provided for @mfgProvisioningSuccessInstitution.
+  ///
+  /// In pt, this message translates to:
+  /// **'Instituição criada.'**
+  String get mfgProvisioningSuccessInstitution;
+
+  /// No description provided for @mfgProvisioningSuccessInvite.
+  ///
+  /// In pt, this message translates to:
+  /// **'Convite enviado.'**
+  String get mfgProvisioningSuccessInvite;
 }
 
 class _AppLocalizationsDelegate

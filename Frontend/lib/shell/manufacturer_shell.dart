@@ -7,6 +7,7 @@ import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
+import '../screens/manufacturer_provisioning_hub_screen.dart';
 import '../l10n/api_exception_localizations.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/error_snacks.dart';
@@ -1611,6 +1612,33 @@ class _ManufacturerShellState extends State<ManufacturerShell> {
                                         const SizedBox(height: 16),
                                       ],
                                       if (_mfgNavIndex == 0) ...[
+                                if (_manufacturer?['validation_status']?.toString() == 'active') ...[
+                                  Card(
+                                    child: ListTile(
+                                      leading: const Icon(Icons.group_add_outlined),
+                                      title: Text(l.mfgProvisioningHubTitle),
+                                      subtitle: Text(
+                                        l.mfgProvisioningHubSubtitle,
+                                        style: const TextStyle(fontSize: 13, height: 1.35),
+                                      ),
+                                      trailing: const Icon(Icons.chevron_right),
+                                      onTap: () {
+                                        final tok = appAuth.token;
+                                        if (tok == null) {
+                                          return;
+                                        }
+                                        unawaited(
+                                          Navigator.of(context).push<void>(
+                                            MaterialPageRoute<void>(
+                                              builder: (_) => ManufacturerProvisioningHubScreen(apiToken: tok),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
                                 if (_manufacturer?['validation_status']?.toString() == 'active' &&
                                     _dashboardSummary == null &&
                                     !_loading) ...[

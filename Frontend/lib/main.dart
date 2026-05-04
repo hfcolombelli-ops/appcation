@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'l10n/api_exception_localizations.dart';
@@ -17,6 +17,8 @@ import 'shell/instructor_shell.dart';
 import 'shell/manufacturer_shell.dart';
 import 'shell/profile_gate_screen.dart';
 import 'shell/trainee_shell.dart';
+import 'screens/invite_accept_screen.dart';
+import 'screens/trainee_public_join_screen.dart';
 import 'login/login_identity_parser.dart';
 import 'widgets/official_google_login_slot.dart';
 import 'widgets/version_badge.dart';
@@ -132,11 +134,42 @@ class MyApp extends StatelessWidget {
       ),
       routes: {
         '/login': (_) => const LoginUniversalScreen(),
+        '/invite': (_) => const InviteAcceptScreen(),
+        '/join-training': (_) => const TraineePublicJoinScreen(),
+        '/role-home': (_) => const RoleHome(),
       },
-      home: appAuth.isAuthenticated ? const RoleHome() : const LoginUniversalScreen(),
+      home: const _SessionGate(),
         );
       },
     );
+  }
+}
+
+/// Escolhe ecrã inicial: rotas públicas Web (convite / inscrição por link) ou login / área autenticada.
+class _SessionGate extends StatelessWidget {
+  const _SessionGate();
+
+  @override
+  Widget build(BuildContext context) {
+    if (kIsWeb) {
+      final uri = Uri.base;
+      final path = uri.path.toLowerCase();
+      final frag = uri.fragment.toLowerCase();
+      final onInvite = path.endsWith('/invite') || path.contains('/invite') || frag.contains('invite');
+      if (onInvite) {
+        return const InviteAcceptScreen();
+      }
+      final onJoinTraining = path.endsWith('/join-training') ||
+          path.contains('join-training') ||
+          frag.contains('join-training');
+      if (onJoinTraining) {
+        return const TraineePublicJoinScreen();
+      }
+    }
+    if (appAuth.isAuthenticated) {
+      return const RoleHome();
+    }
+    return const LoginUniversalScreen();
   }
 }
 

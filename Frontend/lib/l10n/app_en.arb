@@ -1299,5 +1299,56 @@
     "placeholders": {
       "title": {}
     }
-  }
+  },
+  "inviteAcceptTitle": "Accept invitation",
+  "inviteMissingToken": "Invalid or incomplete invitation link.",
+  "inviteStatusNotPending": "This invitation is no longer available (status: {status}).",
+  "@inviteStatusNotPending": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "inviteRoleLabel": "Role",
+  "inviteEmailLabel": "Email",
+  "inviteInstitutionLabel": "Institution",
+  "inviteNameLabel": "Full name",
+  "invitePasswordLabel": "Password",
+  "invitePasswordConfirmLabel": "Confirm password",
+  "inviteActivate": "Activate account",
+  "invitePasswordMismatch": "Passwords do not match.",
+  "inviteNameRequired": "Please enter your name.",
+  "inviteCpfRequired": "Enter your CPF to complete the invitation.",
+  "inviteCpfLabel": "CPF (digits only)",
+  "traineeJoinTitle": "Join training",
+  "traineeJoinSubtitle": "Create your trainee account to access the training from this link.",
+  "traineeJoinName": "Full name",
+  "traineeJoinEmail": "Email",
+  "traineeJoinPassword": "Password",
+  "traineeJoinPasswordConfirm": "Confirm password",
+  "traineeJoinSubmit": "Register and join",
+  "traineeJoinMissingHash": "Training code missing from the link.",
+  "mfgProvisioningHubTitle": "Institutions and invitations",
+  "mfgProvisioningHubSubtitle": "Create institutions and invite managers and instructors.",
+  "mfgProvisioningNavTitle": "Provisioning",
+  "mfgProvisioningCreateInstitutionTitle": "New institution",
+  "mfgProvisioningInstitutionListTitle": "Your institutions",
+  "mfgProvisioningInviteCreateTitle": "New invitation",
+  "mfgProvisioningInvitationListTitle": "Recent invitations",
+  "mfgProvisioningFieldName": "Name",
+  "mfgProvisioningFieldCnpj": "CNPJ",
+  "mfgProvisioningFieldInviteEmail": "Invitee email",
+  "mfgProvisioningFieldInviteNameOptional": "Invitee name (optional)",
+  "mfgProvisioningFieldInviteCpfOptional": "Invitee CPF (optional)",
+  "mfgProvisioningRoleGestor": "Institution manager",
+  "mfgProvisioningRoleInstructor": "Instructor",
+  "mfgProvisioningInviteRoleLabel": "Invitation role",
+  "mfgProvisioningSubmitCreateInstitution": "Create institution",
+  "mfgProvisioningSubmitCreateInvite": "Send invitation",
+  "mfgProvisioningRevokeInvite": "Revoke",
+  "mfgProvisioningEmptyInstitutions": "No institutions created by this manufacturer yet.",
+  "mfgProvisioningPickInstitution": "Create an institution first to send invitations.",
+  "mfgProvisioningInstitutionDropdownLabel": "Institution for invitation",
+  "mfgProvisioningNeedInstitutionFirst": "Select an institution.",
+  "mfgProvisioningSuccessInstitution": "Institution created.",
+  "mfgProvisioningSuccessInvite": "Invitation sent."
 }

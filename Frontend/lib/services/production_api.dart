@@ -41,6 +41,8 @@ ManufacturerOperationsIndexPage _parseManufacturerOperationsIndex(Map<String, dy
 class ProductionApi {
   ProductionApi(this._http);
 
+  static final ProductionApi instance = ProductionApi(ApiClient());
+
   final ApiClient _http;
 
   Future<Map<String, dynamic>> dashboardSummary(String token) =>
@@ -445,6 +447,102 @@ class ProductionApi {
 
   Future<Map<String, dynamic>> manufacturerProfile(String token) =>
       _http.getJson('/api/manufacturer/profile', token: token);
+
+  Future<Map<String, dynamic>> manufacturerCreateInstitution(
+    String token, {
+    required String name,
+    required String cnpj,
+    String? email,
+    String? phone,
+    String? city,
+    String? state,
+  }) =>
+      _http.postJson(
+        '/api/manufacturer/institutions',
+        {
+          'name': name.trim(),
+          'cnpj': cnpj.trim(),
+          if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
+          if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
+          if (city != null && city.trim().isNotEmpty) 'city': city.trim(),
+          if (state != null && state.trim().isNotEmpty) 'state': state.trim(),
+        },
+        token: token,
+      );
+
+  Future<List<Map<String, dynamic>>> manufacturerInstitutionsList(String token) async {
+    final r = await _http.getJsonList('/api/manufacturer/institutions', token: token);
+    return r.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> manufacturerInvitationsList(String token) async {
+    final r = await _http.getJsonList('/api/manufacturer/invitations', token: token);
+    return r.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<Map<String, dynamic>> manufacturerInvitationCreate(
+    String token, {
+    required String invitedEmail,
+    required String role,
+    required int institutionId,
+    String? invitedName,
+    String? invitedCpf,
+  }) =>
+      _http.postJson(
+        '/api/manufacturer/invitations',
+        {
+          'invited_email': invitedEmail.trim(),
+          'role': role,
+          'institution_id': institutionId,
+          if (invitedName != null && invitedName.trim().isNotEmpty) 'invited_name': invitedName.trim(),
+          if (invitedCpf != null && invitedCpf.trim().isNotEmpty) 'invited_cpf': invitedCpf.trim(),
+        },
+        token: token,
+      );
+
+  Future<void> manufacturerInvitationRevoke(String token, int id) =>
+      _http.delete('/api/manufacturer/invitations/$id', token: token);
+
+  Future<Map<String, dynamic>> publicInvitationShow(String token) =>
+      _http.getJson('/api/public/invitations/${Uri.encodeComponent(token)}');
+
+  Future<Map<String, dynamic>> publicInvitationAccept(
+    String token, {
+    required String name,
+    required String password,
+    required String passwordConfirmation,
+    String? cpf,
+  }) =>
+      _http.postJson(
+        '/api/public/invitations/${Uri.encodeComponent(token)}/accept',
+        {
+          'name': name.trim(),
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+          if (cpf != null && cpf.trim().isNotEmpty) 'cpf': cpf.trim(),
+        },
+      );
+
+  Future<Map<String, dynamic>> publicTrainingJoinPreview(String joinHash) =>
+      _http.getJson('/api/public/trainings/join-preview/${Uri.encodeComponent(joinHash)}');
+
+  Future<Map<String, dynamic>> publicTraineeRegisterAndJoin({
+    required String joinHash,
+    required String name,
+    required String email,
+    required String password,
+    required String passwordConfirmation,
+  }) =>
+      _http.postJson(
+        '/api/public/trainings/register-and-join',
+        {
+          'join_hash': joinHash.trim().toLowerCase(),
+          'name': name.trim(),
+          'email': email.trim(),
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        },
+      );
 
   Future<Map<String, dynamic>> manufacturerDashboardSummary(
     String token, {

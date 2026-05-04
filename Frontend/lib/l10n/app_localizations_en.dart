@@ -3009,4 +3009,150 @@ class AppLocalizationsEn extends AppLocalizations {
   String mfgDocMissingKind(Object title) {
     return 'Missing document: $title';
   }
+
+  @override
+  String get inviteAcceptTitle => 'Accept invitation';
+
+  @override
+  String get inviteMissingToken => 'Invalid or incomplete invitation link.';
+
+  @override
+  String inviteStatusNotPending(Object status) {
+    return 'This invitation is no longer available (status: $status).';
+  }
+
+  @override
+  String get inviteRoleLabel => 'Role';
+
+  @override
+  String get inviteEmailLabel => 'Email';
+
+  @override
+  String get inviteInstitutionLabel => 'Institution';
+
+  @override
+  String get inviteNameLabel => 'Full name';
+
+  @override
+  String get invitePasswordLabel => 'Password';
+
+  @override
+  String get invitePasswordConfirmLabel => 'Confirm password';
+
+  @override
+  String get inviteActivate => 'Activate account';
+
+  @override
+  String get invitePasswordMismatch => 'Passwords do not match.';
+
+  @override
+  String get inviteNameRequired => 'Please enter your name.';
+
+  @override
+  String get inviteCpfRequired => 'Enter your CPF to complete the invitation.';
+
+  @override
+  String get inviteCpfLabel => 'CPF (digits only)';
+
+  @override
+  String get traineeJoinTitle => 'Join training';
+
+  @override
+  String get traineeJoinSubtitle =>
+      'Create your trainee account to access the training from this link.';
+
+  @override
+  String get traineeJoinName => 'Full name';
+
+  @override
+  String get traineeJoinEmail => 'Email';
+
+  @override
+  String get traineeJoinPassword => 'Password';
+
+  @override
+  String get traineeJoinPasswordConfirm => 'Confirm password';
+
+  @override
+  String get traineeJoinSubmit => 'Register and join';
+
+  @override
+  String get traineeJoinMissingHash => 'Training code missing from the link.';
+
+  @override
+  String get mfgProvisioningHubTitle => 'Institutions and invitations';
+
+  @override
+  String get mfgProvisioningHubSubtitle =>
+      'Create institutions and invite managers and instructors.';
+
+  @override
+  String get mfgProvisioningNavTitle => 'Provisioning';
+
+  @override
+  String get mfgProvisioningCreateInstitutionTitle => 'New institution';
+
+  @override
+  String get mfgProvisioningInstitutionListTitle => 'Your institutions';
+
+  @override
+  String get mfgProvisioningInviteCreateTitle => 'New invitation';
+
+  @override
+  String get mfgProvisioningInvitationListTitle => 'Recent invitations';
+
+  @override
+  String get mfgProvisioningFieldName => 'Name';
+
+  @override
+  String get mfgProvisioningFieldCnpj => 'CNPJ';
+
+  @override
+  String get mfgProvisioningFieldInviteEmail => 'Invitee email';
+
+  @override
+  String get mfgProvisioningFieldInviteNameOptional =>
+      'Invitee name (optional)';
+
+  @override
+  String get mfgProvisioningFieldInviteCpfOptional => 'Invitee CPF (optional)';
+
+  @override
+  String get mfgProvisioningRoleGestor => 'Institution manager';
+
+  @override
+  String get mfgProvisioningRoleInstructor => 'Instructor';
+
+  @override
+  String get mfgProvisioningInviteRoleLabel => 'Invitation role';
+
+  @override
+  String get mfgProvisioningSubmitCreateInstitution => 'Create institution';
+
+  @override
+  String get mfgProvisioningSubmitCreateInvite => 'Send invitation';
+
+  @override
+  String get mfgProvisioningRevokeInvite => 'Revoke';
+
+  @override
+  String get mfgProvisioningEmptyInstitutions =>
+      'No institutions created by this manufacturer yet.';
+
+  @override
+  String get mfgProvisioningPickInstitution =>
+      'Create an institution first to send invitations.';
+
+  @override
+  String get mfgProvisioningInstitutionDropdownLabel =>
+      'Institution for invitation';
+
+  @override
+  String get mfgProvisioningNeedInstitutionFirst => 'Select an institution.';
+
+  @override
+  String get mfgProvisioningSuccessInstitution => 'Institution created.';
+
+  @override
+  String get mfgProvisioningSuccessInvite => 'Invitation sent.';
 }

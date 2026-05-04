@@ -3019,4 +3019,152 @@ class AppLocalizationsPt extends AppLocalizations {
   String mfgDocMissingKind(Object title) {
     return 'Documento em falta: $title';
   }
+
+  @override
+  String get inviteAcceptTitle => 'Aceitar convite';
+
+  @override
+  String get inviteMissingToken => 'Ligação de convite inválida ou incompleta.';
+
+  @override
+  String inviteStatusNotPending(Object status) {
+    return 'Este convite já não está disponível (estado: $status).';
+  }
+
+  @override
+  String get inviteRoleLabel => 'Perfil';
+
+  @override
+  String get inviteEmailLabel => 'E-mail';
+
+  @override
+  String get inviteInstitutionLabel => 'Instituição';
+
+  @override
+  String get inviteNameLabel => 'Nome completo';
+
+  @override
+  String get invitePasswordLabel => 'Palavra-passe';
+
+  @override
+  String get invitePasswordConfirmLabel => 'Confirmar palavra-passe';
+
+  @override
+  String get inviteActivate => 'Activar conta';
+
+  @override
+  String get invitePasswordMismatch => 'As palavras-passe não coincidem.';
+
+  @override
+  String get inviteNameRequired => 'Indique o seu nome.';
+
+  @override
+  String get inviteCpfRequired => 'Indique o CPF para concluir o convite.';
+
+  @override
+  String get inviteCpfLabel => 'CPF (apenas dígitos)';
+
+  @override
+  String get traineeJoinTitle => 'Entrar no treino';
+
+  @override
+  String get traineeJoinSubtitle =>
+      'Crie a sua conta de treinando para aceder ao treino indicado no link.';
+
+  @override
+  String get traineeJoinName => 'Nome completo';
+
+  @override
+  String get traineeJoinEmail => 'E-mail';
+
+  @override
+  String get traineeJoinPassword => 'Palavra-passe';
+
+  @override
+  String get traineeJoinPasswordConfirm => 'Confirmar palavra-passe';
+
+  @override
+  String get traineeJoinSubmit => 'Registar e entrar';
+
+  @override
+  String get traineeJoinMissingHash => 'Código do treino em falta na ligação.';
+
+  @override
+  String get mfgProvisioningHubTitle => 'Instituições e convites';
+
+  @override
+  String get mfgProvisioningHubSubtitle =>
+      'Criar instituições, convidar gestores e instrutores.';
+
+  @override
+  String get mfgProvisioningNavTitle => 'Provisionamento';
+
+  @override
+  String get mfgProvisioningCreateInstitutionTitle => 'Nova instituição';
+
+  @override
+  String get mfgProvisioningInstitutionListTitle => 'As suas instituições';
+
+  @override
+  String get mfgProvisioningInviteCreateTitle => 'Novo convite';
+
+  @override
+  String get mfgProvisioningInvitationListTitle => 'Convites recentes';
+
+  @override
+  String get mfgProvisioningFieldName => 'Nome';
+
+  @override
+  String get mfgProvisioningFieldCnpj => 'CNPJ';
+
+  @override
+  String get mfgProvisioningFieldInviteEmail => 'E-mail do convidado';
+
+  @override
+  String get mfgProvisioningFieldInviteNameOptional =>
+      'Nome do convidado (opcional)';
+
+  @override
+  String get mfgProvisioningFieldInviteCpfOptional =>
+      'CPF do convidado (opcional)';
+
+  @override
+  String get mfgProvisioningRoleGestor => 'Gestor da instituição';
+
+  @override
+  String get mfgProvisioningRoleInstructor => 'Instrutor';
+
+  @override
+  String get mfgProvisioningInviteRoleLabel => 'Função do convite';
+
+  @override
+  String get mfgProvisioningSubmitCreateInstitution => 'Criar instituição';
+
+  @override
+  String get mfgProvisioningSubmitCreateInvite => 'Enviar convite';
+
+  @override
+  String get mfgProvisioningRevokeInvite => 'Revogar';
+
+  @override
+  String get mfgProvisioningEmptyInstitutions =>
+      'Ainda não há instituições criadas por este fabricante.';
+
+  @override
+  String get mfgProvisioningPickInstitution =>
+      'Crie primeiro uma instituição para poder enviar convites.';
+
+  @override
+  String get mfgProvisioningInstitutionDropdownLabel =>
+      'Instituição do convite';
+
+  @override
+  String get mfgProvisioningNeedInstitutionFirst =>
+      'Seleccione uma instituição.';
+
+  @override
+  String get mfgProvisioningSuccessInstitution => 'Instituição criada.';
+
+  @override
+  String get mfgProvisioningSuccessInvite => 'Convite enviado.';
 }

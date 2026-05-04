@@ -18,12 +18,17 @@ use App\Http\Controllers\Api\ManufacturerDashboardController;
 use App\Http\Controllers\Api\ManufacturerDocumentController;
 use App\Http\Controllers\Api\ManufacturerEquipmentAttachmentController;
 use App\Http\Controllers\Api\ManufacturerEquipmentController;
+use App\Http\Controllers\Api\ManufacturerInstitutionController;
+use App\Http\Controllers\Api\ManufacturerInvitationController;
 use App\Http\Controllers\Api\ManufacturerPrizeCatalogController;
 use App\Http\Controllers\Api\ManufacturerPrizeController;
 use App\Http\Controllers\Api\ManufacturerProfileController;
 use App\Http\Controllers\Api\ManufacturerSeasonController;
 use App\Http\Controllers\Api\ManufacturerValidationController;
 use App\Http\Controllers\Api\PrivacyController;
+use App\Http\Controllers\Api\PublicInvitationController;
+use App\Http\Controllers\Api\PublicTrainingPreviewController;
+use App\Http\Controllers\Api\PublicTrainingRegisterJoinController;
 use App\Http\Controllers\Api\QuestionnaireController;
 use App\Http\Controllers\Api\RealtimeController;
 use App\Http\Controllers\Api\TraineeParkEquipmentController;
@@ -60,6 +65,19 @@ Route::get('/public/manufacturer-prizes', [ManufacturerPrizeCatalogController::c
 
 Route::get('/realtime/client-config', [RealtimeController::class, 'clientConfig'])
     ->middleware('throttle:public-read');
+
+Route::get('/public/invitations/{token}', [PublicInvitationController::class, 'show'])
+    ->where('token', '[A-Za-z0-9]+')
+    ->middleware('throttle:public-read');
+Route::post('/public/invitations/{token}/accept', [PublicInvitationController::class, 'accept'])
+    ->where('token', '[A-Za-z0-9]+')
+    ->middleware('throttle:auth-register');
+
+Route::get('/public/trainings/join-preview/{hash}', [PublicTrainingPreviewController::class, 'joinPreview'])
+    ->where('hash', '[a-zA-Z0-9\-]+')
+    ->middleware('throttle:public-read');
+Route::post('/public/trainings/register-and-join', [PublicTrainingRegisterJoinController::class, 'store'])
+    ->middleware('throttle:auth-register');
 
 Route::middleware(['auth:sanctum', 'throttle:api-user'])->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
@@ -161,6 +179,15 @@ Route::middleware(['auth:sanctum', 'throttle:api-user'])->group(function () {
 
     Route::get('/trainings/{training}/live-state', [TrainingController::class, 'liveState'])
         ->middleware('trainee.lgpd');
+
+    Route::get('/manufacturer/institutions', [ManufacturerInstitutionController::class, 'index']);
+    Route::post('/manufacturer/institutions', [ManufacturerInstitutionController::class, 'store'])
+        ->middleware('throttle:sensitive');
+    Route::get('/manufacturer/invitations', [ManufacturerInvitationController::class, 'index']);
+    Route::post('/manufacturer/invitations', [ManufacturerInvitationController::class, 'store'])
+        ->middleware('throttle:sensitive');
+    Route::delete('/manufacturer/invitations/{invitation}', [ManufacturerInvitationController::class, 'destroy'])
+        ->middleware('throttle:sensitive');
 
     Route::get('/manufacturer/profile', [ManufacturerProfileController::class, 'show']);
     Route::put('/manufacturer/profile', [ManufacturerProfileController::class, 'update']);

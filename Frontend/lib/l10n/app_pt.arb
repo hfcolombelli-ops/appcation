@@ -1299,5 +1299,56 @@
     "placeholders": {
       "title": {}
     }
-  }
+  },
+  "inviteAcceptTitle": "Aceitar convite",
+  "inviteMissingToken": "Ligação de convite inválida ou incompleta.",
+  "inviteStatusNotPending": "Este convite já não está disponível (estado: {status}).",
+  "@inviteStatusNotPending": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "inviteRoleLabel": "Perfil",
+  "inviteEmailLabel": "E-mail",
+  "inviteInstitutionLabel": "Instituição",
+  "inviteNameLabel": "Nome completo",
+  "invitePasswordLabel": "Palavra-passe",
+  "invitePasswordConfirmLabel": "Confirmar palavra-passe",
+  "inviteActivate": "Activar conta",
+  "invitePasswordMismatch": "As palavras-passe não coincidem.",
+  "inviteNameRequired": "Indique o seu nome.",
+  "inviteCpfRequired": "Indique o CPF para concluir o convite.",
+  "inviteCpfLabel": "CPF (apenas dígitos)",
+  "traineeJoinTitle": "Entrar no treino",
+  "traineeJoinSubtitle": "Crie a sua conta de treinando para aceder ao treino indicado no link.",
+  "traineeJoinName": "Nome completo",
+  "traineeJoinEmail": "E-mail",
+  "traineeJoinPassword": "Palavra-passe",
+  "traineeJoinPasswordConfirm": "Confirmar palavra-passe",
+  "traineeJoinSubmit": "Registar e entrar",
+  "traineeJoinMissingHash": "Código do treino em falta na ligação.",
+  "mfgProvisioningHubTitle": "Instituições e convites",
+  "mfgProvisioningHubSubtitle": "Criar instituições, convidar gestores e instrutores.",
+  "mfgProvisioningNavTitle": "Provisionamento",
+  "mfgProvisioningCreateInstitutionTitle": "Nova instituição",
+  "mfgProvisioningInstitutionListTitle": "As suas instituições",
+  "mfgProvisioningInviteCreateTitle": "Novo convite",
+  "mfgProvisioningInvitationListTitle": "Convites recentes",
+  "mfgProvisioningFieldName": "Nome",
+  "mfgProvisioningFieldCnpj": "CNPJ",
+  "mfgProvisioningFieldInviteEmail": "E-mail do convidado",
+  "mfgProvisioningFieldInviteNameOptional": "Nome do convidado (opcional)",
+  "mfgProvisioningFieldInviteCpfOptional": "CPF do convidado (opcional)",
+  "mfgProvisioningRoleGestor": "Gestor da instituição",
+  "mfgProvisioningRoleInstructor": "Instrutor",
+  "mfgProvisioningInviteRoleLabel": "Função do convite",
+  "mfgProvisioningSubmitCreateInstitution": "Criar instituição",
+  "mfgProvisioningSubmitCreateInvite": "Enviar convite",
+  "mfgProvisioningRevokeInvite": "Revogar",
+  "mfgProvisioningEmptyInstitutions": "Ainda não há instituições criadas por este fabricante.",
+  "mfgProvisioningPickInstitution": "Crie primeiro uma instituição para poder enviar convites.",
+  "mfgProvisioningInstitutionDropdownLabel": "Instituição do convite",
+  "mfgProvisioningNeedInstitutionFirst": "Seleccione uma instituição.",
+  "mfgProvisioningSuccessInstitution": "Instituição criada.",
+  "mfgProvisioningSuccessInvite": "Convite enviado."
 }

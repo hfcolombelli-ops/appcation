@@ -127,6 +127,14 @@ class AuthSession extends ChangeNotifier {
     }
   }
 
+  /// Sessão devolvida por endpoints públicos (ex.: aceitar convite).
+  Future<void> absorbInviteSession(String token, Map<String, dynamic> user) async {
+    _token = token;
+    _user = user;
+    await _persist();
+    notifyListeners();
+  }
+
   Future<void> login(String identifierOrEmail, String password) async {
     final data = await _api.postJson('/api/auth/login', {
       'identifier': identifierOrEmail.trim(),
