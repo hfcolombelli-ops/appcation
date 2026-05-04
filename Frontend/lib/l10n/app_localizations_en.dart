@@ -512,6 +512,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String profileGateServerRoleHint(Object serverRoleLabel) {
+    return 'The server already has your role as «$serverRoleLabel». If you already finished triage with that type (here or on another device), use «Refresh session» to open the right area — you do not need to choose again below.';
+  }
+
+  @override
+  String profileGateChoiceConflictsServer(
+    Object chosenLabel,
+    Object serverRoleLabel,
+  ) {
+    return 'You are about to confirm «$chosenLabel», but the server already has «$serverRoleLabel». «Confirm profile» is only accepted while triage still allows changing role; if the server already locked your profile, you will get HTTP 403 — use «Refresh session» or contact support to change account type.';
+  }
+
+  @override
+  String get profileGateRoleMismatchFollowUp =>
+      'If «Refresh session» does not open the area you expect, sign out and sign in with Google again, or email support with your account address.';
+
+  @override
+  String get profileGateRoleLabelInstitutionAdmin => 'Institution manager';
+
+  @override
   String get loginGoogleTriageHint =>
       'After signing in with Google, you will choose your profile in two steps (account type, then company details if needed).';
 

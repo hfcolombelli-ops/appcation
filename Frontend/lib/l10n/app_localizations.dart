@@ -1010,6 +1010,33 @@ abstract class AppLocalizations {
   /// **'O servidor já tem outra função ({serverRole}). Toque em «Actualizar sessão» para abrir a área correcta ou contacte o suporte se precisar de alterar o tipo de conta.'**
   String profileGateRoleMismatchUseRefresh(Object serverRole);
 
+  /// No description provided for @profileGateServerRoleHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'No servidor a função registada é «{serverRoleLabel}». Se já concluiu a triagem com esse tipo (aqui ou outro dispositivo), use «Actualizar sessão» para entrar na área correcta — não precisa de voltar a escolher em baixo.'**
+  String profileGateServerRoleHint(Object serverRoleLabel);
+
+  /// No description provided for @profileGateChoiceConflictsServer.
+  ///
+  /// In pt, this message translates to:
+  /// **'Está a confirmar «{chosenLabel}», mas o servidor já tem «{serverRoleLabel}». «Confirmar perfil» só é aceite enquanto a triagem ainda permite mudar de função; se o servidor já fechou o perfil, verá erro 403 — use «Actualizar sessão» ou contacte o suporte para mudar de tipo de conta.'**
+  String profileGateChoiceConflictsServer(
+    Object chosenLabel,
+    Object serverRoleLabel,
+  );
+
+  /// No description provided for @profileGateRoleMismatchFollowUp.
+  ///
+  /// In pt, this message translates to:
+  /// **'Se «Actualizar sessão» não abrir a área esperada, termine a sessão e entre de novo com Google, ou escreva ao suporte com o e-mail da conta.'**
+  String get profileGateRoleMismatchFollowUp;
+
+  /// No description provided for @profileGateRoleLabelInstitutionAdmin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gestor de instituição'**
+  String get profileGateRoleLabelInstitutionAdmin;
+
   /// No description provided for @loginGoogleTriageHint.
   ///
   /// In pt, this message translates to:
