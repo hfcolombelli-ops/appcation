@@ -6,6 +6,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
 import 'google_sign_in_helper.dart';
 
+/// `needs_profile_gate` como bool estrito; proxies/serializações podem enviar 0/1 ou strings.
+bool? _needsProfileGateTriState(dynamic v) {
+  if (v == null) return null;
+  if (v is bool) return v;
+  if (v is num) {
+    if (v == 0) return false;
+    if (v == 1) return true;
+  }
+  if (v is String) {
+    final s = v.trim().toLowerCase();
+    if (s == 'true' || s == '1') return true;
+    if (s == 'false' || s == '0') return false;
+  }
+  return null;
+}
+
 /// Estado global de autenticação (Sanctum token + usuário).
 class AuthSession extends ChangeNotifier {
   AuthSession({ApiClient? api}) : _api = api ?? ApiClient();
@@ -44,7 +60,7 @@ class AuthSession extends ChangeNotifier {
 
     // O servidor é fonte de verdade: se vier explícito, não deixar o fallback
     // Google+triage reabrir o gate quando `/me` já diz que a triagem terminou.
-    final gate = u['needs_profile_gate'];
+    final gate = _needsProfileGateTriState(u['needs_profile_gate']);
     if (gate == false) return false;
     if (gate == true) return true;
 

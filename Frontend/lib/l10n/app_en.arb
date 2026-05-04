@@ -175,6 +175,12 @@
   "profileGateConfirmProfile": "Confirm profile",
   "profileGatePickRoleFirst": "Choose a role first.",
   "profileGateProfileAlreadySetSync": "Profile already set on the server. Syncing…",
+  "profileGateRoleMismatchUseRefresh": "The server already has a different role ({serverRole}). Tap «Refresh session» to open the correct area, or contact support if you need to change account type.",
+  "@profileGateRoleMismatchUseRefresh": {
+    "placeholders": {
+      "serverRole": {}
+    }
+  },
   "loginGoogleTriageHint": "After signing in with Google, you will choose your profile in two steps (account type, then company details if needed).",
   "profileTriageTitle": "Choose your profile",
   "profileTriageSubtitle": "Select the account type. On the next step you confirm or complete details to link your Google account.",

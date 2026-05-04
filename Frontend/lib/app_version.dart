@@ -1,5 +1,5 @@
 // Gerado por scripts/sync_app_version_from_pubspec.sh — não editar; fonte: Frontend/pubspec.yaml
-// Badge visível: V 1.59 (só MAJOR.MINOR). Pubspec completo: 1.59.0+60
+// Badge visível: V 1.60 (só MAJOR.MINOR). Pubspec completo: 1.60.0+61
 class AppVersion {
-  static const String current = 'V 1.59';
+  static const String current = 'V 1.60';
 }

@@ -1004,6 +1004,12 @@ abstract class AppLocalizations {
   /// **'Perfil já definido no servidor. A sincronizar…'**
   String get profileGateProfileAlreadySetSync;
 
+  /// No description provided for @profileGateRoleMismatchUseRefresh.
+  ///
+  /// In pt, this message translates to:
+  /// **'O servidor já tem outra função ({serverRole}). Toque em «Actualizar sessão» para abrir a área correcta ou contacte o suporte se precisar de alterar o tipo de conta.'**
+  String profileGateRoleMismatchUseRefresh(Object serverRole);
+
   /// No description provided for @loginGoogleTriageHint.
   ///
   /// In pt, this message translates to:

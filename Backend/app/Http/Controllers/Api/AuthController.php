@@ -148,7 +148,7 @@ class AuthController extends Controller
         if (! $user->needsProfileGateForApi() && $this->roleIsMappedForApp($user->role)) {
             $requested = trim((string) $data['role']);
             $current = trim((string) ($user->role ?? ''));
-            if ($requested !== '' && $requested === $current) {
+            if ($requested !== '' && $current !== '' && strcasecmp($requested, $current) === 0) {
                 return response()->json($user->fresh()->toApiArray());
             }
 

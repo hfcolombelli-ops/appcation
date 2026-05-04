@@ -507,6 +507,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Profile already set on the server. Syncing…';
 
   @override
+  String profileGateRoleMismatchUseRefresh(Object serverRole) {
+    return 'The server already has a different role ($serverRole). Tap «Refresh session» to open the correct area, or contact support if you need to change account type.';
+  }
+
+  @override
   String get loginGoogleTriageHint =>
       'After signing in with Google, you will choose your profile in two steps (account type, then company details if needed).';
 

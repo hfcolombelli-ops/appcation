@@ -511,6 +511,11 @@ class AppLocalizationsPt extends AppLocalizations {
       'Perfil já definido no servidor. A sincronizar…';
 
   @override
+  String profileGateRoleMismatchUseRefresh(Object serverRole) {
+    return 'O servidor já tem outra função ($serverRole). Toque em «Actualizar sessão» para abrir a área correcta ou contacte o suporte se precisar de alterar o tipo de conta.';
+  }
+
+  @override
   String get loginGoogleTriageHint =>
       'Depois de entrar com o Google, escolhe o teu perfil em dois passos (tipo de conta e, se necessário, dados da empresa).';
 

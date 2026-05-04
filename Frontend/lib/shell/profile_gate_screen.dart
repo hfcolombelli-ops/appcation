@@ -74,6 +74,20 @@ class _ProfileGateScreenState extends State<ProfileGateScreen> {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.profileGateProfileAlreadySetSync)));
           return;
         }
+        final body = e.message;
+        final lockedProfile =
+            body.contains('perfil já está definido') || body.contains('Actualizar sessão');
+        if (lockedProfile) {
+          final apiRole = appAuth.role?.trim();
+          if (apiRole != null && apiRole.isNotEmpty && apiRole != role) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l.profileGateRoleMismatchUseRefresh(apiRole))),
+            );
+            return;
+          }
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.profileGateProfileAlreadySetSync)));
+          return;
+        }
       }
       final msg = e.message.trim().isNotEmpty ? e.message : l.errApiConnection;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
