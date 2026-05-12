@@ -77,9 +77,24 @@ Exemplo com `psql` (substitui a URL pela tua):
 psql "postgresql://usuario:password@host:port/railway"
 ```
 
-### C) `DATABASE_URL` / `DB_URL` na API
+### C) `DATABASE_URL` / `DB_URL` na API (ligar ao Postgres no canvas)
 
-A API Laravel lê `DB_URL` (o `docker-entrypoint.sh` na Railway copia `DATABASE_URL` → `DB_URL`). Para **ferramentas GUI**, usa a mesma URL que a variável `DATABASE_URL` do Postgres no Railway (referência `${{ Postgres.DATABASE_URL }}`).
+A API Laravel usa `DB_URL`. No contentor da Railway, o [`Backend/docker-entrypoint.sh`](../Backend/docker-entrypoint.sh) copia **`DATABASE_URL` → `DB_URL`** quando `DB_URL` está vazio e força `DB_CONNECTION=pgsql` se a URL for `postgres://` ou `postgresql://`.
+
+**Ligar a API ao serviço PostgreSQL chamado `Postgres-u4Od` (ou outro nome no canvas):**
+
+1. No mesmo **projecto** e **ambiente** (ex.: production), confirma que o cartão da base se chama exactamente **Postgres-u4Od** (Railway mostra o nome no topo do serviço).
+2. Abre o serviço **da API** (Laravel / Docker), separador **Variables**.
+3. Adiciona (ou edita) uma variável:
+   - **Nome:** `DATABASE_URL`
+   - **Valor:** referência ao Postgres — sintaxe Railway: `${{ NomeDoServicoPostgres.DATABASE_URL }}`  
+     Para o teu caso: **`${{ Postgres-u4Od.DATABASE_URL }}`**  
+     O painel Railway tem **Variable Reference** / autocomplete: escolhe o serviço **Postgres-u4Od** e a variável **`DATABASE_URL`** (evita erros de capitalização ou hífens).
+4. Se existir **`DB_URL`** antigo (cadeia colada à mão) a apontar para outro sitio, **remove** ou corrige; o entrypoint **não** sobrescreve `DB_URL` se já estiver definido.
+5. Opcional: define **`DB_CONNECTION=pgsql`** na API (o entrypoint já deduz a partir da URL).
+6. **Deploy** o serviço da API (ou *Deploy* das alterações em variáveis). O `preDeployCommand` em [`Backend/railway.toml`](../Backend/railway.toml) corre `php artisan migrate --force` antes de aceitar tráfego.
+
+**Nota:** O Flutter / Firebase **não** precisa desta URL; só o backend Laravel.
 
 ---
 
