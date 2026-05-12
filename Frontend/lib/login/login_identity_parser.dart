@@ -1,4 +1,4 @@
-// Heurísticas alinhadas ao LoginIdentityParser do URS (CPF, CNPJ, CRM, conta sistema).
+// Heurísticas de identificador no login (CPF, CNPJ, CRM, conta sistema, e-mail).
 // E-mail válido: tipo extra para login App²cation (API aceita e-mail como identificador).
 
 enum LoginIdentityType {

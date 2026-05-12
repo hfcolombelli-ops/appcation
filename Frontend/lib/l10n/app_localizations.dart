@@ -146,11 +146,11 @@ abstract class AppLocalizations {
   /// **'Use o e-mail e a palavra-passe da sua conta ou da sua instituição.'**
   String get loginCardSignInLead;
 
-  /// No description provided for @loginUrsSecurePortalSubtitle.
+  /// No description provided for @loginBrandPortalSubtitle.
   ///
   /// In pt, this message translates to:
-  /// **'Acesso seguro ao portal'**
-  String get loginUrsSecurePortalSubtitle;
+  /// **'Portal App²cation — acesso seguro'**
+  String get loginBrandPortalSubtitle;
 
   /// No description provided for @loginSectionLoginTitle.
   ///
@@ -169,6 +169,66 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'O acesso é feito com e-mail e palavra-passe. Se ainda não tiver perfil, após o primeiro login será pedido que escolha o tipo de conta.'**
   String get loginPasswordOnlyHint;
+
+  /// No description provided for @loginWelcomeBackTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Bem-vindo de volta'**
+  String get loginWelcomeBackTitle;
+
+  /// No description provided for @loginWelcomeBackSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aceda à sua conta para continuar.'**
+  String get loginWelcomeBackSubtitle;
+
+  /// No description provided for @loginPersonaUserTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Usuário'**
+  String get loginPersonaUserTitle;
+
+  /// No description provided for @loginPersonaUserSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Treinando, instrutor ou instituição'**
+  String get loginPersonaUserSubtitle;
+
+  /// No description provided for @loginPersonaManufacturerTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fabricante'**
+  String get loginPersonaManufacturerTitle;
+
+  /// No description provided for @loginPersonaManufacturerSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Administrador da empresa'**
+  String get loginPersonaManufacturerSubtitle;
+
+  /// No description provided for @loginIdentifierLabelUser.
+  ///
+  /// In pt, this message translates to:
+  /// **'E-mail ou CPF'**
+  String get loginIdentifierLabelUser;
+
+  /// No description provided for @loginIdentifierLabelManufacturer.
+  ///
+  /// In pt, this message translates to:
+  /// **'E-mail ou CNPJ'**
+  String get loginIdentifierLabelManufacturer;
+
+  /// No description provided for @loginEnterSystem.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entrar no sistema'**
+  String get loginEnterSystem;
+
+  /// No description provided for @loginNewUserLead.
+  ///
+  /// In pt, this message translates to:
+  /// **'Novo por aqui?'**
+  String get loginNewUserLead;
 
   /// No description provided for @loginFieldIdentifier.
   ///
@@ -236,11 +296,11 @@ abstract class AppLocalizations {
   /// **'Criar conta'**
   String get loginNoAccountAction;
 
-  /// No description provided for @loginUrsHeroTagline.
+  /// No description provided for @loginBrandHeroTagline.
   ///
   /// In pt, this message translates to:
-  /// **'Conectando cuidado e tecnologia em tempo real'**
-  String get loginUrsHeroTagline;
+  /// **'App²cation: cuidado e tecnologia em tempo real.'**
+  String get loginBrandHeroTagline;
 
   /// No description provided for @loginEmptyIdentifierPassword.
   ///

@@ -238,6 +238,9 @@ enum _AuthPhase { entry, register }
 /// Fluxo de cadastro/login: pessoa física (CPF) vs empresa (CNPJ / fabricante).
 enum _AuthDocumentTrack { cpf, cnpj }
 
+/// Persona no ecrã de entrada: utilizador (treinando/instrutor/instituição) vs fabricante.
+enum _LoginPersona { user, manufacturer }
+
 class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   final _formLogin = GlobalKey<FormState>();
   final _emailLogin = TextEditingController();
@@ -263,6 +266,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
 
   bool _obscurePassword = true;
   LoginIdentityType _previewType = LoginIdentityType.unknown;
+  _LoginPersona _loginPersona = _LoginPersona.user;
 
   @override
   void initState() {
@@ -342,6 +346,15 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       _phase = _AuthPhase.register;
       _errorRegister = null;
       _errorRegisterManufacturer = null;
+      if (_loginPersona == _LoginPersona.manufacturer) {
+        _authTrack = _AuthDocumentTrack.cnpj;
+        _registerAccountType = 'manufacturer_admin';
+      } else {
+        _authTrack = _AuthDocumentTrack.cpf;
+        if (_registerAccountType == 'manufacturer_admin') {
+          _registerAccountType = 'trainee';
+        }
+      }
     });
   }
 
@@ -593,7 +606,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                   ),
                 ),
                 child: _phase == _AuthPhase.entry
-                    ? _buildUrsEntryLayout(context, tt, s, key: const ValueKey('urs-entry'))
+                    ? _buildSplitLoginLayout(context, tt, s, key: const ValueKey('login-entry'))
                     : _buildRegisterCard(context, tt, s, key: const ValueKey('card-register')),
               ),
             ),
@@ -604,14 +617,13 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     );
   }
 
-  static const _ursMobileBreakpoint = 600.0;
-  static const _ursPrimaryBlue = Color(0xFF1032FC);
-  static const _ursTertiaryNavy = Color(0xFF0E3554);
-  static const _ursGradientMobile = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [_ursTertiaryNavy, _ursPrimaryBlue],
-  );
+  static const _loginSplitBreakpoint = 600.0;
+  static const _loginPanelNavy = Color(0xFF1A233A);
+  static const _loginPanelNavyDeep = Color(0xFF121A2E);
+  static const _loginAccentPurple = Color(0xFF5B47E0);
+  static const _loginCardMuted = Color(0xFFF1F5F9);
+  static const _loginCardBorder = Color(0xFFE2E8F0);
+  static const _loginMutedOnNavy = Color(0xFFB8C0D4);
 
   String _loginIdentityPreviewLabel(AppLocalizations s) {
     return switch (_previewType) {
@@ -624,313 +636,401 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     };
   }
 
-  Widget _buildUrsEntryLayout(BuildContext context, TextTheme tt, AppLocalizations s, {Key? key}) {
+  String _loginIdentifierFieldLabel(AppLocalizations s) {
+    return _loginPersona == _LoginPersona.user
+        ? s.loginIdentifierLabelUser
+        : s.loginIdentifierLabelManufacturer;
+  }
+
+  Widget _loginShieldMark({required double size}) {
+    return ExcludeSemantics(
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: size * 0.92,
+              height: size * 0.92,
+              decoration: BoxDecoration(
+                color: _loginAccentPurple.withValues(alpha: 0.35),
+                shape: BoxShape.circle,
+              ),
+            ),
+            Icon(Icons.shield_outlined, size: size * 0.44, color: Colors.white),
+            Positioned(
+              right: size * 0.02,
+              bottom: size * 0.02,
+              child: Container(
+                width: size * 0.3,
+                height: size * 0.3,
+                decoration: const BoxDecoration(color: Color(0xFF0B1020), shape: BoxShape.circle),
+                alignment: Alignment.center,
+                child: Icon(Icons.add, size: size * 0.16, color: _loginAccentPurple),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginBrandingBlock(AppLocalizations s, TextTheme tt, {required bool compact}) {
+    final iconBox = compact ? 64.0 : 80.0;
+    final titleStyle = (compact ? tt.titleLarge : tt.headlineSmall)?.copyWith(
+      color: Colors.white,
+      fontWeight: FontWeight.w800,
+      letterSpacing: -0.4,
+      height: 1.15,
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _loginShieldMark(size: iconBox),
+        SizedBox(height: compact ? 16 : 24),
+        Text(s.loginBrandTitle, textAlign: TextAlign.center, style: titleStyle),
+        SizedBox(height: compact ? 10 : 14),
+        Text(
+          s.loginBrandHeroTagline,
+          textAlign: TextAlign.center,
+          style: tt.bodyLarge?.copyWith(
+            color: _loginMutedOnNavy,
+            height: 1.45,
+            fontWeight: FontWeight.w500,
+            fontSize: compact ? 14 : 15,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _loginPersonaCard({
+    required AppLocalizations s,
+    required TextTheme tt,
+    required bool selected,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    required String semanticsLabel,
+  }) {
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: semanticsLabel,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(14),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                color: selected ? _loginAccentPurple : _loginCardMuted,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: selected ? _loginAccentPurple : _loginCardBorder,
+                  width: selected ? 2 : 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, size: 22, color: selected ? Colors.white : const Color(0xFF64748B)),
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tt.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: selected ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: tt.bodySmall?.copyWith(
+                      height: 1.25,
+                      color: selected ? Colors.white.withValues(alpha: 0.92) : const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginFormBody(BuildContext context, TextTheme tt, AppLocalizations s) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          s.loginWelcomeBackTitle,
+          style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: ClinicalPrecisionColors.onSurface),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          s.loginWelcomeBackSubtitle,
+          style: tt.bodyMedium?.copyWith(color: const Color(0xFF64748B), height: 1.35),
+        ),
+        const SizedBox(height: 20),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _loginPersonaCard(
+              s: s,
+              tt: tt,
+              selected: _loginPersona == _LoginPersona.user,
+              icon: Icons.person_outline_rounded,
+              title: s.loginPersonaUserTitle,
+              subtitle: s.loginPersonaUserSubtitle,
+              semanticsLabel: s.loginPersonaUserTitle,
+              onTap: () => setState(() => _loginPersona = _LoginPersona.user),
+            ),
+            const SizedBox(width: 10),
+            _loginPersonaCard(
+              s: s,
+              tt: tt,
+              selected: _loginPersona == _LoginPersona.manufacturer,
+              icon: Icons.precision_manufacturing_outlined,
+              title: s.loginPersonaManufacturerTitle,
+              subtitle: s.loginPersonaManufacturerSubtitle,
+              semanticsLabel: s.loginPersonaManufacturerTitle,
+              onTap: () => setState(() => _loginPersona = _LoginPersona.manufacturer),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          s.loginPasswordOnlyHint,
+          textAlign: TextAlign.center,
+          style: tt.bodySmall?.copyWith(color: const Color(0xFF94A3B8), height: 1.35),
+        ),
+        const SizedBox(height: 18),
+        Form(
+          key: _formLogin,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _emailLogin,
+                keyboardType: TextInputType.text,
+                textCapitalization: TextCapitalization.none,
+                autofillHints: const [AutofillHints.username],
+                decoration: InputDecoration(
+                  labelText: _loginIdentifierFieldLabel(s),
+                  hintText: s.loginFieldIdentifierHint,
+                  prefixIcon: const Icon(Icons.person_outline_rounded, size: 22),
+                  isDense: true,
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return s.valEmailRequired;
+                  return null;
+                },
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _loginIdentityPreviewLabel(s),
+                style: tt.labelMedium?.copyWith(color: const Color(0xFF5C6370), height: 1.3),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _passwordLogin,
+                obscureText: _obscurePassword,
+                autofillHints: const [AutofillHints.password],
+                decoration: InputDecoration(
+                  labelText: s.fieldPassword,
+                  prefixIcon: const Icon(Icons.lock_outline_rounded, size: 22),
+                  isDense: true,
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  suffixIcon: IconButton(
+                    tooltip: _obscurePassword ? s.loginShowPassword : s.loginHidePassword,
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                  ),
+                ),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return s.valPasswordRequired;
+                  return null;
+                },
+              ),
+              if (_errorLogin != null) ...[
+                const SizedBox(height: 10),
+                Text(_errorLogin!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13)),
+              ],
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => _snack(s.loginFooterSoon),
+                  child: Text(s.loginForgotPassword),
+                ),
+              ),
+              const SizedBox(height: 4),
+              FilledButton(
+                key: const ValueKey('login-submit'),
+                onPressed: _loadingLogin ? null : _submitLogin,
+                style: FilledButton.styleFrom(
+                  backgroundColor: _loginAccentPurple,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _loadingLogin
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Text(s.loginEnterSystem),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          s.loginOrgHint,
+          textAlign: TextAlign.center,
+          style: tt.bodySmall?.copyWith(color: const Color(0xFF94A3B8), height: 1.35),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 2,
+          runSpacing: 8,
+          children: [
+            Text(s.loginNewUserLead, style: tt.bodyMedium?.copyWith(color: const Color(0xFF64748B))),
+            TextButton(
+              onPressed: _openRegisterCard,
+              style: TextButton.styleFrom(foregroundColor: _loginAccentPurple, padding: const EdgeInsets.symmetric(horizontal: 6)),
+              child: Text(s.loginNoAccountAction, style: const TextStyle(fontWeight: FontWeight.w700)),
+            ),
+            Text('·', style: TextStyle(color: Colors.grey.shade400)),
+            TextButton(
+              onPressed: () => _snack(s.loginFooterSoon),
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFF64748B)),
+              child: Text(s.loginNavQuestions, style: const TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          AppVersion.current,
+          textAlign: TextAlign.center,
+          style: tt.labelMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: ClinicalPrecisionColors.onSurfaceVariant,
+          ),
+        ),
+        if (kDebugMode) ...[
+          const SizedBox(height: 10),
+          Text(
+            s.loginDebugApiLine(AppConfig.apiBaseUrl),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Login em duas colunas: painel de marca (App²cation) + formulário.
+  Widget _buildSplitLoginLayout(BuildContext context, TextTheme tt, AppLocalizations s, {Key? key}) {
     return LayoutBuilder(
       key: key,
       builder: (context, constraints) {
-        final mobile = constraints.maxWidth < _ursMobileBreakpoint;
+        final mobile = constraints.maxWidth < _loginSplitBreakpoint;
         if (mobile) {
-          return DecoratedBox(
-            decoration: const BoxDecoration(gradient: _ursGradientMobile),
-            child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 460),
-                    child: _buildUrsLoginCard(context, tt, s),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [_loginPanelNavyDeep, _loginPanelNavy],
+                  ),
+                ),
+                child: SafeArea(
+                  bottom: false,
+                  child: Center(child: _buildLoginBrandingBlock(s, tt, compact: true)),
+                ),
+              ),
+              Expanded(
+                child: ColoredBox(
+                  color: Colors.white,
+                  child: SafeArea(
+                    top: false,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 440),
+                          child: _buildLoginFormBody(context, tt, s),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           );
         }
         return Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              flex: 5,
               child: ColoredBox(
-                color: Colors.white,
+                color: _loginPanelNavy,
                 child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 28),
-                    child: Center(
-                      child: SingleChildScrollView(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 460),
-                          child: _buildUrsLoginCard(context, tt, s),
-                        ),
-                      ),
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                      child: _buildLoginBrandingBlock(s, tt, compact: false),
                     ),
                   ),
                 ),
               ),
             ),
             Expanded(
-              flex: 7,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          _ursTertiaryNavy,
-                          _ursPrimaryBlue.withValues(alpha: 0.85),
-                        ],
+              child: ColoredBox(
+                color: Colors.white,
+                child: SafeArea(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: _buildLoginFormBody(context, tt, s),
                       ),
                     ),
                   ),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.white.withValues(alpha: 0.12),
-                          _ursTertiaryNavy.withValues(alpha: 0.08),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Center(
-                    child: Icon(Icons.health_and_safety_outlined, size: 120, color: Colors.white.withValues(alpha: 0.2)),
-                  ),
-                  SafeArea(
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
-                        child: Text(
-                          s.loginUrsHeroTagline,
-                          textAlign: TextAlign.center,
-                          style: tt.titleMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            height: 1.35,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ],
         );
       },
-    );
-  }
-
-  Widget _buildUrsLoginCard(BuildContext context, TextTheme tt, AppLocalizations s) {
-    const cardRadius = 18.0;
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 460),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(cardRadius),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1A1A1C1C),
-            blurRadius: 14,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: _ursPrimaryBlue.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(Icons.health_and_safety_outlined, color: _ursPrimaryBlue, size: 28),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              s.loginBrandTitle,
-              textAlign: TextAlign.center,
-              style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: ClinicalPrecisionColors.onSurface),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              s.loginUrsSecurePortalSubtitle,
-              textAlign: TextAlign.center,
-              style: tt.bodySmall?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.35),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              s.loginSectionLoginTitle,
-              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: ClinicalPrecisionColors.onSurface),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              s.loginPasswordOnlyHint,
-              textAlign: TextAlign.center,
-              style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280), height: 1.35),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              s.loginInstitutionalCredentialsTitle,
-              style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: ClinicalPrecisionColors.onSurface),
-            ),
-            const SizedBox(height: 10),
-            Form(
-              key: _formLogin,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextFormField(
-                    controller: _emailLogin,
-                    keyboardType: TextInputType.text,
-                    textCapitalization: TextCapitalization.none,
-                    autofillHints: const [AutofillHints.username],
-                    decoration: InputDecoration(
-                      labelText: s.loginFieldIdentifier,
-                      hintText: s.loginFieldIdentifierHint,
-                      prefixIcon: const Icon(Icons.person_outline, size: 22),
-                      isDense: true,
-                    ),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return s.valEmailRequired;
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _loginIdentityPreviewLabel(s),
-                    style: tt.labelMedium?.copyWith(color: const Color(0xFF5C6370), height: 1.3),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _passwordLogin,
-                    obscureText: _obscurePassword,
-                    autofillHints: const [AutofillHints.password],
-                    decoration: InputDecoration(
-                      labelText: s.fieldPassword,
-                      prefixIcon: const Icon(Icons.lock_outline, size: 22),
-                      isDense: true,
-                      suffixIcon: IconButton(
-                        tooltip: _obscurePassword ? s.loginShowPassword : s.loginHidePassword,
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                        icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                      ),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return s.valPasswordRequired;
-                      return null;
-                    },
-                  ),
-                  if (_errorLogin != null) ...[
-                    const SizedBox(height: 10),
-                    Text(_errorLogin!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13)),
-                  ],
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => _snack(s.loginFooterSoon),
-                      child: Text(s.loginForgotPassword),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  FilledButton(
-                    key: const ValueKey('login-submit'),
-                    onPressed: _loadingLogin ? null : _submitLogin,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _ursPrimaryBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: _loadingLogin
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : Text(s.actionSignIn),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              s.loginOrgHint,
-              textAlign: TextAlign.center,
-              style: tt.bodySmall?.copyWith(color: const Color(0xFF8E9099), height: 1.35),
-            ),
-            const SizedBox(height: 14),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: _ursPrimaryBlue.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 4,
-                  runSpacing: 6,
-                  children: [
-                    Text(s.loginNoAccountPrefix, style: tt.bodyMedium?.copyWith(color: ClinicalPrecisionColors.onSurface)),
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      onPressed: _openRegisterCard,
-                      child: Text(s.loginNoAccountAction, style: const TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                    Text('·', style: TextStyle(color: Colors.grey.shade500)),
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      onPressed: () => _snack(s.loginFooterSoon),
-                      child: Text(s.loginNavQuestions, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              AppVersion.current,
-              textAlign: TextAlign.center,
-              style: tt.labelMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: ClinicalPrecisionColors.onSurfaceVariant,
-              ),
-            ),
-            if (kDebugMode) ...[
-              const SizedBox(height: 10),
-              Text(
-                s.loginDebugApiLine(AppConfig.apiBaseUrl),
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 

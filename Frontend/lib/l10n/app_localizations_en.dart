@@ -35,7 +35,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Use your account or institutional email and password.';
 
   @override
-  String get loginUrsSecurePortalSubtitle => 'Secure portal access';
+  String get loginBrandPortalSubtitle => 'App²cation portal — secure access';
 
   @override
   String get loginSectionLoginTitle => 'Login';
@@ -46,6 +46,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get loginPasswordOnlyHint =>
       'Sign-in is email and password. If you do not have a profile yet, you will be asked to choose an account type after your first login.';
+
+  @override
+  String get loginWelcomeBackTitle => 'Welcome back';
+
+  @override
+  String get loginWelcomeBackSubtitle => 'Sign in to your account to continue.';
+
+  @override
+  String get loginPersonaUserTitle => 'User';
+
+  @override
+  String get loginPersonaUserSubtitle => 'Trainee, instructor, or institution';
+
+  @override
+  String get loginPersonaManufacturerTitle => 'Manufacturer';
+
+  @override
+  String get loginPersonaManufacturerSubtitle =>
+      'Company administrator account';
+
+  @override
+  String get loginIdentifierLabelUser => 'Email or national ID';
+
+  @override
+  String get loginIdentifierLabelManufacturer => 'Email or company tax ID';
+
+  @override
+  String get loginEnterSystem => 'Sign in to continue';
+
+  @override
+  String get loginNewUserLead => 'New here?';
 
   @override
   String get loginFieldIdentifier => 'Identifier';
@@ -84,8 +115,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginNoAccountAction => 'Create account';
 
   @override
-  String get loginUrsHeroTagline =>
-      'Connecting care and technology in real time';
+  String get loginBrandHeroTagline =>
+      'App²cation: care and technology in real time.';
 
   @override
   String get loginEmptyIdentifierPassword => 'Identifier or password is empty.';

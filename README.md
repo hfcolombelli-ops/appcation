@@ -26,6 +26,18 @@ A **única fonte de verdade** é `Frontend/pubspec.yaml` (`version: MAJOR.MINOR.
 
    O hook `githooks/pre-commit` exige que `Frontend/pubspec.yaml` esteja no commit e que a linha `version` seja **diferente** do último commit. Emergência (só excecional): `SKIP_VERSION_HOOK=1 git commit ...`
 
+## Desenvolvimento local — Backend com PostgreSQL
+
+O Laravel aceita SQLite por defeito; em produção (Railway) usa-se **PostgreSQL**. Para desenvolver contra Postgres no teu computador:
+
+1. `cd Backend && docker compose up -d` (sobe Postgres 16 na porta **5432**).
+2. Copia `Backend/.env.example` para `Backend/.env` e define `DB_CONNECTION=pgsql` e `DB_URL=postgresql://appcation:appcation@127.0.0.1:5432/appcation?schema=public` (está comentado no exemplo).
+3. `cd Backend && php artisan migrate`
+
+Os testes PHPUnit continuam a usar SQLite em memória (`phpunit.xml`); o CI não precisa do Docker Postgres.
+
+No host onde corres `php artisan`, o PHP precisa da extensão **pdo_pgsql** (ex.: macOS Homebrew: `brew install php` e extensão, ou imagem PHP com `pgsql`).
+
 ## Deploy
 
 ### Backend (Railway)

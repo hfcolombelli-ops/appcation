@@ -1,0 +1,25 @@
+# PostgreSQL local para desenvolvimento (alinhado a produção no Railway).
+#
+# Arranque:
+#   cd Backend && docker compose up -d
+#
+# No .env: DB_CONNECTION=pgsql e DB_URL conforme Backend/.env.example
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: appcation
+      POSTGRES_PASSWORD: appcation
+      POSTGRES_DB: appcation
+    volumes:
+      - appcation_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appcation -d appcation"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  appcation_pgdata:

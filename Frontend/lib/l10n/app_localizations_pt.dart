@@ -35,7 +35,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Use o e-mail e a palavra-passe da sua conta ou da sua instituição.';
 
   @override
-  String get loginUrsSecurePortalSubtitle => 'Acesso seguro ao portal';
+  String get loginBrandPortalSubtitle => 'Portal App²cation — acesso seguro';
 
   @override
   String get loginSectionLoginTitle => 'Login';
@@ -46,6 +46,36 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get loginPasswordOnlyHint =>
       'O acesso é feito com e-mail e palavra-passe. Se ainda não tiver perfil, após o primeiro login será pedido que escolha o tipo de conta.';
+
+  @override
+  String get loginWelcomeBackTitle => 'Bem-vindo de volta';
+
+  @override
+  String get loginWelcomeBackSubtitle => 'Aceda à sua conta para continuar.';
+
+  @override
+  String get loginPersonaUserTitle => 'Usuário';
+
+  @override
+  String get loginPersonaUserSubtitle => 'Treinando, instrutor ou instituição';
+
+  @override
+  String get loginPersonaManufacturerTitle => 'Fabricante';
+
+  @override
+  String get loginPersonaManufacturerSubtitle => 'Administrador da empresa';
+
+  @override
+  String get loginIdentifierLabelUser => 'E-mail ou CPF';
+
+  @override
+  String get loginIdentifierLabelManufacturer => 'E-mail ou CNPJ';
+
+  @override
+  String get loginEnterSystem => 'Entrar no sistema';
+
+  @override
+  String get loginNewUserLead => 'Novo por aqui?';
 
   @override
   String get loginFieldIdentifier => 'Identificador';
@@ -84,8 +114,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get loginNoAccountAction => 'Criar conta';
 
   @override
-  String get loginUrsHeroTagline =>
-      'Conectando cuidado e tecnologia em tempo real';
+  String get loginBrandHeroTagline =>
+      'App²cation: cuidado e tecnologia em tempo real.';
 
   @override
   String get loginEmptyIdentifierPassword =>
