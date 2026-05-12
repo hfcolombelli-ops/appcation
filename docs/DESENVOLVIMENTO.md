@@ -19,7 +19,7 @@ Se o código divergir do fluxograma sem decisão explícita, trata-se de **dívi
 3. **Contrato antes da pintura** — Campos novos ou estados novos: primeiro modelo/API ou contrato JSON estável; depois UI.
 4. **Sem texto cru na UI** — Novas cópias em `app_pt.arb` / `app_en.arb` e `flutter gen-l10n`.
 5. **Chrome partilhado** — Miúdos dos shells: [`Frontend/lib/theme/instructor_page_chrome.dart`](../Frontend/lib/theme/instructor_page_chrome.dart) (`instructorShellScaffold`, `instructorShellCard`). Refinar pixel-perfect **depois** da funcionalidade.
-6. **Versão visível** — No `pubspec` usa-se `MAJOR.MINOR.0+BUILD` (ex.: `1.0.0+1`). O badge na app mostra só **`V MAJOR.MINOR`** (ex.: `V 1.0`, `V 1.1`, até `V 1.99`), sem «1.x.0» nem `+build`. Em cada entrega, `./scripts/bump_version.sh` incrementa **minor**, patch 0, build +1; ao passar 99 no minor, sobe o major. Incluir `pubspec.yaml` e `app_version.dart` no commit.
+6. **Versão visível** — No `pubspec` usa-se `MAJOR.MINOR.0+BUILD` (ex.: `1.0.0+1`). O badge na app mostra só **`V MAJOR.MINOR`** (ex.: `V 1.0`, `V 1.1`, … `V 1.99`), sem «1.x.0» nem `+build` na UI. Cada entrega: `./scripts/bump_version.sh` incrementa **MINOR** em 1 (= **+0,1** na linha de produto 1.x), **PATCH** 0, **BUILD** +1; quando **MINOR > 99**, **MAJOR** +1 e **MINOR** 0. Incluir `pubspec.yaml` e `app_version.dart` no commit.
 
 ## 3. Perfis técnicos (mapeamento IAM)
 
@@ -115,7 +115,7 @@ Para cada entrega (idealmente 1 PR ou série pequena coerente):
 
 ## 6. Convenções rápidas
 
-- **Versão Flutter:** `MAJOR.MINOR.0+BUILD` no `pubspec.yaml`; badge `AppVersion.current` = `V MAJOR.MINOR` apenas (gerado — não editar à mão).
+- **Versão Flutter:** `MAJOR.MINOR.0+BUILD` no `pubspec.yaml`; badge `AppVersion.current` = `V MAJOR.MINOR` (ex.: `V 1.0` → `V 1.1` a cada bump, até `V 1.99` depois `V 2.0`). Gerado — não editar à mão.
 - **API:** Controllers em `Backend/app/Http/Controllers/Api/`; respeitar roles e policies existentes.
 - **Flutter:** Shells em `Frontend/lib/shell/`; evitar ficheiros monolíticos novos enormes — extrair widgets quando a fatia crescer.
 - **Dropdowns Flutter recentes:** `DropdownButtonFormField` com `initialValue` + `ValueKey` quando o estado controlado mudar (evitar deprecações).

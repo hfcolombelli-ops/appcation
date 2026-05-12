@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
-# Política App²cation — versão «de produto» = MAJOR.MINOR (ex.: 1.46), nunca concatenação tipo 1.45.46:
-#   - Badge na app: «V 1.46» (só estes dois números; ver scripts/sync_app_version_from_pubspec.sh).
-#   - Pubspec: MAJOR.MINOR.PATCH+BUILD (Flutter); PATCH fica 0; BUILD (+n) sobe a cada entrega.
-#   - Cada ./scripts/bump_version.sh: MINOR +1, PATCH 0, BUILD +1 (ex.: 1.45.0+46 → 1.46.0+47).
-#   - MINOR > 99: MAJOR +1, MINOR 0.
+# Política App²cation — versão de produto em «décimos» no badge: V 1.0 → V 1.1 → … → V 1.99 → V 2.0
+#   - Pubspec Flutter: MAJOR.MINOR.PATCH+BUILD (PATCH fica sempre 0).
+#   - Badge na app: só «V MAJOR.MINOR» (ex.: V 1.3); ver scripts/sync_app_version_from_pubspec.sh.
+#   - Cada ./scripts/bump_version.sh: MINOR +1 (sobe 0.1 na linha 1.x), PATCH 0, BUILD +1.
+#     Ex.: 1.0.0+1 → 1.1.0+2 → … → 1.99.0+100 → 2.0.0+101 (quando MINOR > 99: MAJOR +1, MINOR 0).
+#   - O +BUILD não aparece no badge; serve só de contador interno no pubspec.
 #
-# Ex.: 1.0.0+1 → 1.1.0+2 → … → 1.99.0+100 → 2.0.0+101
-#
-# Uso: ./scripts/bump_version.sh
+# Uso antes de commit/deploy: ./scripts/bump_version.sh
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
