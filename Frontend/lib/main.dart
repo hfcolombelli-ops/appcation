@@ -710,74 +710,83 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     );
   }
 
-  Widget _loginPersonaCard({
-    required AppLocalizations s,
-    required TextTheme tt,
-    required bool selected,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    required String semanticsLabel,
-  }) {
-    return Expanded(
-      child: Semantics(
-        button: true,
-        selected: selected,
-        label: semanticsLabel,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(14),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              decoration: BoxDecoration(
-                color: selected ? ClinicalPrecisionColors.secondary : ClinicalPrecisionColors.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: selected ? ClinicalPrecisionColors.secondary : ClinicalPrecisionColors.outlineVariant,
-                  width: selected ? 2 : 1,
-                ),
+  /// Selector compacto (Material 3): ícone + rótulo curto; descrição numa linha por baixo.
+  Widget _buildLoginPersonaSelector(BuildContext context, TextTheme tt, AppLocalizations s) {
+    final track = ClinicalPrecisionColors.surfaceContainerLow;
+    final selectedFill = ClinicalPrecisionColors.surfaceContainerLowest;
+    final outline = ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.65);
+    final segStyle = SegmentedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      minimumSize: const Size(0, 40),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+      textStyle: tt.labelLarge?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.1),
+      side: BorderSide(color: outline),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: track,
+      foregroundColor: ClinicalPrecisionColors.onSurfaceVariant,
+      selectedForegroundColor: ClinicalPrecisionColors.secondary,
+      selectedBackgroundColor: selectedFill,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          s.loginPersonaPickerLabel,
+          style: tt.labelMedium?.copyWith(
+            color: ClinicalPrecisionColors.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Semantics(
+          container: true,
+          label: s.loginPersonaPickerLabel,
+          child: SegmentedButton<_LoginPersona>(
+            showSelectedIcon: false,
+            style: segStyle,
+            segments: [
+              ButtonSegment<_LoginPersona>(
+                value: _LoginPersona.user,
+                label: Text(s.loginPersonaUserTitle),
+                icon: const Icon(Icons.person_outline_rounded, size: 18),
+                tooltip: s.loginPersonaUserSubtitle,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    icon,
-                    size: 22,
-                    color: selected ? Colors.white : ClinicalPrecisionColors.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: tt.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: selected ? Colors.white : ClinicalPrecisionColors.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: tt.bodySmall?.copyWith(
-                      height: 1.25,
-                      color: selected
-                          ? Colors.white.withValues(alpha: 0.92)
-                          : ClinicalPrecisionColors.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+              ButtonSegment<_LoginPersona>(
+                value: _LoginPersona.manufacturer,
+                label: Text(s.loginPersonaManufacturerTitle),
+                icon: const Icon(Icons.precision_manufacturing_outlined, size: 18),
+                tooltip: s.loginPersonaManufacturerSubtitle,
               ),
+            ],
+            selected: {_loginPersona},
+            onSelectionChanged: (Set<_LoginPersona> next) {
+              if (next.isEmpty) return;
+              setState(() => _loginPersona = next.first);
+            },
+            multiSelectionEnabled: false,
+            emptySelectionAllowed: false,
+          ),
+        ),
+        const SizedBox(height: 8),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          child: Text(
+            _loginPersona == _LoginPersona.user
+                ? s.loginPersonaUserSubtitle
+                : s.loginPersonaManufacturerSubtitle,
+            key: ValueKey(_loginPersona),
+            style: tt.bodySmall?.copyWith(
+              color: ClinicalPrecisionColors.onSurfaceVariant.withValues(alpha: 0.92),
+              height: 1.35,
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -794,34 +803,9 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
           s.loginWelcomeBackSubtitle,
           style: tt.bodyLarge?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.4),
         ),
-        const SizedBox(height: 20),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _loginPersonaCard(
-              s: s,
-              tt: tt,
-              selected: _loginPersona == _LoginPersona.user,
-              icon: Icons.person_outline_rounded,
-              title: s.loginPersonaUserTitle,
-              subtitle: s.loginPersonaUserSubtitle,
-              semanticsLabel: s.loginPersonaUserTitle,
-              onTap: () => setState(() => _loginPersona = _LoginPersona.user),
-            ),
-            const SizedBox(width: 10),
-            _loginPersonaCard(
-              s: s,
-              tt: tt,
-              selected: _loginPersona == _LoginPersona.manufacturer,
-              icon: Icons.precision_manufacturing_outlined,
-              title: s.loginPersonaManufacturerTitle,
-              subtitle: s.loginPersonaManufacturerSubtitle,
-              semanticsLabel: s.loginPersonaManufacturerTitle,
-              onTap: () => setState(() => _loginPersona = _LoginPersona.manufacturer),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 18),
+        _buildLoginPersonaSelector(context, tt, s),
+        const SizedBox(height: 14),
         Text(
           s.loginPasswordOnlyHint,
           textAlign: TextAlign.start,

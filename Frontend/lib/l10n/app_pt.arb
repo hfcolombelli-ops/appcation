@@ -18,6 +18,7 @@
   "loginPersonaUserSubtitle": "Treinando, instrutor ou instituição",
   "loginPersonaManufacturerTitle": "Fabricante",
   "loginPersonaManufacturerSubtitle": "Administrador da empresa",
+  "loginPersonaPickerLabel": "Tipo de conta",
   "loginIdentifierLabelUser": "E-mail ou CPF",
   "loginIdentifierLabelManufacturer": "E-mail ou CNPJ",
   "loginEnterSystem": "Entrar no sistema",

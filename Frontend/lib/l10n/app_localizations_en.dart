@@ -67,6 +67,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Company administrator account';
 
   @override
+  String get loginPersonaPickerLabel => 'Account type';
+
+  @override
   String get loginIdentifierLabelUser => 'Email or national ID';
 
   @override

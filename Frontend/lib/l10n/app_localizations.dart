@@ -206,6 +206,12 @@ abstract class AppLocalizations {
   /// **'Administrador da empresa'**
   String get loginPersonaManufacturerSubtitle;
 
+  /// No description provided for @loginPersonaPickerLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tipo de conta'**
+  String get loginPersonaPickerLabel;
+
   /// No description provided for @loginIdentifierLabelUser.
   ///
   /// In pt, this message translates to:

@@ -18,6 +18,7 @@
   "loginPersonaUserSubtitle": "Trainee, instructor, or institution",
   "loginPersonaManufacturerTitle": "Manufacturer",
   "loginPersonaManufacturerSubtitle": "Company administrator account",
+  "loginPersonaPickerLabel": "Account type",
   "loginIdentifierLabelUser": "Email or national ID",
   "loginIdentifierLabelManufacturer": "Email or company tax ID",
   "loginEnterSystem": "Sign in to continue",

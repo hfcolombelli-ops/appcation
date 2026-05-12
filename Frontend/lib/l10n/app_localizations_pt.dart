@@ -66,6 +66,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get loginPersonaManufacturerSubtitle => 'Administrador da empresa';
 
   @override
+  String get loginPersonaPickerLabel => 'Tipo de conta';
+
+  @override
   String get loginIdentifierLabelUser => 'E-mail ou CPF';
 
   @override
