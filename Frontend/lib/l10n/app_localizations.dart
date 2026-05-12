@@ -179,7 +179,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginWelcomeBackSubtitle.
   ///
   /// In pt, this message translates to:
-  /// **'Aceda à sua conta para continuar.'**
+  /// **'E-mail e palavra-passe.'**
   String get loginWelcomeBackSubtitle;
 
   /// No description provided for @loginPersonaUserTitle.
@@ -545,7 +545,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginOrgHint.
   ///
   /// In pt, this message translates to:
-  /// **'Gestor de hospital ou clínica: use o e-mail e senha que a instituição criou para si no painel interno.'**
+  /// **'Gestor: use o acesso que a instituição criou para si.'**
   String get loginOrgHint;
 
   /// No description provided for @actionCreateAccount.
@@ -563,8 +563,62 @@ abstract class AppLocalizations {
   /// No description provided for @registerSubtitle.
   ///
   /// In pt, this message translates to:
-  /// **'Escolha CPF ou CNPJ, o perfil e preencha os dados.'**
+  /// **'Preencha os dados.'**
   String get registerSubtitle;
+
+  /// No description provided for @registerPickLead.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolha o tipo de conta.'**
+  String get registerPickLead;
+
+  /// No description provided for @registerPillTraineeTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Treinando'**
+  String get registerPillTraineeTitle;
+
+  /// No description provided for @registerPillTraineeSub.
+  ///
+  /// In pt, this message translates to:
+  /// **'Individual'**
+  String get registerPillTraineeSub;
+
+  /// No description provided for @registerPillInstructorTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Instrutor'**
+  String get registerPillInstructorTitle;
+
+  /// No description provided for @registerPillInstructorSub.
+  ///
+  /// In pt, this message translates to:
+  /// **'Individual'**
+  String get registerPillInstructorSub;
+
+  /// No description provided for @registerPillManufacturerTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fabricante'**
+  String get registerPillManufacturerTitle;
+
+  /// No description provided for @registerPillManufacturerSub.
+  ///
+  /// In pt, this message translates to:
+  /// **'Empresa'**
+  String get registerPillManufacturerSub;
+
+  /// No description provided for @registerBackToLogin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Já tenho conta — voltar ao login'**
+  String get registerBackToLogin;
+
+  /// No description provided for @registerFormLead.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome, e-mail e senha (mín. 8 caracteres).'**
+  String get registerFormLead;
 
   /// No description provided for @registerAccountTypeTitle.
   ///

@@ -236,9 +236,6 @@ class LoginUniversalScreen extends StatefulWidget {
 
 enum _AuthPhase { entry, register }
 
-/// Fluxo de cadastro/login: pessoa física (CPF) vs empresa (CNPJ / fabricante).
-enum _AuthDocumentTrack { cpf, cnpj }
-
 /// Persona no ecrã de entrada: utilizador (treinando/instrutor/instituição) vs fabricante.
 enum _LoginPersona { user, manufacturer }
 
@@ -255,8 +252,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   final _mfgCnpjRegister = TextEditingController();
 
   _AuthPhase _phase = _AuthPhase.entry;
-  _AuthDocumentTrack _authTrack = _AuthDocumentTrack.cpf;
-  /// `trainee` | `instructor` (CPF) ou `manufacturer_admin` (CNPJ).
+  /// `trainee` | `instructor` | `manufacturer_admin`.
   String _registerAccountType = 'trainee';
 
   bool _loadingLogin = false;
@@ -268,6 +264,8 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   bool _obscurePassword = true;
   LoginIdentityType _previewType = LoginIdentityType.unknown;
   _LoginPersona _loginPersona = _LoginPersona.user;
+  /// Passo 1 do registo: escolha do perfil (pills); passo 2: formulário.
+  bool _registerChoosingRole = true;
 
   @override
   void initState() {
@@ -345,13 +343,12 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   void _openRegisterCard() {
     setState(() {
       _phase = _AuthPhase.register;
+      _registerChoosingRole = true;
       _errorRegister = null;
       _errorRegisterManufacturer = null;
       if (_loginPersona == _LoginPersona.manufacturer) {
-        _authTrack = _AuthDocumentTrack.cnpj;
         _registerAccountType = 'manufacturer_admin';
       } else {
-        _authTrack = _AuthDocumentTrack.cpf;
         if (_registerAccountType == 'manufacturer_admin') {
           _registerAccountType = 'trainee';
         }
@@ -359,15 +356,15 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     });
   }
 
-  void _setAuthTrack(_AuthDocumentTrack track) {
+  void _pickRegisterRole(String role) {
     setState(() {
-      _authTrack = track;
-      if (track == _AuthDocumentTrack.cnpj) {
+      _registerChoosingRole = false;
+      _errorRegister = null;
+      _errorRegisterManufacturer = null;
+      if (role == 'manufacturer_admin') {
         _registerAccountType = 'manufacturer_admin';
       } else {
-        if (_registerAccountType == 'manufacturer_admin') {
-          _registerAccountType = 'trainee';
-        }
+        _registerAccountType = role;
       }
     });
   }
@@ -375,6 +372,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   void _backToEntry() {
     setState(() {
       _phase = _AuthPhase.entry;
+      _registerChoosingRole = true;
       _errorRegister = null;
       _errorRegisterManufacturer = null;
     });
@@ -785,22 +783,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
             emptySelectionAllowed: false,
           ),
         ),
-        const SizedBox(height: 8),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          child: Text(
-            _loginPersona == _LoginPersona.user
-                ? s.loginPersonaUserSubtitle
-                : s.loginPersonaManufacturerSubtitle,
-            key: ValueKey(_loginPersona),
-            style: tt.bodySmall?.copyWith(
-              color: ClinicalPrecisionColors.onSurfaceVariant.withValues(alpha: 0.92),
-              height: 1.35,
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -816,20 +798,11 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
         const SizedBox(height: 6),
         Text(
           s.loginWelcomeBackSubtitle,
-          style: tt.bodyLarge?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.4),
+          style: tt.bodyMedium?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.35),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 16),
         _buildLoginPersonaSelector(context, tt, s),
-        const SizedBox(height: 14),
-        Text(
-          s.loginPasswordOnlyHint,
-          textAlign: TextAlign.start,
-          style: tt.bodySmall?.copyWith(
-            color: ClinicalPrecisionColors.onSurfaceVariant.withValues(alpha: 0.88),
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 16),
         Form(
           key: _formLogin,
           child: Column(
@@ -843,6 +816,12 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 decoration: InputDecoration(
                   labelText: _loginIdentifierFieldLabel(s),
                   hintText: s.loginFieldIdentifierHint,
+                  helperText: _loginIdentityPreviewLabel(s),
+                  helperMaxLines: 2,
+                  helperStyle: tt.bodySmall?.copyWith(
+                    color: ClinicalPrecisionColors.onSurfaceVariant,
+                    height: 1.25,
+                  ),
                   prefixIcon: const Icon(Icons.person_outline_rounded, size: 22),
                   isDense: true,
                   filled: true,
@@ -853,15 +832,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                   if (v == null || v.trim().isEmpty) return s.valEmailRequired;
                   return null;
                 },
-              ),
-              const SizedBox(height: 6),
-              Text(
-                _loginIdentityPreviewLabel(s),
-                style: tt.labelLarge?.copyWith(
-                  color: ClinicalPrecisionColors.onSurfaceVariant,
-                  height: 1.35,
-                  fontWeight: FontWeight.w500,
-                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -952,13 +922,13 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Text(
           s.loginOrgHint,
           textAlign: TextAlign.center,
           style: tt.bodySmall?.copyWith(
-            color: ClinicalPrecisionColors.onSurfaceVariant.withValues(alpha: 0.9),
-            height: 1.45,
+            color: ClinicalPrecisionColors.onSurfaceVariant.withValues(alpha: 0.85),
+            height: 1.35,
           ),
         ),
         const SizedBox(height: 16),
@@ -1157,19 +1127,13 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
         width: double.infinity,
         constraints: const BoxConstraints(maxWidth: 420),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE1E4E8)),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.07),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          color: ClinicalPrecisionColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.45)),
+          boxShadow: ClinicalPrecisionShadows.ambientCard,
         ),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
+          padding: const EdgeInsets.fromLTRB(22, 14, 22, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -1177,239 +1141,208 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 children: [
                   IconButton(
                     key: const ValueKey('register-back'),
-                    onPressed: _backToEntry,
-                    style: IconButton.styleFrom(foregroundColor: const Color(0xFF45464D)),
+                    onPressed: () {
+                      if (_registerChoosingRole) {
+                        _backToEntry();
+                      } else {
+                        setState(() => _registerChoosingRole = true);
+                      }
+                    },
+                    style: IconButton.styleFrom(foregroundColor: ClinicalPrecisionColors.onSurfaceVariant),
                     icon: const Icon(Icons.arrow_back_rounded),
                     tooltip: s.actionBack,
                   ),
                   Expanded(
                     child: Text(
                       s.actionCreateAccount,
-                      style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: ClinicalPrecisionColors.onSurface),
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                s.registerSubtitle,
-                style: tt.bodyMedium?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.35),
-              ),
-              const SizedBox(height: 16),
-              SegmentedButton<_AuthDocumentTrack>(
-                segments: [
-                  ButtonSegment<_AuthDocumentTrack>(
-                    value: _AuthDocumentTrack.cpf,
-                    label: Text(s.authTrackCpfLabel),
-                    icon: const Icon(Icons.person_outline, size: 18),
-                  ),
-                  ButtonSegment<_AuthDocumentTrack>(
-                    value: _AuthDocumentTrack.cnpj,
-                    label: Text(s.authTrackCnpjLabel),
-                    icon: const Icon(Icons.business_outlined, size: 18),
-                  ),
-                ],
-                selected: {_authTrack},
-                onSelectionChanged: (Set<_AuthDocumentTrack> next) {
-                  if (next.isEmpty) return;
-                  _setAuthTrack(next.first);
-                },
-              ),
-              const SizedBox(height: 8),
-              Text(
-                s.authTrackSegmentSubtitle,
-                textAlign: TextAlign.center,
-                style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280), height: 1.35),
-              ),
-              const SizedBox(height: 16),
-              if (_authTrack == _AuthDocumentTrack.cpf) ...[
-              Text(
-                s.registerAccountTypeTitleCpf,
-                style: tt.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _AccountTypeMiniCard(
-                      label: s.googleRoleTrainee,
-                      icon: Icons.school_outlined,
-                      selected: _registerAccountType == 'trainee',
-                      onTap: () => setState(() => _registerAccountType = 'trainee'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _AccountTypeMiniCard(
-                      label: s.googleRoleInstructor,
-                      icon: Icons.verified_user_outlined,
-                      selected: _registerAccountType == 'instructor',
-                      onTap: () => setState(() => _registerAccountType = 'instructor'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.info_outline, size: 18, color: Color(0xFF00677D)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      s.registerManagerInviteHint,
-                      style: tt.bodySmall?.copyWith(color: const Color(0xFF5C5E66), height: 1.35),
-                    ),
-                  ),
-                ],
-              ),
-            ] else ...[
-              Text(
-                s.registerAccountTypeTitleCnpj,
-                style: tt.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                s.mfgCompanyLabel,
-                style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280)),
-              ),
-            ],
-            const SizedBox(height: 20),
-            Form(
-              key: _formRegister,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextFormField(
-                    controller: _nameRegister,
-                    decoration: InputDecoration(labelText: s.fieldFullName, isDense: true),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return s.valNameRequired;
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  TextFormField(
-                    controller: _emailRegister,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(labelText: s.fieldEmail, isDense: true),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return s.valEmailRequired;
-                      if (!v.contains('@')) return s.valEmailInvalid;
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  TextFormField(
-                    controller: _passwordRegister,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: s.fieldPasswordRegister,
-                      isDense: true,
-                    ),
-                    validator: (v) {
-                      if (v == null || v.length < 8) return s.valPasswordMin8;
-                      return null;
-                    },
-                  ),
-                  if (_registerAccountType == 'manufacturer_admin') ...[
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: _mfgNameRegister,
-                      decoration: InputDecoration(
-                        labelText: s.fieldCompanyName,
-                        helperText: s.registerMfgCompanyOptionalDomain,
-                        isDense: true,
+                      style: tt.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: ClinicalPrecisionColors.onSurface,
+                        letterSpacing: -0.3,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: _mfgCnpjRegister,
-                      decoration: InputDecoration(
-                        labelText: s.mfgCnpjOptionalLabel,
-                        isDense: true,
+                  ),
+                ],
+              ),
+              if (_registerChoosingRole) ...[
+                const SizedBox(height: 4),
+                Text(
+                  s.registerPickLead,
+                  style: tt.bodyMedium?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.35),
+                ),
+                const SizedBox(height: 20),
+                _RegisterRolePill(
+                  title: s.registerPillTraineeTitle,
+                  subtitle: s.registerPillTraineeSub,
+                  icon: Icons.school_outlined,
+                  onTap: () => _pickRegisterRole('trainee'),
+                ),
+                const SizedBox(height: 10),
+                _RegisterRolePill(
+                  title: s.registerPillInstructorTitle,
+                  subtitle: s.registerPillInstructorSub,
+                  icon: Icons.verified_user_outlined,
+                  onTap: () => _pickRegisterRole('instructor'),
+                ),
+                const SizedBox(height: 10),
+                _RegisterRolePill(
+                  title: s.registerPillManufacturerTitle,
+                  subtitle: s.registerPillManufacturerSub,
+                  icon: Icons.precision_manufacturing_outlined,
+                  onTap: () => _pickRegisterRole('manufacturer_admin'),
+                ),
+                const SizedBox(height: 18),
+                Center(
+                  child: TextButton(
+                    onPressed: _backToEntry,
+                    style: TextButton.styleFrom(foregroundColor: ClinicalPrecisionColors.secondary),
+                    child: Text(s.registerBackToLogin, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 4),
+                Text(
+                  s.registerFormLead,
+                  style: tt.bodySmall?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.35),
+                ),
+                const SizedBox(height: 16),
+                Form(
+                  key: _formRegister,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: _nameRegister,
+                        decoration: InputDecoration(labelText: s.fieldFullName, isDense: true),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return s.valNameRequired;
+                          return null;
+                        },
                       ),
-                    ),
-                  ],
-                  if (_errorRegister != null) ...[
-                    const SizedBox(height: 12),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFFECACA)),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: _emailRegister,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(labelText: s.fieldEmail, isDense: true),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return s.valEmailRequired;
+                          if (!v.contains('@')) return s.valEmailInvalid;
+                          return null;
+                        },
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.error_outline_rounded, color: Color(0xFFB91C1C), size: 22),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                _errorRegister!,
-                                style: tt.bodyMedium?.copyWith(
-                                  color: const Color(0xFF991B1B),
-                                  height: 1.35,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: _passwordRegister,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          labelText: s.fieldPasswordRegister,
+                          isDense: true,
                         ),
+                        validator: (v) {
+                          if (v == null || v.length < 8) return s.valPasswordMin8;
+                          return null;
+                        },
                       ),
-                    ),
-                  ],
-                  if (_errorRegisterManufacturer != null) ...[
-                    const SizedBox(height: 12),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFFECACA)),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.error_outline_rounded, color: Color(0xFFB91C1C), size: 22),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                _errorRegisterManufacturer!,
-                                style: tt.bodyMedium?.copyWith(
-                                  color: const Color(0xFF991B1B),
-                                  height: 1.35,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
+                      if (_registerAccountType == 'manufacturer_admin') ...[
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          controller: _mfgNameRegister,
+                          decoration: InputDecoration(
+                            labelText: s.fieldCompanyName,
+                            helperText: s.registerMfgCompanyOptionalDomain,
+                            isDense: true,
+                          ),
                         ),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          controller: _mfgCnpjRegister,
+                          decoration: InputDecoration(
+                            labelText: s.mfgCnpjOptionalLabel,
+                            isDense: true,
+                          ),
+                        ),
+                      ],
+                      if (_errorRegister != null) ...[
+                        const SizedBox(height: 12),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFECACA)),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.error_outline_rounded, color: Color(0xFFB91C1C), size: 22),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _errorRegister!,
+                                    style: tt.bodyMedium?.copyWith(
+                                      color: const Color(0xFF991B1B),
+                                      height: 1.35,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (_errorRegisterManufacturer != null) ...[
+                        const SizedBox(height: 12),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFECACA)),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.error_outline_rounded, color: Color(0xFFB91C1C), size: 22),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _errorRegisterManufacturer!,
+                                    style: tt.bodyMedium?.copyWith(
+                                      color: const Color(0xFF991B1B),
+                                      height: 1.35,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: _loadingRegister ? null : _submitRegister,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: ClinicalPrecisionColors.secondary,
+                          foregroundColor: ClinicalPrecisionColors.onSecondary,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: _loadingRegister
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : Text(s.actionCompleteRegistration),
                       ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: _loadingRegister ? null : _submitRegister,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF00677D),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: _loadingRegister
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : Text(s.actionCompleteRegistration),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              ],
             ],
           ),
         ),
@@ -1418,55 +1351,64 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   }
 }
 
-class _AccountTypeMiniCard extends StatelessWidget {
-  const _AccountTypeMiniCard({
-    required this.label,
+class _RegisterRolePill extends StatelessWidget {
+  const _RegisterRolePill({
+    required this.title,
+    required this.subtitle,
     required this.icon,
-    required this.selected,
     required this.onTap,
   });
 
-  final String label;
+  final String title;
+  final String subtitle;
   final IconData icon;
-  final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    const accent = Color(0xFF00677D);
+    final tt = Theme.of(context).textTheme;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+        borderRadius: BorderRadius.circular(20),
+        child: Ink(
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFE8F4F7) : const Color(0xFFF4F6F8),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: selected ? accent : const Color(0xFFE0E4E8),
-              width: selected ? 1.5 : 1,
-            ),
+            color: ClinicalPrecisionColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.65)),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 22, color: selected ? accent : const Color(0xFF6B7280)),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                    color: selected ? const Color(0xFF0D3D47) : const Color(0xFF374151),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            child: Row(
+              children: [
+                Icon(icon, size: 26, color: ClinicalPrecisionColors.secondary),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: tt.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: ClinicalPrecisionColors.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: tt.bodySmall?.copyWith(
+                          color: ClinicalPrecisionColors.onSurfaceVariant,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+                Icon(Icons.chevron_right_rounded, color: ClinicalPrecisionColors.onSurfaceVariant.withValues(alpha: 0.45)),
+              ],
+            ),
           ),
         ),
       ),

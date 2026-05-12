@@ -51,7 +51,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get loginWelcomeBackTitle => 'Bem-vindo de volta';
 
   @override
-  String get loginWelcomeBackSubtitle => 'Aceda à sua conta para continuar.';
+  String get loginWelcomeBackSubtitle => 'E-mail e palavra-passe.';
 
   @override
   String get loginPersonaUserTitle => 'Usuário';
@@ -246,7 +246,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get loginOrgHint =>
-      'Gestor de hospital ou clínica: use o e-mail e senha que a instituição criou para si no painel interno.';
+      'Gestor: use o acesso que a instituição criou para si.';
 
   @override
   String get actionCreateAccount => 'Criar conta';
@@ -255,8 +255,34 @@ class AppLocalizationsPt extends AppLocalizations {
   String get actionBack => 'Voltar';
 
   @override
-  String get registerSubtitle =>
-      'Escolha CPF ou CNPJ, o perfil e preencha os dados.';
+  String get registerSubtitle => 'Preencha os dados.';
+
+  @override
+  String get registerPickLead => 'Escolha o tipo de conta.';
+
+  @override
+  String get registerPillTraineeTitle => 'Treinando';
+
+  @override
+  String get registerPillTraineeSub => 'Individual';
+
+  @override
+  String get registerPillInstructorTitle => 'Instrutor';
+
+  @override
+  String get registerPillInstructorSub => 'Individual';
+
+  @override
+  String get registerPillManufacturerTitle => 'Fabricante';
+
+  @override
+  String get registerPillManufacturerSub => 'Empresa';
+
+  @override
+  String get registerBackToLogin => 'Já tenho conta — voltar ao login';
+
+  @override
+  String get registerFormLead => 'Nome, e-mail e senha (mín. 8 caracteres).';
 
   @override
   String get registerAccountTypeTitle => 'Tipo de conta';

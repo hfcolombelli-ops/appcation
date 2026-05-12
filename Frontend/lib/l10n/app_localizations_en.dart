@@ -51,7 +51,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginWelcomeBackTitle => 'Welcome back';
 
   @override
-  String get loginWelcomeBackSubtitle => 'Sign in to your account to continue.';
+  String get loginWelcomeBackSubtitle => 'Email and password.';
 
   @override
   String get loginPersonaUserTitle => 'User';
@@ -246,7 +246,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginOrgHint =>
-      'Hospital or clinic manager: use the email and password your organization created for you in the internal panel.';
+      'Managers: use the access your organization created for you.';
 
   @override
   String get actionCreateAccount => 'Create account';
@@ -255,8 +255,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionBack => 'Back';
 
   @override
-  String get registerSubtitle =>
-      'Choose individual or company, the profile, then fill in the details.';
+  String get registerSubtitle => 'Fill in your details.';
+
+  @override
+  String get registerPickLead => 'Choose an account type.';
+
+  @override
+  String get registerPillTraineeTitle => 'Trainee';
+
+  @override
+  String get registerPillTraineeSub => 'Individual';
+
+  @override
+  String get registerPillInstructorTitle => 'Instructor';
+
+  @override
+  String get registerPillInstructorSub => 'Individual';
+
+  @override
+  String get registerPillManufacturerTitle => 'Manufacturer';
+
+  @override
+  String get registerPillManufacturerSub => 'Company';
+
+  @override
+  String get registerBackToLogin =>
+      'I already have an account — back to sign in';
+
+  @override
+  String get registerFormLead =>
+      'Name, email, and password (min. 8 characters).';
 
   @override
   String get registerAccountTypeTitle => 'Account type';
