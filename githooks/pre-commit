@@ -33,7 +33,7 @@ fi
 
 if [[ -n "$OLD" && "$OLD" == "$NEW" ]]; then
   echo "pre-commit: a 'version' em $PUB não mudou face ao último commit ($NEW)." >&2
-  echo "  Incrementa (ex.: build +1: 1.0.1+2 → 1.0.1+3) ou usa ./scripts/bump_version.sh" >&2
+  echo "  Incrementa (ex.: 1.0.0 → 1.1.0) ou usa ./scripts/bump_version.sh" >&2
   exit 1
 fi
 

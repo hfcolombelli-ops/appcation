@@ -9,7 +9,7 @@ Monorepo do sistema App²cation com:
 
 ## Versionamento (obrigatório em cada commit)
 
-A **única fonte de verdade** é `Frontend/pubspec.yaml` (`version: MAJOR.MINOR.0+BUILD`). O badge na UI mostra só **`V MAJOR.MINOR`** (linha de produto em décimos: `V 1.0`, `V 1.1`, … até `V 1.99`, depois `V 2.0`), gerado em `Frontend/lib/app_version.dart` pelo script de sync (não editar à mão). O `+BUILD` é contador interno e não aparece no badge.
+A **única fonte de verdade** é `Frontend/pubspec.yaml`. O **Pub/Dart** exige semver com **três números** (`MAJOR.MINOR.PATCH`); não é válido `1.0` ou `1.0+1` só. Usamos **`1.0.0`**, **`1.1.0`**, **`1.2.0`**… com **PATCH sempre 0** (sem `+BUILD`). O badge na UI mostra só **`V MAJOR.MINOR`** (`V 1.0`, `V 1.1`, …), gerado em `Frontend/lib/app_version.dart` pelo script de sync (não editar à mão). Cada `./scripts/bump_version.sh` sobe **MINOR** em 1.
 
 1. **Uma vez por clone**, ativar o hook Git (bloqueia commit se a versão não subir):
 

@@ -3,8 +3,8 @@
 # Uso: ./scripts/sync_app_version_from_pubspec.sh [caminho-para-pubspec]
 # Por defeito: Frontend/pubspec.yaml
 #
-# Badge visível: «V 1.46» = só MAJOR.MINOR (versão de produto). Não mostrar PATCH nem +BUILD
-# (evita confusão com algo tipo «1.45.46»; o +BUILD é contador interno no pubspec).
+# Badge visível: «V 1.0» = só MAJOR.MINOR (o terceiro número no pubspec é 0 — exigência do Pub).
+# Não mostrar PATCH nem +BUILD no badge.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PUB="${1:-$ROOT/Frontend/pubspec.yaml}"

@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Política App²cation — versão de produto em «décimos» no badge: V 1.0 → V 1.1 → … → V 1.99 → V 2.0
-#   - Pubspec Flutter: MAJOR.MINOR.PATCH+BUILD (PATCH fica sempre 0).
-#   - Badge na app: só «V MAJOR.MINOR» (ex.: V 1.3); ver scripts/sync_app_version_from_pubspec.sh.
-#   - Cada ./scripts/bump_version.sh: MINOR +1 (sobe 0.1 na linha 1.x), PATCH 0, BUILD +1.
-#     Ex.: 1.0.0+1 → 1.1.0+2 → … → 1.99.0+100 → 2.0.0+101 (quando MINOR > 99: MAJOR +1, MINOR 0).
-#   - O +BUILD não aparece no badge; serve só de contador interno no pubspec.
+# Política App²cation — linha de produto: 1.0 → 1.1 → 1.2 → … (sem limite de MINOR).
+#
+# O Pub/Dart não aceita «1.0» nem «1.0+1» na linha version: — exige semver
+# MAJOR.MINOR.PATCH. Mantemos PATCH sempre 0; o badge mostra só MAJOR.MINOR
+# (ver scripts/sync_app_version_from_pubspec.sh). Sem +BUILD no pubspec.
+#
+# Cada ./scripts/bump_version.sh: MINOR +1, PATCH 0.
+# Ex.: 1.0.0 → 1.1.0 → 1.2.0 → … → 1.100.0
 #
 # Uso antes de commit/deploy: ./scripts/bump_version.sh
 set -euo pipefail
@@ -28,21 +30,19 @@ elif [[ "$full" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
   major="${BASH_REMATCH[1]}"
   minor="${BASH_REMATCH[2]}"
   patch="${BASH_REMATCH[3]}"
-  build="0"
+  build=""
+elif [[ "$full" =~ ^([0-9]+)\.([0-9]+)\+([0-9]+)$ ]]; then
+  echo "bump_version: formato legado MAJOR.MINOR+BUILD não suportado; use MAJOR.MINOR.0 em $PUB" >&2
+  exit 1
 else
-  echo "Formato de version não suportado em $PUB: '$full' (use MAJOR.MINOR.PATCH+BUILD ou MAJOR.MINOR.PATCH)." >&2
+  echo "Formato de version não suportado em $PUB: '$full' (use MAJOR.MINOR.0 ou MAJOR.MINOR.0+BUILD para migrar)." >&2
   exit 1
 fi
 
 minor=$((10#$minor + 1))
-if (( minor > 99 )); then
-  major=$((10#$major + 1))
-  minor=0
-fi
 patch=0
-build=$((10#$build + 1))
 
-new_full="${major}.${minor}.${patch}+${build}"
+new_full="${major}.${minor}.${patch}"
 
 if [[ "$(uname -s)" == "Darwin" ]]; then
   sed -i '' "s/^version:.*/version: $new_full/" "$PUB"
