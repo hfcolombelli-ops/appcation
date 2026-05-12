@@ -1,5 +1,7 @@
 # PostgreSQL e gestão de utilizadores (App²cation)
 
+> **Primeira vez / passo a passo simples:** [GUIA_POSTGRES_LEIGO.md](GUIA_POSTGRES_LEIGO.md) (browser, terminal com `./scripts/railway_psql.sh`, ou Docker local).
+
 ## 1. Limpar **todos** os utilizadores (`users`)
 
 O backend já inclui o comando Artisan `app:purge-all-users`, que remove linhas em `users`, tokens Sanctum ligados a utilizadores, `sessions` e `password_reset_tokens`. Tabelas com `ON DELETE CASCADE` para `users` (ex.: `enrollments`, `trainee_profiles`) são limpas pela base.
