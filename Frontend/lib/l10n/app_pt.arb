@@ -92,6 +92,7 @@
   "registerMfgCompanyOptionalDomain": "Obrigatório só no primeiro registo deste domínio; deixe em branco para juntar-se a um fabricante já criado.",
   "valCompanyNameRequired": "Informe o nome da empresa.",
   "actionCompleteRegistration": "Concluir cadastro",
+  "registerSuccessNowSignIn": "Conta criada. Entre com o seu e-mail e palavra-passe.",
   "errApiConnection": "Falha de conexão com a API.",
   "errMfgNameRequired": "Informe o nome da empresa.",
   "errSelectInstitution": "Selecione a instituição na lista.",

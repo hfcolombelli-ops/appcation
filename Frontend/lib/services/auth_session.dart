@@ -147,6 +147,8 @@ class AuthSession extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// [establishSession]: se falso, valida a resposta 201 mas não grava token
+  /// (ex.: registo no Web seguido de ecrã de login explícito).
   Future<void> register({
     required String name,
     required String email,
@@ -155,6 +157,7 @@ class AuthSession extends ChangeNotifier {
     String? phone,
     String? manufacturerName,
     String? manufacturerCnpj,
+    bool establishSession = true,
   }) async {
     final data = await _api.postJson('/api/auth/register', {
       'name': name.trim(),
@@ -173,6 +176,9 @@ class AuthSession extends ChangeNotifier {
     final u = data['user'];
     if (t == null || u is! Map<String, dynamic>) {
       throw ApiException('', 500, reason: LocalizedApiReason.authInvalidRegisterResponse);
+    }
+    if (!establishSession) {
+      return;
     }
     _token = t;
     _user = u;

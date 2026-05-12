@@ -650,6 +650,12 @@ abstract class AppLocalizations {
   /// **'Concluir cadastro'**
   String get actionCompleteRegistration;
 
+  /// No description provided for @registerSuccessNowSignIn.
+  ///
+  /// In pt, this message translates to:
+  /// **'Conta criada. Entre com o seu e-mail e palavra-passe.'**
+  String get registerSuccessNowSignIn;
+
   /// No description provided for @errApiConnection.
   ///
   /// In pt, this message translates to:

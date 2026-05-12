@@ -99,6 +99,7 @@ class MyApp extends StatelessWidget {
           primaryContainer: primaryContainer,
           secondaryContainer: secondaryContainer,
         ),
+        fontFamilyFallback: [GoogleFonts.notoSans().fontFamily ?? 'sans-serif'],
         useMaterial3: true,
         cardTheme: CardThemeData(
           color: Colors.white,
@@ -394,6 +395,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
           email: _emailRegister.text,
           password: _passwordRegister.text,
           role: 'trainee',
+          establishSession: false,
         );
       } else if (_registerAccountType == 'instructor') {
         await appAuth.register(
@@ -401,6 +403,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
           email: _emailRegister.text,
           password: _passwordRegister.text,
           role: 'instructor',
+          establishSession: false,
         );
       } else {
         await appAuth.register(
@@ -411,8 +414,21 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
           manufacturerName:
               _mfgNameRegister.text.trim().isEmpty ? null : _mfgNameRegister.text.trim(),
           manufacturerCnpj: _mfgCnpjRegister.text.trim().isEmpty ? null : _mfgCnpjRegister.text.trim(),
+          establishSession: false,
         );
       }
+      if (!mounted) return;
+      final s = AppLocalizations.of(context);
+      final email = _emailRegister.text.trim();
+      setState(() {
+        _phase = _AuthPhase.entry;
+        _errorRegister = null;
+        _errorRegisterManufacturer = null;
+        _emailLogin.text = email;
+        _passwordLogin.clear();
+        _passwordRegister.clear();
+      });
+      _snack(s.registerSuccessNowSignIn);
     } on ApiException catch (e) {
       if (!mounted) return;
       final msg = localizedApiMessage(AppLocalizations.of(context), e);

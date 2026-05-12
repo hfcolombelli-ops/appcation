@@ -92,6 +92,7 @@
   "registerMfgCompanyOptionalDomain": "Required only for the first signup on this domain; leave blank to join an existing manufacturer.",
   "valCompanyNameRequired": "Enter the company name.",
   "actionCompleteRegistration": "Complete registration",
+  "registerSuccessNowSignIn": "Account created. Sign in with your email and password.",
   "errApiConnection": "Could not connect to the API.",
   "errMfgNameRequired": "Enter the company name.",
   "errSelectInstitution": "Select an institution from the list.",

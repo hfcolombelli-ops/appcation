@@ -304,6 +304,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionCompleteRegistration => 'Complete registration';
 
   @override
+  String get registerSuccessNowSignIn =>
+      'Account created. Sign in with your email and password.';
+
+  @override
   String get errApiConnection => 'Could not connect to the API.';
 
   @override

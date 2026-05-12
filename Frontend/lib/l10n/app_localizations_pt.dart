@@ -304,6 +304,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get actionCompleteRegistration => 'Concluir cadastro';
 
   @override
+  String get registerSuccessNowSignIn =>
+      'Conta criada. Entre com o seu e-mail e palavra-passe.';
+
+  @override
   String get errApiConnection => 'Falha de conexão com a API.';
 
   @override
