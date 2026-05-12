@@ -18,9 +18,9 @@ Future<void> initFirebaseWeb() async {
 
   if (projectId.isEmpty) {
     debugPrint(
-      'Firebase Web: omitido. Para ativar: copia Frontend/dart_defines.production.env.example '
-      'para dart_defines.production.env, preenche FIREBASE_WEB_* (Console Firebase → app Web) '
-      'e corre ./scripts/deploy_web_hosting.sh.',
+      'Firebase Web omitido (sem FIREBASE_WEB_*). Login com e-mail/senha funciona; login Google '
+      'na Web precisa de dart_defines — ver Frontend/dart_defines.production.env.example e '
+      './scripts/deploy_web_hosting.sh.',
     );
     return;
   }

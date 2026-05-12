@@ -18,6 +18,8 @@
   "loginPersonaUserSubtitle": "Treinando, instrutor ou instituição",
   "loginPersonaManufacturerTitle": "Fabricante",
   "loginPersonaManufacturerSubtitle": "Administrador da empresa",
+  "loginPersonaManufacturerPasswordHint": "Use o e-mail do administrador ou o CNPJ da empresa (14 dígitos) e a palavra-passe. Com conta de fabricante, abre-se a área do fabricante após entrar.",
+  "loginPasswordRequiresEmailOrMfgCnpj": "Como fabricante, use o e-mail do administrador ou um CNPJ válido da empresa (14 dígitos).",
   "loginPersonaPickerLabel": "Tipo de conta",
   "loginIdentifierLabelUser": "E-mail ou CPF",
   "loginIdentifierLabelManufacturer": "E-mail ou CNPJ",

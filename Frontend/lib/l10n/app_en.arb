@@ -18,6 +18,8 @@
   "loginPersonaUserSubtitle": "Trainee, instructor, or institution",
   "loginPersonaManufacturerTitle": "Manufacturer",
   "loginPersonaManufacturerSubtitle": "Company administrator account",
+  "loginPersonaManufacturerPasswordHint": "Use your administrator email or the company tax ID (14 digits) and password. With a manufacturer account, the manufacturer area opens after sign-in.",
+  "loginPasswordRequiresEmailOrMfgCnpj": "As a manufacturer, use your administrator email or a valid company tax ID (14 digits).",
   "loginPersonaPickerLabel": "Account type",
   "loginIdentifierLabelUser": "Email or national ID",
   "loginIdentifierLabelManufacturer": "Email or company tax ID",

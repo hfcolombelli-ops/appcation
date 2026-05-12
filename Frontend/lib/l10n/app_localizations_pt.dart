@@ -66,6 +66,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get loginPersonaManufacturerSubtitle => 'Administrador da empresa';
 
   @override
+  String get loginPersonaManufacturerPasswordHint =>
+      'Use o e-mail do administrador ou o CNPJ da empresa (14 dígitos) e a palavra-passe. Com conta de fabricante, abre-se a área do fabricante após entrar.';
+
+  @override
+  String get loginPasswordRequiresEmailOrMfgCnpj =>
+      'Como fabricante, use o e-mail do administrador ou um CNPJ válido da empresa (14 dígitos).';
+
+  @override
   String get loginPersonaPickerLabel => 'Tipo de conta';
 
   @override

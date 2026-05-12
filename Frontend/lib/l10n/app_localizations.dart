@@ -206,6 +206,18 @@ abstract class AppLocalizations {
   /// **'Administrador da empresa'**
   String get loginPersonaManufacturerSubtitle;
 
+  /// No description provided for @loginPersonaManufacturerPasswordHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Use o e-mail do administrador ou o CNPJ da empresa (14 dígitos) e a palavra-passe. Com conta de fabricante, abre-se a área do fabricante após entrar.'**
+  String get loginPersonaManufacturerPasswordHint;
+
+  /// No description provided for @loginPasswordRequiresEmailOrMfgCnpj.
+  ///
+  /// In pt, this message translates to:
+  /// **'Como fabricante, use o e-mail do administrador ou um CNPJ válido da empresa (14 dígitos).'**
+  String get loginPasswordRequiresEmailOrMfgCnpj;
+
   /// No description provided for @loginPersonaPickerLabel.
   ///
   /// In pt, this message translates to:

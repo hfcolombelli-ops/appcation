@@ -317,9 +317,16 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       _snack(s.loginIdentifierInvalidClient);
       return;
     }
-    if (typ != LoginIdentityType.email) {
-      _snack(s.loginPasswordRequiresEmail);
-      return;
+    if (_loginPersona == _LoginPersona.user) {
+      if (typ != LoginIdentityType.email) {
+        _snack(s.loginPasswordRequiresEmail);
+        return;
+      }
+    } else {
+      if (typ != LoginIdentityType.email && typ != LoginIdentityType.institutionCnpj) {
+        _snack(s.loginPasswordRequiresEmailOrMfgCnpj);
+        return;
+      }
     }
     setState(() {
       _errorLogin = null;
@@ -802,6 +809,16 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
         ),
         const SizedBox(height: 16),
         _buildLoginPersonaSelector(context, tt, s),
+        if (_loginPersona == _LoginPersona.manufacturer) ...[
+          const SizedBox(height: 10),
+          Text(
+            s.loginPersonaManufacturerPasswordHint,
+            style: tt.bodySmall?.copyWith(
+              color: ClinicalPrecisionColors.onSurfaceVariant,
+              height: 1.35,
+            ),
+          ),
+        ],
         const SizedBox(height: 16),
         Form(
           key: _formLogin,

@@ -67,6 +67,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Company administrator account';
 
   @override
+  String get loginPersonaManufacturerPasswordHint =>
+      'Use your administrator email or the company tax ID (14 digits) and password. With a manufacturer account, the manufacturer area opens after sign-in.';
+
+  @override
+  String get loginPasswordRequiresEmailOrMfgCnpj =>
+      'As a manufacturer, use your administrator email or a valid company tax ID (14 digits).';
+
+  @override
   String get loginPersonaPickerLabel => 'Account type';
 
   @override

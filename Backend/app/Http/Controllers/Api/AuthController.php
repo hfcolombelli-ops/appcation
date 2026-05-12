@@ -175,17 +175,34 @@ class AuthController extends Controller
         ]);
 
         $raw = $credentials['email'] ?? $credentials['identifier'] ?? '';
-        $email = strtolower(trim((string) $raw));
-        if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return response()->json([
-                'message' => 'Utilize um e-mail institucional válido no campo identificador (ou fluxo Google).',
-                'errors' => ['identifier' => ['O identificador deve ser um e-mail válido para este portal.']],
-            ], 422);
+        $trimmed = strtolower(trim((string) $raw));
+        $password = $credentials['password'];
+
+        $user = null;
+
+        if ($trimmed !== '' && filter_var($trimmed, FILTER_VALIDATE_EMAIL)) {
+            $user = User::query()->where('email', $trimmed)->first();
+        } else {
+            $cnpjDigits = preg_replace('/\D+/', '', (string) $raw);
+            if (strlen($cnpjDigits) === 14) {
+                $manufacturer = Manufacturer::query()->where('cnpj', $cnpjDigits)->first();
+                if ($manufacturer !== null) {
+                    $candidates = User::query()
+                        ->where('manufacturer_id', $manufacturer->id)
+                        ->where('role', 'manufacturer_admin')
+                        ->whereNotNull('password')
+                        ->get();
+                    foreach ($candidates as $candidate) {
+                        if (Hash::check($password, $candidate->password)) {
+                            $user = $candidate;
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
-        $user = User::where('email', $email)->first();
-
-        if (! $user || $user->password === null || ! Hash::check($credentials['password'], $user->password)) {
+        if ($user === null || $user->password === null || ! Hash::check($password, $user->password)) {
             return response()->json(['message' => 'Credenciais inválidas.'], 422);
         }
 
