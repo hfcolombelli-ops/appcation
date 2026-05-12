@@ -13,8 +13,6 @@ enum LocalizedApiReason {
   operationIncomplete,
   authInvalidLoginResponse,
   authInvalidRegisterResponse,
-  authGoogleCancelled,
-  authInvalidGoogleLoginResponse,
   uploadMissingFileSource,
 }
 

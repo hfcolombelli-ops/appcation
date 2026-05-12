@@ -32,7 +32,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginCardSignInLead =>
-      'Use Google or your institutional email and password.';
+      'Use your account or institutional email and password.';
 
   @override
   String get loginUrsSecurePortalSubtitle => 'Secure portal access';
@@ -42,6 +42,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginInstitutionalCredentialsTitle => 'Credentials (email)';
+
+  @override
+  String get loginPasswordOnlyHint =>
+      'Sign-in is email and password. If you do not have a profile yet, you will be asked to choose an account type after your first login.';
 
   @override
   String get loginFieldIdentifier => 'Identifier';
@@ -68,7 +72,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginIdentityUnknown =>
-      'Unrecognized identifier — use a valid email or Google';
+      'Unrecognized identifier — use a valid email registered on the platform.';
 
   @override
   String get loginForgotPassword => 'Forgot password';
@@ -92,7 +96,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginPasswordRequiresEmail =>
-      'Password sign-in requires your account email (or use Continue with Google).';
+      'Password sign-in requires your account email.';
 
   @override
   String get loginShowPassword => 'Show password';
@@ -461,7 +465,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileGateBody =>
-      'You are signed in, but this account has no role mapped to an app area (trainee, instructor, institution manager, or manufacturer). Sign out and sign in again; on first Google sign-in, pick the correct account type.';
+      'You are signed in, but this account has no role mapped to an app area (trainee, instructor, institution manager, or manufacturer). Sign out and sign in again; on first access, choose the correct account type when prompted.';
 
   @override
   String get profileGateDocHint =>
@@ -501,14 +505,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginGoogleTriageHint =>
-      'After signing in with Google, you will choose your profile in two steps (account type, then company details if needed).';
+      'If you do not have a profile yet, after signing in you will choose your profile in two steps (and company details if needed).';
 
   @override
   String get profileTriageTitle => 'Choose your profile';
 
   @override
   String get profileTriageSubtitle =>
-      'Select the account type. On the next step you confirm or complete details to link your Google account.';
+      'Select the account type. On the next step you confirm or complete details to activate your profile on the platform.';
 
   @override
   String get profileTriageStep2Title => 'Profile details';
@@ -2155,7 +2159,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trnLgpdBullets =>
-      '• Purpose: identification in trainings, certificates, and aggregated institution reports.\n• Sharing: individual data only with the instructor during the session; to the institution, in aggregated form.\n• Retention: up to 5 years after the last training for audit, unless you request deletion or anonymization.\n• Rights: access, correction, portability, and deletion via the Privacy menu (icon at the top).\n• Google: when using Google login, data is also processed under Google’s policy.';
+      '• Purpose: identification in trainings, certificates, and aggregated institution reports.\n• Sharing: individual data only with the instructor during the session; to the institution, in aggregated form.\n• Retention: up to 5 years after the last training for audit, unless you request deletion or anonymization.\n• Rights: access, correction, portability, and deletion via the Privacy menu (icon at the top).';
 
   @override
   String get trnLgpdCheckboxTitle =>

@@ -10,13 +10,10 @@ import '../app_state.dart';
 import '../l10n/api_exception_localizations.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/error_snacks.dart';
-import '../l10n/google_sign_in_localizations.dart';
 import '../l10n/status_labels.dart';
-import '../services/google_sign_in_errors.dart';
 import '../services/api_client.dart';
 import '../services/production_api.dart';
 import '../services/training_reverb_listener.dart';
-import '../services/google_sign_in_helper.dart';
 import '../theme/clinical_precision_tokens.dart';
 import '../widgets/version_badge.dart';
 
@@ -732,7 +729,6 @@ class _TraineeShellState extends State<TraineeShell> {
   Future<void> _confirmDeleteAccount() async {
     final t = appAuth.token;
     if (t == null) return;
-    final googleLinked = appAuth.user?['google_sub'] != null;
     final pwd = TextEditingController();
     final confirm = TextEditingController();
     try {
@@ -747,13 +743,9 @@ class _TraineeShellState extends State<TraineeShell> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    googleLinked ? lang.trnDeleteAccountBodyGoogle : lang.trnDeleteAccountBodyPassword,
-                  ),
-                  if (!googleLinked) ...[
-                    const SizedBox(height: 12),
-                    TextField(controller: pwd, obscureText: true, decoration: InputDecoration(labelText: lang.trnFieldPassword)),
-                  ],
+                  Text(lang.trnDeleteAccountBodyPassword),
+                  const SizedBox(height: 12),
+                  TextField(controller: pwd, obscureText: true, decoration: InputDecoration(labelText: lang.trnFieldPassword)),
                   const SizedBox(height: 8),
                   TextField(controller: confirm, decoration: InputDecoration(labelText: lang.trnFieldConfirmDelete)),
                 ],
@@ -770,27 +762,10 @@ class _TraineeShellState extends State<TraineeShell> {
         },
       );
       if (ok != true || !mounted) return;
-      if (googleLinked) {
-        final idToken = await obtainGoogleIdToken(context: context, forceAccountPicker: true);
-        if (idToken == null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).trnSnackCancelled)));
-          }
-          return;
-        }
-        await _api.requestAccountDeletion(t, idToken: idToken, confirmText: confirm.text.trim());
-      } else {
-        await _api.requestAccountDeletion(t, password: pwd.text, confirmText: confirm.text.trim());
-      }
+      await _api.requestAccountDeletion(t, password: pwd.text, confirmText: confirm.text.trim());
       await appAuth.logout();
     } on ApiException catch (e) {
       if (mounted) context.showLocalizedApiExceptionSnack(e);
-    } on GoogleSignInFailure catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(localizedGoogleSignInFailure(AppLocalizations.of(context), e))),
-        );
-      }
     } catch (_) {
       if (mounted) context.showErrApiConnectionSnack();
     } finally {

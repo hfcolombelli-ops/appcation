@@ -32,7 +32,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get loginCardSignInLead =>
-      'Use o Google ou o e-mail e senha da sua instituição.';
+      'Use o e-mail e a palavra-passe da sua conta ou da sua instituição.';
 
   @override
   String get loginUrsSecurePortalSubtitle => 'Acesso seguro ao portal';
@@ -42,6 +42,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get loginInstitutionalCredentialsTitle => 'Credenciais (e-mail)';
+
+  @override
+  String get loginPasswordOnlyHint =>
+      'O acesso é feito com e-mail e palavra-passe. Se ainda não tiver perfil, após o primeiro login será pedido que escolha o tipo de conta.';
 
   @override
   String get loginFieldIdentifier => 'Identificador';
@@ -68,7 +72,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get loginIdentityUnknown =>
-      'Identificador não reconhecido — use e-mail válido ou Google';
+      'Identificador não reconhecido — use um e-mail válido registado na plataforma.';
 
   @override
   String get loginForgotPassword => 'Esqueci minha senha';
@@ -93,7 +97,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get loginPasswordRequiresEmail =>
-      'Para entrar com senha neste portal, use o e-mail da sua conta (ou Continuar com Google).';
+      'Para entrar com senha neste portal, use o e-mail da sua conta.';
 
   @override
   String get loginShowPassword => 'Mostrar senha';
@@ -465,7 +469,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get profileGateBody =>
-      'A sessão está ativa, mas este utilizador não tem um perfil associado a uma área da aplicação (treinando, instrutor, gestor ou fabricante). Termine a sessão e entre novamente; no primeiro acesso com Google, escolha o tipo de conta correto.';
+      'A sessão está ativa, mas este utilizador não tem um perfil associado a uma área da aplicação (treinando, instrutor, gestor ou fabricante). Termine a sessão e entre novamente; se for o primeiro acesso, escolha o tipo de conta correcto quando solicitado.';
 
   @override
   String get profileGateDocHint =>
@@ -505,14 +509,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get loginGoogleTriageHint =>
-      'Depois de entrar com o Google, escolhe o teu perfil em dois passos (tipo de conta e, se necessário, dados da empresa).';
+      'Se ainda não tiver perfil, após iniciar sessão será pedido que escolha o tipo de conta em dois passos (e dados da empresa, se aplicável).';
 
   @override
   String get profileTriageTitle => 'Escolhe o teu perfil';
 
   @override
   String get profileTriageSubtitle =>
-      'Selecciona o tipo de conta. No passo seguinte confirmas ou completas os dados para vincular a conta Google.';
+      'Selecciona o tipo de conta. No passo seguinte confirmas ou completas os dados para activar o perfil na plataforma.';
 
   @override
   String get profileTriageStep2Title => 'Dados do perfil';
@@ -2162,7 +2166,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trnLgpdBullets =>
-      '• Finalidade: identificação em treinamentos, certificados e relatórios agregados da instituição.\n• Compartilhamento: dados individuais apenas com o instrutor durante a sessão; à instituição, de forma agregada.\n• Retenção: até 5 anos após o último treinamento para auditoria, salvo exclusão ou anonimização a seu pedido.\n• Direitos: acesso, correção, portabilidade e exclusão pelo menu Privacidade (ícone no topo).\n• Google: ao usar login Google, dados também são tratados segundo a política do Google.';
+      '• Finalidade: identificação em treinamentos, certificados e relatórios agregados da instituição.\n• Compartilhamento: dados individuais apenas com o instrutor durante a sessão; à instituição, de forma agregada.\n• Retenção: até 5 anos após o último treinamento para auditoria, salvo exclusão ou anonimização a seu pedido.\n• Direitos: acesso, correção, portabilidade e exclusão pelo menu Privacidade (ícone no topo).';
 
   @override
   String get trnLgpdCheckboxTitle =>

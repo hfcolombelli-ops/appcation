@@ -143,7 +143,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginCardSignInLead.
   ///
   /// In pt, this message translates to:
-  /// **'Use o Google ou o e-mail e senha da sua instituição.'**
+  /// **'Use o e-mail e a palavra-passe da sua conta ou da sua instituição.'**
   String get loginCardSignInLead;
 
   /// No description provided for @loginUrsSecurePortalSubtitle.
@@ -163,6 +163,12 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Credenciais (e-mail)'**
   String get loginInstitutionalCredentialsTitle;
+
+  /// No description provided for @loginPasswordOnlyHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'O acesso é feito com e-mail e palavra-passe. Se ainda não tiver perfil, após o primeiro login será pedido que escolha o tipo de conta.'**
+  String get loginPasswordOnlyHint;
 
   /// No description provided for @loginFieldIdentifier.
   ///
@@ -209,7 +215,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginIdentityUnknown.
   ///
   /// In pt, this message translates to:
-  /// **'Identificador não reconhecido — use e-mail válido ou Google'**
+  /// **'Identificador não reconhecido — use um e-mail válido registado na plataforma.'**
   String get loginIdentityUnknown;
 
   /// No description provided for @loginForgotPassword.
@@ -251,7 +257,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginPasswordRequiresEmail.
   ///
   /// In pt, this message translates to:
-  /// **'Para entrar com senha neste portal, use o e-mail da sua conta (ou Continuar com Google).'**
+  /// **'Para entrar com senha neste portal, use o e-mail da sua conta.'**
   String get loginPasswordRequiresEmail;
 
   /// No description provided for @loginShowPassword.
@@ -929,7 +935,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileGateBody.
   ///
   /// In pt, this message translates to:
-  /// **'A sessão está ativa, mas este utilizador não tem um perfil associado a uma área da aplicação (treinando, instrutor, gestor ou fabricante). Termine a sessão e entre novamente; no primeiro acesso com Google, escolha o tipo de conta correto.'**
+  /// **'A sessão está ativa, mas este utilizador não tem um perfil associado a uma área da aplicação (treinando, instrutor, gestor ou fabricante). Termine a sessão e entre novamente; se for o primeiro acesso, escolha o tipo de conta correcto quando solicitado.'**
   String get profileGateBody;
 
   /// No description provided for @profileGateDocHint.
@@ -995,7 +1001,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginGoogleTriageHint.
   ///
   /// In pt, this message translates to:
-  /// **'Depois de entrar com o Google, escolhe o teu perfil em dois passos (tipo de conta e, se necessário, dados da empresa).'**
+  /// **'Se ainda não tiver perfil, após iniciar sessão será pedido que escolha o tipo de conta em dois passos (e dados da empresa, se aplicável).'**
   String get loginGoogleTriageHint;
 
   /// No description provided for @profileTriageTitle.
@@ -1007,7 +1013,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileTriageSubtitle.
   ///
   /// In pt, this message translates to:
-  /// **'Selecciona o tipo de conta. No passo seguinte confirmas ou completas os dados para vincular a conta Google.'**
+  /// **'Selecciona o tipo de conta. No passo seguinte confirmas ou completas os dados para activar o perfil na plataforma.'**
   String get profileTriageSubtitle;
 
   /// No description provided for @profileTriageStep2Title.
@@ -3956,7 +3962,7 @@ abstract class AppLocalizations {
   /// No description provided for @trnLgpdBullets.
   ///
   /// In pt, this message translates to:
-  /// **'• Finalidade: identificação em treinamentos, certificados e relatórios agregados da instituição.\n• Compartilhamento: dados individuais apenas com o instrutor durante a sessão; à instituição, de forma agregada.\n• Retenção: até 5 anos após o último treinamento para auditoria, salvo exclusão ou anonimização a seu pedido.\n• Direitos: acesso, correção, portabilidade e exclusão pelo menu Privacidade (ícone no topo).\n• Google: ao usar login Google, dados também são tratados segundo a política do Google.'**
+  /// **'• Finalidade: identificação em treinamentos, certificados e relatórios agregados da instituição.\n• Compartilhamento: dados individuais apenas com o instrutor durante a sessão; à instituição, de forma agregada.\n• Retenção: até 5 anos após o último treinamento para auditoria, salvo exclusão ou anonimização a seu pedido.\n• Direitos: acesso, correção, portabilidade e exclusão pelo menu Privacidade (ícone no topo).'**
   String get trnLgpdBullets;
 
   /// No description provided for @trnLgpdCheckboxTitle.

@@ -1,10 +1,9 @@
 import 'dart:convert';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
-import 'google_sign_in_helper.dart';
 
 /// `needs_profile_gate` como bool estrito; proxies/serializações podem enviar 0/1 ou strings.
 bool? _needsProfileGateTriState(dynamic v) {
@@ -50,16 +49,13 @@ class AuthSession extends ChangeNotifier {
     return s.isEmpty ? null : s;
   }
 
-  /// API: `needs_profile_gate` — conta Google (ou perfil inválido) ainda sem escolha em PATCH /api/me/role.
+  /// API: `needs_profile_gate` — sessão sem `role` válido ou ainda a completar dados em `PATCH /api/me/role`.
   ///
-  /// Fallback: API antiga ou cache sem o campo — replica o critério Laravel (google_sub + sem
-  /// `google_triage_completed_at` + papel treinando ou sem perfil) para não ir directo ao pré-registro.
+  /// Fallback legado: contas antigas com `google_sub` e triagem incompleta (mesmo critério que o Laravel).
   bool get needsProfileGate {
     final u = _user;
     if (u == null) return false;
 
-    // O servidor é fonte de verdade: se vier explícito, não deixar o fallback
-    // Google+triage reabrir o gate quando `/me` já diz que a triagem terminou.
     final gate = _needsProfileGateTriState(u['needs_profile_gate']);
     if (gate == false) return false;
     if (gate == true) return true;
@@ -182,68 +178,6 @@ class AuthSession extends ChangeNotifier {
     _user = u;
     await _persist();
     notifyListeners();
-  }
-
-  /// Troca um ID token Google já obtido no cliente por sessão Sanctum (Web: botão GIS; mobile: após `authenticate`).
-  /// Sem [role]: o servidor cria/vincula a sessão e deixa o perfil para a triagem (`ProfileGateScreen`).
-  Future<void> loginWithGoogleIdToken(
-    String idToken, {
-    String? role,
-    String? manufacturerName,
-    String? manufacturerCnpj,
-  }) async {
-    final body = <String, dynamic>{'id_token': idToken};
-    if (role != null) {
-      body['role'] = role;
-      if (role == 'manufacturer_admin') {
-        if (manufacturerName != null && manufacturerName.trim().isNotEmpty) {
-          body['manufacturer_name'] = manufacturerName.trim();
-        }
-        if (manufacturerCnpj != null && manufacturerCnpj.trim().isNotEmpty) {
-          body['manufacturer_cnpj'] = manufacturerCnpj.trim();
-        }
-      }
-    }
-
-    final data = await _api.postJson('/api/auth/google', body);
-    final t = data['token'] as String?;
-    final u = data['user'];
-    if (t == null || u is! Map<String, dynamic>) {
-      throw ApiException('', 500, reason: LocalizedApiReason.authInvalidGoogleLoginResponse);
-    }
-    _token = t;
-    _user = Map<String, dynamic>.from(u);
-    // Garantir `role` null da BD (evita default DB / serialização) antes da triagem.
-    try {
-      final me = await _api.getJson('/api/auth/me', token: _token);
-      _user = Map<String, dynamic>.from(me);
-    } catch (_) {
-      // mantém payload do POST se /me falhar
-    }
-    await _persist();
-    notifyListeners();
-  }
-
-  Future<void> loginWithGoogle(
-    BuildContext context, {
-    bool forceAccountPicker = true,
-    String? role,
-    String? manufacturerName,
-    String? manufacturerCnpj,
-  }) async {
-    final idToken = await obtainGoogleIdToken(
-      context: context,
-      forceAccountPicker: forceAccountPicker,
-    );
-    if (idToken == null) {
-      throw ApiException('', 400, reason: LocalizedApiReason.authGoogleCancelled);
-    }
-    await loginWithGoogleIdToken(
-      idToken,
-      role: role,
-      manufacturerName: manufacturerName,
-      manufacturerCnpj: manufacturerCnpj,
-    );
   }
 
   /// Digesto semanal de resumo agregado (gestor / fabricante).

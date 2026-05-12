@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'l10n/api_exception_localizations.dart';
 import 'l10n/app_localizations.dart';
-import 'l10n/google_sign_in_localizations.dart';
-import 'services/google_sign_in_errors.dart';
 import 'app_navigator.dart';
 import 'app_state.dart';
 import 'app_version.dart';
@@ -20,7 +18,6 @@ import 'shell/trainee_shell.dart';
 import 'screens/invite_accept_screen.dart';
 import 'screens/trainee_public_join_screen.dart';
 import 'login/login_identity_parser.dart';
-import 'widgets/official_google_login_slot.dart';
 import 'widgets/version_badge.dart';
 
 Future<void> main() async {
@@ -260,7 +257,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
 
   bool _loadingLogin = false;
   bool _loadingRegister = false;
-  bool _loadingGoogle = false;
   String? _errorLogin;
   String? _errorRegister;
   String? _errorRegisterManufacturer;
@@ -421,61 +417,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       }
     } finally {
       if (mounted) setState(() => _loadingRegister = false);
-    }
-  }
-
-  Future<void> _submitGoogle() async {
-    setState(() {
-      _errorLogin = null;
-      _errorRegister = null;
-      _errorRegisterManufacturer = null;
-    });
-    final s = AppLocalizations.of(context);
-    if (AppConfig.googleWebClientId.trim().isEmpty) {
-      _snack(s.errGoogleClientId);
-      return;
-    }
-    setState(() => _loadingGoogle = true);
-    try {
-      await appAuth.loginWithGoogle(context);
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() => _errorLogin = localizedApiMessage(AppLocalizations.of(context), e));
-    } on GoogleSignInFailure catch (e) {
-      if (!mounted) return;
-      _snack(localizedGoogleSignInFailure(AppLocalizations.of(context), e));
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _errorLogin = AppLocalizations.of(context).errApiConnection);
-    } finally {
-      if (mounted) setState(() => _loadingGoogle = false);
-    }
-  }
-
-  /// Web: token vindo do botão GIS oficial (sem `authenticate`).
-  Future<void> _onWebGoogleIdToken(String idToken) async {
-    if (!mounted) return;
-    final s = AppLocalizations.of(context);
-    setState(() {
-      _errorLogin = null;
-      _errorRegister = null;
-      _errorRegisterManufacturer = null;
-    });
-    if (AppConfig.googleWebClientId.trim().isEmpty) {
-      _snack(s.errGoogleClientId);
-      return;
-    }
-    setState(() => _loadingGoogle = true);
-    try {
-      await appAuth.loginWithGoogleIdToken(idToken);
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() => _errorLogin = localizedApiMessage(AppLocalizations.of(context), e));
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _errorLogin = AppLocalizations.of(context).errApiConnection);
-    } finally {
-      if (mounted) setState(() => _loadingGoogle = false);
     }
   }
 
@@ -833,38 +774,16 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               s.loginSectionLoginTitle,
               style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: ClinicalPrecisionColors.onSurface),
             ),
-            const SizedBox(height: 12),
-            OfficialGoogleLoginSlot(
-              loading: _loadingGoogle,
-              onWebGoogleToken: _onWebGoogleIdToken,
-              fallback: _primaryButton(
-                context,
-                label: _loadingGoogle ? s.googleConnecting : s.googleContinue,
-                icon: Icons.login_rounded,
-                onPressed: _loadingGoogle ? null : _submitGoogle,
-              ),
-            ),
             const SizedBox(height: 8),
             Text(
-              s.loginGoogleTriageHint,
+              s.loginPasswordOnlyHint,
               textAlign: TextAlign.center,
               style: tt.bodySmall?.copyWith(color: const Color(0xFF6B7280), height: 1.35),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                const Expanded(child: Divider(height: 1, color: Color(0xFFDCE0E5))),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(s.loginOrEmail, style: tt.labelMedium?.copyWith(color: const Color(0xFF76777D))),
-                ),
-                const Expanded(child: Divider(height: 1, color: Color(0xFFDCE0E5))),
-              ],
-            ),
-            const SizedBox(height: 14),
             Text(
               s.loginInstitutionalCredentialsTitle,
-              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: ClinicalPrecisionColors.onSurface),
+              style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: ClinicalPrecisionColors.onSurface),
             ),
             const SizedBox(height: 10),
             Form(
@@ -1230,28 +1149,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       ),
     );
   }
-}
-
-Widget _primaryButton(
-  BuildContext context, {
-  required String label,
-  required IconData icon,
-  required VoidCallback? onPressed,
-}) {
-  return SizedBox(
-    width: double.infinity,
-    child: FilledButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 22),
-      label: Text(label),
-      style: FilledButton.styleFrom(
-        backgroundColor: const Color(0xFF4285F4),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    ),
-  );
 }
 
 class _AccountTypeMiniCard extends StatelessWidget {

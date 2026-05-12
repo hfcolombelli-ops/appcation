@@ -16,10 +16,6 @@ String localizedApiMessage(AppLocalizations l, ApiException e) {
       return l.errAuthInvalidLoginResponse;
     case LocalizedApiReason.authInvalidRegisterResponse:
       return l.errAuthInvalidRegisterResponse;
-    case LocalizedApiReason.authGoogleCancelled:
-      return l.errAuthGoogleCancelled;
-    case LocalizedApiReason.authInvalidGoogleLoginResponse:
-      return l.errAuthInvalidGoogleLoginResponse;
     case LocalizedApiReason.uploadMissingFileSource:
       return l.errApiUploadMissingFileSource;
     case null:
