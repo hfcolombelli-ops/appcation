@@ -7,8 +7,10 @@ use App\Models\Manufacturer;
 use App\Models\User;
 use App\Services\ManufacturerReviewerNotifier;
 use App\Support\ManufacturerRegistrationSupport;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
@@ -54,31 +56,113 @@ class AuthController extends Controller
                     ? preg_replace('/\D+/', '', $cnpjRaw)
                     : null;
 
-                $manufacturer = Manufacturer::create([
-                    'name' => $mfgName,
-                    'slug' => Str::slug($mfgName).'-'.Str::lower(Str::random(8)),
-                    'cnpj' => ($cnpjDigits !== null && $cnpjDigits !== '') ? $cnpjDigits : null,
-                    'support_email' => $data['email'],
-                    'registration_email_domain' => $domain,
-                    'status' => 'active',
-                    'validation_status' => 'pending_info',
-                ]);
+                $createdManufacturerHere = false;
+                $manufacturer = null;
+                try {
+                    $manufacturer = Manufacturer::create([
+                        'name' => $mfgName,
+                        'slug' => $this->newUniqueManufacturerSlug($mfgName),
+                        'cnpj' => ($cnpjDigits !== null && $cnpjDigits !== '') ? $cnpjDigits : null,
+                        'support_email' => $data['email'],
+                        'registration_email_domain' => $domain,
+                        'status' => 'active',
+                        'validation_status' => 'pending_info',
+                    ]);
+                    $createdManufacturerHere = true;
+                } catch (QueryException $e) {
+                    if (! $this->isIntegrityConstraintViolation($e)) {
+                        Log::error('auth.register.manufacturer_create', [
+                            'domain' => $domain,
+                            'message' => $e->getMessage(),
+                        ]);
+                        throw $e;
+                    }
+                    $manufacturer = Manufacturer::query()->where('registration_email_domain', $domain)->first();
+                }
+
+                if ($manufacturer === null) {
+                    Log::error('auth.register.manufacturer_missing_after_race', ['domain' => $domain]);
+
+                    return response()->json([
+                        'message' => 'Não foi possível concluir o registo do fabricante. Recarregue e tente de novo.',
+                    ], 500);
+                }
+
                 $manufacturerId = $manufacturer->id;
-                ManufacturerReviewerNotifier::notifyNewRegistrationIfConfigured($manufacturer);
+                if ($createdManufacturerHere) {
+                    ManufacturerReviewerNotifier::notifyNewRegistrationIfConfigured($manufacturer);
+                }
             }
         }
 
         unset($data['manufacturer_name'], $data['manufacturer_cnpj']);
 
-        $user = User::create(array_merge($data, [
-            'manufacturer_id' => $manufacturerId,
-            'google_triage_completed_at' => now(),
-        ]));
+        try {
+            $user = User::create(array_merge($data, [
+                'manufacturer_id' => $manufacturerId,
+                'google_triage_completed_at' => now(),
+            ]));
+        } catch (QueryException $e) {
+            if ($this->isIntegrityConstraintViolation($e)) {
+                return response()->json([
+                    'message' => 'Este e-mail já está registado. Use «Entrar» ou recuperação de senha.',
+                    'errors' => ['email' => ['Este e-mail já está em uso.']],
+                ], 422);
+            }
+            Log::error('auth.register.user_create', ['message' => $e->getMessage()]);
+            throw $e;
+        }
+
+        try {
+            $token = $user->createToken('web')->plainTextToken;
+        } catch (\Throwable $e) {
+            Log::error('auth.register.token_create', ['message' => $e->getMessage(), 'user_id' => $user->id]);
+
+            return response()->json([
+                'message' => 'Conta criada, mas falhou a emissão do token de sessão. Verifique Sanctum (tabela personal_access_tokens) no servidor.',
+            ], 503);
+        }
 
         return response()->json([
-            'token' => $user->createToken('web')->plainTextToken,
+            'token' => $token,
             'user' => $user->fresh()->toApiArray(),
         ], 201);
+    }
+
+    private function newUniqueManufacturerSlug(string $mfgName): string
+    {
+        $base = Str::slug($mfgName);
+        if ($base === '') {
+            $base = 'fabricante';
+        }
+
+        for ($i = 0; $i < 16; $i++) {
+            $slug = $base.'-'.Str::lower(Str::random(10));
+            if (! Manufacturer::query()->where('slug', $slug)->exists()) {
+                return $slug;
+            }
+        }
+
+        return $base.'-'.Str::lower(Str::random(16));
+    }
+
+    private function isIntegrityConstraintViolation(QueryException $e): bool
+    {
+        $sqlState = (string) ($e->errorInfo[0] ?? '');
+        if ($sqlState === '23505') {
+            return true;
+        }
+
+        $driverCode = (int) ($e->errorInfo[1] ?? 0);
+        if ($driverCode === 1062) {
+            return true;
+        }
+
+        $msg = strtolower($e->getMessage());
+
+        return str_contains($msg, 'duplicate')
+            || str_contains($msg, 'unique constraint')
+            || str_contains($msg, 'integrity constraint');
     }
 
     public function login(Request $request)

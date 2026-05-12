@@ -103,6 +103,15 @@
   "actionCompleteRegistration": "Concluir cadastro",
   "registerSuccessNowSignIn": "Conta criada. Entre com o seu e-mail e palavra-passe.",
   "errApiConnection": "Falha de conexão com a API.",
+  "errApiGenericHttpFailure": "Falha no servidor (HTTP {code}). Se já criou conta, tente entrar; senão tente novamente em instantes.",
+  "@errApiGenericHttpFailure": {
+    "placeholders": {
+      "code": {
+        "type": "String",
+        "example": "500"
+      }
+    }
+  },
   "errMfgNameRequired": "Informe o nome da empresa.",
   "errSelectInstitution": "Selecione a instituição na lista.",
   "errGoogleClientId": "Configure GOOGLE_WEB_CLIENT_ID ao executar o Flutter (mesmo ID que GOOGLE_CLIENT_ID no servidor).",

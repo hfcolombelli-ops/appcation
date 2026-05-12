@@ -19,6 +19,10 @@ String localizedApiMessage(AppLocalizations l, ApiException e) {
     case LocalizedApiReason.uploadMissingFileSource:
       return l.errApiUploadMissingFileSource;
     case null:
+      final raw = e.message.trim();
+      if (raw.isEmpty || raw == 'Server Error' || raw == 'Internal Server Error') {
+        return l.errApiGenericHttpFailure('${e.statusCode}');
+      }
       return e.message;
   }
 }

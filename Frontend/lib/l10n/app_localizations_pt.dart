@@ -337,6 +337,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get errApiConnection => 'Falha de conexão com a API.';
 
   @override
+  String errApiGenericHttpFailure(String code) {
+    return 'Falha no servidor (HTTP $code). Se já criou conta, tente entrar; senão tente novamente em instantes.';
+  }
+
+  @override
   String get errMfgNameRequired => 'Informe o nome da empresa.';
 
   @override

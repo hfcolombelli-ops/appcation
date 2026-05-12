@@ -716,6 +716,12 @@ abstract class AppLocalizations {
   /// **'Falha de conexão com a API.'**
   String get errApiConnection;
 
+  /// No description provided for @errApiGenericHttpFailure.
+  ///
+  /// In pt, this message translates to:
+  /// **'Falha no servidor (HTTP {code}). Se já criou conta, tente entrar; senão tente novamente em instantes.'**
+  String errApiGenericHttpFailure(String code);
+
   /// No description provided for @errMfgNameRequired.
   ///
   /// In pt, this message translates to:

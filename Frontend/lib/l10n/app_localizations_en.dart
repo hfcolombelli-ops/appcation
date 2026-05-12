@@ -339,6 +339,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errApiConnection => 'Could not connect to the API.';
 
   @override
+  String errApiGenericHttpFailure(String code) {
+    return 'Server error (HTTP $code). If you already created an account, try signing in; otherwise try again shortly.';
+  }
+
+  @override
   String get errMfgNameRequired => 'Enter the company name.';
 
   @override

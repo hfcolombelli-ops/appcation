@@ -103,6 +103,15 @@
   "actionCompleteRegistration": "Complete registration",
   "registerSuccessNowSignIn": "Account created. Sign in with your email and password.",
   "errApiConnection": "Could not connect to the API.",
+  "errApiGenericHttpFailure": "Server error (HTTP {code}). If you already created an account, try signing in; otherwise try again shortly.",
+  "@errApiGenericHttpFailure": {
+    "placeholders": {
+      "code": {
+        "type": "String",
+        "example": "500"
+      }
+    }
+  },
   "errMfgNameRequired": "Enter the company name.",
   "errSelectInstitution": "Select an institution from the list.",
   "errGoogleClientId": "Set GOOGLE_WEB_CLIENT_ID when running Flutter (same as GOOGLE_CLIENT_ID on the server).",
