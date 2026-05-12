@@ -23,12 +23,26 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('auth-login', function (Request $request) {
-            // Antes: 8/15min por IP — demasiado agressivo (429 na Web, mesmo utilizador a corrigir senha).
-            return Limit::perMinute(45)->by($request->ip());
+            // Evita partilha injusta do limite quando vários clientes vêm do mesmo IP (proxy/CDN)
+            // ou quando o IP visto pelo Laravel é sempre o do edge. Limites por e-mail + tecto por IP.
+            // Prefixo v2: ignora entradas antigas do limitador «8/15min» ainda em cache.
+            $raw = strtolower(trim((string) ($request->input('identifier') ?? $request->input('email') ?? '')));
+            $emailKey = $raw !== '' ? sha1($raw) : 'empty';
+
+            return [
+                Limit::perMinute(40)->by('v2:login:email:'.$emailKey),
+                Limit::perMinute(200)->by('v2:login:ip:'.$request->ip()),
+            ];
         });
 
         RateLimiter::for('auth-register', function (Request $request) {
-            return Limit::perMinute(20)->by($request->ip());
+            $raw = strtolower(trim((string) ($request->input('email') ?? '')));
+            $emailKey = $raw !== '' ? sha1($raw) : 'empty';
+
+            return [
+                Limit::perMinute(15)->by('v2:reg:email:'.$emailKey),
+                Limit::perMinute(40)->by('v2:reg:ip:'.$request->ip()),
+            ];
         });
 
         RateLimiter::for('auth-google', function (Request $request) {
