@@ -588,7 +588,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
       showAppBar: false,
       showVersionBadge: false,
       child: ColoredBox(
-        color: const Color(0xFFEDEFF2),
+        color: ClinicalPrecisionColors.surface,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -618,12 +618,9 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   }
 
   static const _loginSplitBreakpoint = 600.0;
-  static const _loginPanelNavy = Color(0xFF1A233A);
-  static const _loginPanelNavyDeep = Color(0xFF121A2E);
-  static const _loginAccentPurple = Color(0xFF5B47E0);
-  static const _loginCardMuted = Color(0xFFF1F5F9);
-  static const _loginCardBorder = Color(0xFFE2E8F0);
-  static const _loginMutedOnNavy = Color(0xFFB8C0D4);
+  static const _loginHeroDeep = Color(0xFF0E1524);
+  static const _loginHeroMid = ClinicalPrecisionColors.primaryContainer;
+  static const _loginMutedOnNavy = ClinicalPrecisionColors.onPrimaryContainer;
 
   String _loginIdentityPreviewLabel(AppLocalizations s) {
     return switch (_previewType) {
@@ -643,6 +640,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   }
 
   Widget _loginShieldMark({required double size}) {
+    final accent = ClinicalPrecisionColors.secondary;
     return ExcludeSemantics(
       child: SizedBox(
         width: size,
@@ -655,7 +653,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               width: size * 0.92,
               height: size * 0.92,
               decoration: BoxDecoration(
-                color: _loginAccentPurple.withValues(alpha: 0.35),
+                color: accent.withValues(alpha: 0.28),
                 shape: BoxShape.circle,
               ),
             ),
@@ -666,9 +664,12 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               child: Container(
                 width: size * 0.3,
                 height: size * 0.3,
-                decoration: const BoxDecoration(color: Color(0xFF0B1020), shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: ClinicalPrecisionColors.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
                 alignment: Alignment.center,
-                child: Icon(Icons.add, size: size * 0.16, color: _loginAccentPurple),
+                child: Icon(Icons.add, size: size * 0.16, color: ClinicalPrecisionColors.secondaryFixedDim),
               ),
             ),
           ],
@@ -678,31 +679,34 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
   }
 
   Widget _buildLoginBrandingBlock(AppLocalizations s, TextTheme tt, {required bool compact}) {
-    final iconBox = compact ? 64.0 : 80.0;
-    final titleStyle = (compact ? tt.titleLarge : tt.headlineSmall)?.copyWith(
+    final iconBox = compact ? 72.0 : 96.0;
+    final titleStyle = (compact ? tt.headlineSmall : tt.headlineMedium)?.copyWith(
       color: Colors.white,
       fontWeight: FontWeight.w800,
-      letterSpacing: -0.4,
-      height: 1.15,
+      letterSpacing: -0.5,
+      height: 1.12,
     );
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _loginShieldMark(size: iconBox),
-        SizedBox(height: compact ? 16 : 24),
-        Text(s.loginBrandTitle, textAlign: TextAlign.center, style: titleStyle),
-        SizedBox(height: compact ? 10 : 14),
-        Text(
-          s.loginBrandHeroTagline,
-          textAlign: TextAlign.center,
-          style: tt.bodyLarge?.copyWith(
-            color: _loginMutedOnNavy,
-            height: 1.45,
-            fontWeight: FontWeight.w500,
-            fontSize: compact ? 14 : 15,
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: compact ? 320 : 380),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _loginShieldMark(size: iconBox),
+          SizedBox(height: compact ? 18 : 28),
+          Text(s.loginBrandTitle, textAlign: TextAlign.center, style: titleStyle),
+          SizedBox(height: compact ? 12 : 16),
+          Text(
+            s.loginBrandHeroTagline,
+            textAlign: TextAlign.center,
+            style: tt.bodyLarge?.copyWith(
+              color: _loginMutedOnNavy,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+              fontSize: compact ? 14 : 16,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -731,17 +735,21 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               curve: Curves.easeOutCubic,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               decoration: BoxDecoration(
-                color: selected ? _loginAccentPurple : _loginCardMuted,
+                color: selected ? ClinicalPrecisionColors.secondary : ClinicalPrecisionColors.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: selected ? _loginAccentPurple : _loginCardBorder,
+                  color: selected ? ClinicalPrecisionColors.secondary : ClinicalPrecisionColors.outlineVariant,
                   width: selected ? 2 : 1,
                 ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, size: 22, color: selected ? Colors.white : const Color(0xFF64748B)),
+                  Icon(
+                    icon,
+                    size: 22,
+                    color: selected ? Colors.white : ClinicalPrecisionColors.onSurfaceVariant,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     title,
@@ -749,7 +757,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: tt.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: selected ? Colors.white : const Color(0xFF0F172A),
+                      color: selected ? Colors.white : ClinicalPrecisionColors.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -759,7 +767,9 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: tt.bodySmall?.copyWith(
                       height: 1.25,
-                      color: selected ? Colors.white.withValues(alpha: 0.92) : const Color(0xFF64748B),
+                      color: selected
+                          ? Colors.white.withValues(alpha: 0.92)
+                          : ClinicalPrecisionColors.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -782,7 +792,7 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
         const SizedBox(height: 6),
         Text(
           s.loginWelcomeBackSubtitle,
-          style: tt.bodyMedium?.copyWith(color: const Color(0xFF64748B), height: 1.35),
+          style: tt.bodyLarge?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant, height: 1.4),
         ),
         const SizedBox(height: 20),
         Row(
@@ -814,8 +824,11 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
         const SizedBox(height: 12),
         Text(
           s.loginPasswordOnlyHint,
-          textAlign: TextAlign.center,
-          style: tt.bodySmall?.copyWith(color: const Color(0xFF94A3B8), height: 1.35),
+          textAlign: TextAlign.start,
+          style: tt.bodySmall?.copyWith(
+            color: ClinicalPrecisionColors.onSurfaceVariant.withValues(alpha: 0.88),
+            height: 1.4,
+          ),
         ),
         const SizedBox(height: 18),
         Form(
@@ -845,7 +858,11 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               const SizedBox(height: 6),
               Text(
                 _loginIdentityPreviewLabel(s),
-                style: tt.labelMedium?.copyWith(color: const Color(0xFF5C6370), height: 1.3),
+                style: tt.labelLarge?.copyWith(
+                  color: ClinicalPrecisionColors.onSurfaceVariant,
+                  height: 1.35,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -871,24 +888,57 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                 },
               ),
               if (_errorLogin != null) ...[
-                const SizedBox(height: 10),
-                Text(_errorLogin!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13)),
+                const SizedBox(height: 14),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFECACA)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.error_outline_rounded, color: Color(0xFFB91C1C), size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _errorLogin!,
+                            style: tt.bodyMedium?.copyWith(
+                              color: const Color(0xFF991B1B),
+                              height: 1.35,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => _snack(s.loginFooterSoon),
-                  child: Text(s.loginForgotPassword),
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 10),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: ClinicalPrecisionColors.secondary,
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () => _snack(s.loginFooterSoon),
+                    child: Text(s.loginForgotPassword, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ),
                 ),
               ),
-              const SizedBox(height: 4),
               FilledButton(
                 key: const ValueKey('login-submit'),
                 onPressed: _loadingLogin ? null : _submitLogin,
                 style: FilledButton.styleFrom(
-                  backgroundColor: _loginAccentPurple,
-                  foregroundColor: Colors.white,
+                  backgroundColor: ClinicalPrecisionColors.secondary,
+                  foregroundColor: ClinicalPrecisionColors.onSecondary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -907,7 +957,10 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
         Text(
           s.loginOrgHint,
           textAlign: TextAlign.center,
-          style: tt.bodySmall?.copyWith(color: const Color(0xFF94A3B8), height: 1.35),
+          style: tt.bodySmall?.copyWith(
+            color: ClinicalPrecisionColors.onSurfaceVariant.withValues(alpha: 0.9),
+            height: 1.45,
+          ),
         ),
         const SizedBox(height: 16),
         Wrap(
@@ -916,31 +969,25 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
           spacing: 2,
           runSpacing: 8,
           children: [
-            Text(s.loginNewUserLead, style: tt.bodyMedium?.copyWith(color: const Color(0xFF64748B))),
+            Text(s.loginNewUserLead, style: tt.bodyMedium?.copyWith(color: ClinicalPrecisionColors.onSurfaceVariant)),
             TextButton(
               onPressed: _openRegisterCard,
-              style: TextButton.styleFrom(foregroundColor: _loginAccentPurple, padding: const EdgeInsets.symmetric(horizontal: 6)),
+              style: TextButton.styleFrom(
+                foregroundColor: ClinicalPrecisionColors.secondary,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+              ),
               child: Text(s.loginNoAccountAction, style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
-            Text('·', style: TextStyle(color: Colors.grey.shade400)),
+            Text('·', style: TextStyle(color: ClinicalPrecisionColors.outlineVariant)),
             TextButton(
               onPressed: () => _snack(s.loginFooterSoon),
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFF64748B)),
+              style: TextButton.styleFrom(foregroundColor: ClinicalPrecisionColors.onSurfaceVariant),
               child: Text(s.loginNavQuestions, style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Text(
-          AppVersion.current,
-          textAlign: TextAlign.center,
-          style: tt.labelMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: ClinicalPrecisionColors.onSurfaceVariant,
-          ),
-        ),
         if (kDebugMode) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
           Text(
             s.loginDebugApiLine(AppConfig.apiBaseUrl),
             textAlign: TextAlign.center,
@@ -948,6 +995,95 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
           ),
         ],
       ],
+    );
+  }
+
+  /// Fundo do painel esquerdo / topo móvel: gradiente + halos suaves (menos «vazio» que navy liso).
+  Widget _loginBrandHeroPanel({
+    required AppLocalizations s,
+    required TextTheme tt,
+    required bool compact,
+    required bool mobileHeader,
+  }) {
+    final scroll = Center(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(
+          horizontal: mobileHeader ? 24 : 36,
+          vertical: mobileHeader ? 28 : 40,
+        ),
+        child: _buildLoginBrandingBlock(s, tt, compact: compact),
+      ),
+    );
+    return Stack(
+      fit: StackFit.expand,
+      clipBehavior: Clip.hardEdge,
+      children: [
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  _loginHeroDeep,
+                  _loginHeroMid,
+                  const Color(0xFF1A2638),
+                ],
+                stops: const [0.0, 0.52, 1.0],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: -36,
+          right: -28,
+          child: IgnorePointer(
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: ClinicalPrecisionColors.secondary.withValues(alpha: 0.13),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: compact ? -24 : 48,
+          left: -56,
+          child: IgnorePointer(
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.045),
+              ),
+            ),
+          ),
+        ),
+        if (mobileHeader)
+          SafeArea(bottom: false, child: scroll)
+        else
+          SafeArea(child: scroll),
+      ],
+    );
+  }
+
+  Widget _loginFormCard({required Widget child}) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: ClinicalPrecisionColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: ClinicalPrecisionColors.outlineVariant.withValues(alpha: 0.42),
+        ),
+        boxShadow: ClinicalPrecisionShadows.loginCard,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(26, 28, 26, 28),
+        child: child,
+      ),
     );
   }
 
@@ -961,32 +1097,22 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [_loginPanelNavyDeep, _loginPanelNavy],
-                  ),
-                ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Center(child: _buildLoginBrandingBlock(s, tt, compact: true)),
-                ),
+              Expanded(
+                flex: 2,
+                child: _loginBrandHeroPanel(s: s, tt: tt, compact: true, mobileHeader: true),
               ),
               Expanded(
+                flex: 5,
                 child: ColoredBox(
-                  color: Colors.white,
+                  color: ClinicalPrecisionColors.surface,
                   child: SafeArea(
                     top: false,
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
                       child: Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 440),
-                          child: _buildLoginFormBody(context, tt, s),
+                          child: _loginFormCard(child: _buildLoginFormBody(context, tt, s)),
                         ),
                       ),
                     ),
@@ -1000,28 +1126,18 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: ColoredBox(
-                color: _loginPanelNavy,
-                child: SafeArea(
-                  child: Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-                      child: _buildLoginBrandingBlock(s, tt, compact: false),
-                    ),
-                  ),
-                ),
-              ),
+              child: _loginBrandHeroPanel(s: s, tt: tt, compact: false, mobileHeader: false),
             ),
             Expanded(
               child: ColoredBox(
-                color: Colors.white,
+                color: ClinicalPrecisionColors.surface,
                 child: SafeArea(
                   child: Center(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 420),
-                        child: _buildLoginFormBody(context, tt, s),
+                        constraints: const BoxConstraints(maxWidth: 460),
+                        child: _loginFormCard(child: _buildLoginFormBody(context, tt, s)),
                       ),
                     ),
                   ),
