@@ -34,7 +34,7 @@ void main() {
 
     expect(find.byKey(const ValueKey('login-universal')), findsOneWidget);
     expect(find.byKey(const ValueKey('login-submit')), findsOneWidget);
-    final signIn = lookupAppLocalizations(const Locale('pt')).actionSignIn;
+    final signIn = lookupAppLocalizations(const Locale('pt')).loginEnterSystem;
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('login-submit')),
