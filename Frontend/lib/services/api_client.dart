@@ -49,7 +49,8 @@ String? _tryServerMessage(Map<String, dynamic> map) {
 }
 
 Never _throwHttpClientError(Map<String, dynamic> map, int statusCode) {
-  final msg = _tryServerMessage(map);
+  final msg = _tryServerMessage(map) ??
+      (statusCode == 429 ? 'Too Many Attempts' : null);
   if (msg != null) {
     throw ApiException(msg, statusCode, body: map);
   }

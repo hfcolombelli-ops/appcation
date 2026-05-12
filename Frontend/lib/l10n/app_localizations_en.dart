@@ -344,6 +344,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get errApiRateLimited =>
+      'Too many requests in a short time. Wait about a minute and try signing in again.';
+
+  @override
   String get errMfgNameRequired => 'Enter the company name.';
 
   @override

@@ -23,11 +23,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('auth-login', function (Request $request) {
-            return Limit::perMinutes(15, 8)->by($request->ip());
+            // Antes: 8/15min por IP — demasiado agressivo (429 na Web, mesmo utilizador a corrigir senha).
+            return Limit::perMinute(45)->by($request->ip());
         });
 
         RateLimiter::for('auth-register', function (Request $request) {
-            return Limit::perMinutes(60, 15)->by($request->ip());
+            return Limit::perMinute(20)->by($request->ip());
         });
 
         RateLimiter::for('auth-google', function (Request $request) {

@@ -112,6 +112,7 @@
       }
     }
   },
+  "errApiRateLimited": "Muitos pedidos seguidos. Aguarde cerca de um minuto e tente entrar de novo.",
   "errMfgNameRequired": "Informe o nome da empresa.",
   "errSelectInstitution": "Selecione a instituição na lista.",
   "errGoogleClientId": "Configure GOOGLE_WEB_CLIENT_ID ao executar o Flutter (mesmo ID que GOOGLE_CLIENT_ID no servidor).",

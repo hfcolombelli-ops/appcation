@@ -6,7 +6,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 # Versão (Pub/Dart exige MAJOR.MINOR.PATCH — não existe «1.0» só com dois números).
 # Linha de produto no badge: só MAJOR.MINOR (1.0, 1.1, 1.2…). PATCH fica sempre 0; sem +BUILD.
-version: 1.8.0
+version: 1.9.0
 
 environment:
   sdk: ^3.11.5

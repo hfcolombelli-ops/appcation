@@ -342,6 +342,10 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get errApiRateLimited =>
+      'Muitos pedidos seguidos. Aguarde cerca de um minuto e tente entrar de novo.';
+
+  @override
   String get errMfgNameRequired => 'Informe o nome da empresa.';
 
   @override

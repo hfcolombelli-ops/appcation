@@ -722,6 +722,12 @@ abstract class AppLocalizations {
   /// **'Falha no servidor (HTTP {code}). Se já criou conta, tente entrar; senão tente novamente em instantes.'**
   String errApiGenericHttpFailure(String code);
 
+  /// No description provided for @errApiRateLimited.
+  ///
+  /// In pt, this message translates to:
+  /// **'Muitos pedidos seguidos. Aguarde cerca de um minuto e tente entrar de novo.'**
+  String get errApiRateLimited;
+
   /// No description provided for @errMfgNameRequired.
   ///
   /// In pt, this message translates to:

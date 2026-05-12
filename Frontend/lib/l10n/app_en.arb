@@ -112,6 +112,7 @@
       }
     }
   },
+  "errApiRateLimited": "Too many requests in a short time. Wait about a minute and try signing in again.",
   "errMfgNameRequired": "Enter the company name.",
   "errSelectInstitution": "Select an institution from the list.",
   "errGoogleClientId": "Set GOOGLE_WEB_CLIENT_ID when running Flutter (same as GOOGLE_CLIENT_ID on the server).",

@@ -19,9 +19,15 @@ String localizedApiMessage(AppLocalizations l, ApiException e) {
     case LocalizedApiReason.uploadMissingFileSource:
       return l.errApiUploadMissingFileSource;
     case null:
+      if (e.statusCode == 429) {
+        return l.errApiRateLimited;
+      }
       final raw = e.message.trim();
       if (raw.isEmpty || raw == 'Server Error' || raw == 'Internal Server Error') {
         return l.errApiGenericHttpFailure('${e.statusCode}');
+      }
+      if (raw.toLowerCase().contains('too many')) {
+        return l.errApiRateLimited;
       }
       return e.message;
   }
