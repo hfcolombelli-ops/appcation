@@ -3,5 +3,8 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
+# Garante migrações na BD antes do novo tráfego (ex.: índices novos em produção).
+# O [docker-entrypoint.sh] também corre migrate ao arrancar o contentor; falha aqui bloqueia o deploy.
+preDeployCommand = ["php", "artisan", "migrate", "--force", "--no-interaction"]
 healthcheckPath = "/up"
 restartPolicyType = "ON_FAILURE"
