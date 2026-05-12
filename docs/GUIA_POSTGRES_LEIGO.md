@@ -65,7 +65,9 @@ Abre o Postgres no terminal:
 ./scripts/railway_psql.sh Postgres-u4Od
 ```
 
-Troca **Postgres-u4Od** pelo nome **exacto** do cartão Postgres no canvas da Railway.
+Troca **Postgres-u4Od** pelo nome **exacto** do cartão Postgres no canvas da Railway. **Não** ponhas `]` nem outros caracteres no fim do nome.
+
+No `railway link`, escolhe o **projecto onde está a API Appcation** (não outro repositório, ex. sunny-strength). O link grava-se na pasta onde correste o comando — deve ser a raiz deste repositório **Appcation**.
 
 Dentro do `psql`:
 
@@ -74,6 +76,48 @@ Dentro do `psql`:
 | `\dt` | Lista tabelas |
 | `\d users` | Mostra colunas da tabela `users` |
 | `\q` | Sair |
+
+---
+
+## Problemas comuns
+
+### «Instala o cliente PostgreSQL» / `psql` não encontrado
+
+O `libpq` fica em `/opt/homebrew/opt/libpq/bin/psql` (Apple Silicon). Corre **só** esta linha e tenta outra vez o script:
+
+```bash
+brew link --force libpq
+```
+
+Se ainda falhar, no **mesmo** terminal onde vais abrir o Postgres:
+
+```bash
+export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+./scripts/railway_psql.sh Postgres-u4Od
+```
+
+(Intel Mac: troca por `/usr/local/opt/libpq/bin`.)
+
+### «Liguei mas não vejo os dados da Appcation»
+
+O `railway link` associa **esta pasta** a **um** projecto Railway. Se escolheste outro projecto (ex.: sunny-strength), o `railway connect` abre **esse** Postgres.
+
+Volta a ligar à pasta **Appcation**:
+
+```bash
+cd /Users/henriquecolombelli/Appcation
+railway link
+```
+
+Escolhe o workspace → **projecto Appcation** (ou o nome que deres no Railway) → ambiente (ex.: production) → podes saltar o serviço com Esc (o script já indica o Postgres).
+
+### Conflito `brew install railway` com `railway` antigo (npm)
+
+Se o Homebrew avisar que `/opt/homebrew/bin/railway` já existe, ou:
+
+```bash
+brew link --overwrite railway
+```
 
 ---
 

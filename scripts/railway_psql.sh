@@ -12,6 +12,15 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# libpq (Homebrew) instala o psql em opt/.../bin — muitas vezes não está no PATH até «brew link».
+for _pq in "/opt/homebrew/opt/libpq/bin" "/usr/local/opt/libpq/bin"; do
+  if [ -d "$_pq" ]; then
+    PATH="$_pq:$PATH"
+    export PATH
+    break
+  fi
+done
+
 if ! command -v railway >/dev/null 2>&1; then
   echo "Instala a Railway CLI: brew install railway" >&2
   echo "Guia: docs/GUIA_POSTGRES_LEIGO.md" >&2
@@ -19,7 +28,11 @@ if ! command -v railway >/dev/null 2>&1; then
 fi
 
 if ! command -v psql >/dev/null 2>&1; then
-  echo "Instala o cliente PostgreSQL: brew install libpq && brew link --force libpq" >&2
+  echo "O comando «psql» não foi encontrado." >&2
+  echo "Corre na mesma máquina:" >&2
+  echo "  brew install libpq && brew link --force libpq" >&2
+  echo "Ou (sem link global) usa só no terminal:" >&2
+  echo "  export PATH=\"/opt/homebrew/opt/libpq/bin:\$PATH\"" >&2
   echo "Guia: docs/GUIA_POSTGRES_LEIGO.md" >&2
   exit 1
 fi
