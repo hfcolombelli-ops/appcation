@@ -437,9 +437,6 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  static const _loginLogoUrl =
-      'https://lh3.googleusercontent.com/aida/ADBb0uiBfLRiTNXO08j1P2IZWvshAg7Z9Cov-vEofM75n72DNP2GySWtw6G4jCFgDxrk5P41_SrvHlHfRfnovqLb-MHUJek6pEbWNdhDTeFq1SRfs8CEhqWds7APs33Meva5ib0gL8d5XtzADnwgs_bNsz2_fuLC1XlMqg9jWCaREZBjWGWMDmFajYRN3L4QAeEcmGKaWH1438zk9Q2hfrdT4lEzD7poZuProyJ_AJgjV1loVF22d9PH2WVm';
-
   Widget _buildLoginTopBar(AppLocalizations s) {
     return Material(
       color: ClinicalPrecisionColors.surfaceContainerLowest,
@@ -452,12 +449,14 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
               constraints: const BoxConstraints(maxWidth: 1440),
               child: Row(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      _loginLogoUrl,
-                      height: 40,
-                      errorBuilder: (_, _, _) => const Icon(Icons.medical_services_rounded, size: 36, color: ClinicalPrecisionColors.secondary),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: ClinicalPrecisionColors.secondary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(Icons.shield_outlined, size: 22, color: ClinicalPrecisionColors.secondary),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -1316,12 +1315,64 @@ class _LoginUniversalScreenState extends State<LoginUniversalScreen> {
                     ),
                   ],
                   if (_errorRegister != null) ...[
-                    const SizedBox(height: 8),
-                    Text(_errorRegister!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13)),
+                    const SizedBox(height: 12),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFECACA)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.error_outline_rounded, color: Color(0xFFB91C1C), size: 22),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _errorRegister!,
+                                style: tt.bodyMedium?.copyWith(
+                                  color: const Color(0xFF991B1B),
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                   if (_errorRegisterManufacturer != null) ...[
-                    const SizedBox(height: 8),
-                    Text(_errorRegisterManufacturer!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13)),
+                    const SizedBox(height: 12),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFECACA)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.error_outline_rounded, color: Color(0xFFB91C1C), size: 22),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _errorRegisterManufacturer!,
+                                style: tt.bodyMedium?.copyWith(
+                                  color: const Color(0xFF991B1B),
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                   const SizedBox(height: 16),
                   FilledButton(
